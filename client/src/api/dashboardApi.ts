@@ -7,6 +7,9 @@ export interface DashboardStats {
     revenueMTD: number;
     recentBookings: any[];
     pipelineStats: Record<string, number>;
+    revenueOverTime: { name: string; amount: number }[];
+    leadsBySource: { name: string; count: number }[];
+    bookingsByResource: { name: string; count: number }[];
 }
 
 export const getDashboardStats = async (): Promise<DashboardStats> => {

@@ -1,6 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Box, Calendar, Users, TrendingUp, Loader2 } from 'lucide-react';
 import { useDashboardStats } from '@/hooks';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    LineChart,
+    Line
+} from 'recharts';
 
 interface StatCardProps {
     title: string;
@@ -8,6 +22,8 @@ interface StatCardProps {
     change?: string;
     icon: React.ElementType;
 }
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 function StatCard({ title, value, change, icon: Icon }: StatCardProps) {
     return (
@@ -75,7 +91,69 @@ export default function Dashboard() {
                 />
             </div>
 
-            {/* Data Visualization */}
+            {/* Charts Section */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {/* Revenue Trend */}
+                <Card className="lg:col-span-2">
+                    <CardHeader>
+                        <CardTitle>Revenue Trend (Last 6 Months)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={stats?.revenueOverTime}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" />
+                                <YAxis tickFormatter={(value) => `₹${value / 1000}k`} />
+                                <Tooltip formatter={(value: number) => `₹${value.toLocaleString()}`} />
+                                <Line
+                                    type="monotone"
+                                    dataKey="amount"
+                                    stroke="#3B82F6"
+                                    strokeWidth={2}
+                                    dot={{ r: 4 }}
+                                    activeDot={{ r: 6 }}
+                                />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                {/* Leads by Source */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Leads by Source</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={stats?.leadsBySource}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="count"
+                                >
+                                    {stats?.leadsBySource.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                            {stats?.leadsBySource.map((source, index) => (
+                                <div key={source.name} className="flex items-center gap-2">
+                                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                    <span className="capitalize">{source.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Recent Bookings */}
                 <Card>
@@ -92,7 +170,7 @@ export default function Dashboard() {
                                             <p className="text-xs text-muted-foreground">{booking.resource_name}</p>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-sm">₹{parseFloat(booking.total_amount).toLocaleString()}</p>
+                                            <p className="text-sm font-semibold text-primary">₹{parseFloat(booking.total_amount).toLocaleString()}</p>
                                             <p className="text-xs text-muted-foreground">
                                                 {new Date(booking.created_at).toLocaleDateString()}
                                             </p>
@@ -108,38 +186,49 @@ export default function Dashboard() {
                     </CardContent>
                 </Card>
 
-                {/* Lead Pipeline */}
+                {/* Lead Pipeline Distribution */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Lead Pipeline</CardTitle>
+                        <CardTitle>Booking Distribution (By Type)</CardTitle>
+                    </CardHeader>
+                    <CardContent className="h-[250px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats?.bookingsByResource}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Bar dataKey="count" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                    <CardHeader className="pt-0">
+                        <CardTitle className="text-base">Lead Funnel</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {stats?.pipelineStats && Object.keys(stats.pipelineStats).length > 0 ? (
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 {Object.entries(stats.pipelineStats)
-                                    .sort((a, b) => b[1] - a[1]) // Sort by count desc
+                                    .filter(([stage]) => !['won', 'lost'].includes(stage))
+                                    .sort((a, b) => b[1] - a[1])
                                     .map(([stage, count]) => (
                                         <div key={stage} className="space-y-1">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="capitalize">{stage.replace(/_/g, ' ')}</span>
-                                                <span className="font-bold">{count}</span>
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="capitalize text-muted-foreground">{stage.replace(/_/g, ' ')}</span>
+                                                <span className="font-medium">{count}</span>
                                             </div>
-                                            <div className="h-2 w-full rounded-full bg-secondary">
+                                            <div className="h-1.5 w-full rounded-full bg-secondary">
                                                 <div
                                                     className="h-full rounded-full bg-primary"
                                                     style={{
-                                                        width: `${(count / (stats.openLeads + (stats.pipelineStats['won'] || 0) + (stats.pipelineStats['lost'] || 0))) * 100}%`
+                                                        width: `${(count / stats.openLeads) * 100}%`
                                                     }}
                                                 />
                                             </div>
                                         </div>
                                     ))}
                             </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                                No leads in pipeline.
-                            </p>
-                        )}
+                        ) : null}
                     </CardContent>
                 </Card>
             </div>

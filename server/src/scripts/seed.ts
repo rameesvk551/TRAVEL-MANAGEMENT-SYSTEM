@@ -110,14 +110,14 @@ async function seed() {
             { name: 'Goa Honeymoon', destination: 'Goa', source: 'referral', stage: 'contacted', score: 65 },
             { name: 'Rajasthan Cultural', destination: 'Jaipur', source: 'social', stage: 'proposal', score: 85 },
             { name: 'Iceland Northern Lights', destination: 'Iceland', source: 'google', stage: 'qualified', score: 70 },
-            { name: 'Bali Beach Escape', destination: 'Bali', source: 'website', stage: 'won', score: 100 },
+            { name: 'Bali Beach Escape', destination: 'Bali', source: 'direct', stage: 'won', score: 100 },
             { name: 'Kerala Backwaters', destination: 'Alleppey', source: 'email', stage: 'lost', score: 20 },
             { name: 'Ladakh Bike Trip', destination: 'Leh', source: 'phone', stage: 'new', score: 35 },
             { name: 'Swiss Alp Skiing', destination: 'Zermatt', source: 'referral', stage: 'contacted', score: 55 },
             { name: 'Japan Cherry Blossom', destination: 'Tokyo', source: 'website', stage: 'qualified', score: 75 },
             { name: 'African Safari', destination: 'Kenya', source: 'social', stage: 'proposal', score: 80 },
             { name: 'Dubai Luxury', destination: 'Dubai', source: 'google', stage: 'won', score: 100 },
-            { name: 'Maldives Overwater', destination: 'Maldives', source: 'website', stage: 'lost', score: 15 },
+            { name: 'Maldives Overwater', destination: 'Maldives', source: 'direct', stage: 'lost', score: 15 },
             { name: 'Machu Picchu Trek', destination: 'Peru', source: 'referral', stage: 'new', score: 45 },
             { name: 'Vietnam Food Tour', destination: 'Hanoi', source: 'email', stage: 'contacted', score: 50 },
             { name: 'New Zealand Roadtrip', destination: 'Queenstown', source: 'website', stage: 'qualified', score: 60 },
@@ -128,7 +128,7 @@ async function seed() {
             { name: 'Arctic Expedition', destination: 'Svalbard', source: 'website', stage: 'qualified', score: 68 },
             { name: 'Amazon Rainforest', destination: 'Brazil', source: 'email', stage: 'proposal', score: 82 },
             { name: 'Galapagos Diving', destination: 'Ecuador', source: 'phone', stage: 'won', score: 100 },
-            { name: 'Paris Romantic', destination: 'France', source: 'social', stage: 'lost', score: 10 },
+            { name: 'Paris Romantic', destination: 'France', source: 'direct', stage: 'lost', score: 10 },
             { name: 'Andaman Scuba', destination: 'Havelock', source: 'google', stage: 'new', score: 25 },
             { name: 'Bhutan Monastery', destination: 'Paro', source: 'referral', stage: 'qualified', score: 72 }
         ];
@@ -197,18 +197,24 @@ async function seed() {
             );
         }
 
-        // 8. Bookings (10 items)
-        console.log('Creating 10 Bookings...');
+        // 8. Bookings (50 items historical)
+        console.log('Creating 50 historical Bookings...');
         const resourceRes = await query(`SELECT id FROM resources WHERE tenant_id = $1`, [tenantId]);
         const resourceIds = resourceRes.rows.map(r => r.id);
         const wonLeadsRes = await query(`SELECT id, name FROM leads WHERE tenant_id = $1 AND stage_id = 'won'`, [tenantId]);
 
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 50; i++) {
             const lead = wonLeadsRes.rows[i % wonLeadsRes.rows.length];
             const resourceId = resourceIds[i % resourceIds.length];
-            const amount = 25000 + (Math.random() * 50000);
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() + (i * 7));
+            const amount = 25000 + (Math.random() * 80000);
+
+            // Spread over last 6 months
+            const dayOffset = Math.floor(Math.random() * 180);
+            const createdAt = new Date();
+            createdAt.setDate(createdAt.getDate() - dayOffset);
+
+            const startDate = new Date(createdAt);
+            startDate.setDate(startDate.getDate() + 30); // Start 30 days after creation
             const endDate = new Date(startDate);
             endDate.setDate(endDate.getDate() + 5);
 
@@ -217,11 +223,11 @@ async function seed() {
                     tenant_id, resource_id, lead_id, created_by_id, 
                     source, guest_name, start_date, end_date, 
                     status, base_amount, total_amount, currency, created_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW() - INTERVAL '${i} days')`,
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
                 [
                     tenantId, resourceId, lead?.id, adminId,
                     'DIRECT', lead?.name || 'Walk-in Guest', startDate, endDate,
-                    'confirmed', amount * 0.9, amount, 'INR'
+                    'confirmed', amount * 0.9, amount, 'INR', createdAt
                 ]
             );
         }
