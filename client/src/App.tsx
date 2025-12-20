@@ -13,6 +13,8 @@ import { PipelineBoard } from '@/pages/crm/PipelineBoard';
 import { LeadDetail } from '@/pages/crm/LeadDetail';
 import { LeadForm } from '@/pages/crm/LeadForm';
 import { Leads } from '@/pages/crm/Leads';
+import DashboardList from '@/pages/dashboards/DashboardList';
+import DashboardBuilder from '@/pages/dashboards/DashboardBuilder';
 
 function App() {
     return (
@@ -36,6 +38,10 @@ function App() {
                     <Route path="crm" element={<PipelineBoard />} />
                     <Route path="crm/leads/new" element={<LeadForm />} />
                     <Route path="crm/leads/:id" element={<LeadDetail />} />
+
+                    {/* Dashboard Builder Routes */}
+                    <Route path="dashboards" element={<DashboardList />} />
+                    <Route path="dashboards/builder" element={<DashboardBuilder />} />
                 </Route>
             </Route>
         </Routes>

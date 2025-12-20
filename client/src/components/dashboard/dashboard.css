@@ -1,0 +1,18 @@
+/* Dashboard Widget Styles */
+.dashboard-table th {
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    /* slate-400 */
+    padding: 8px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dashboard-table td {
+    padding: 8px;
+    font-size: 13px;
+    color: #334155;
+    /* slate-700 */
+    border-bottom: 1px solid #f8fafc;
+}

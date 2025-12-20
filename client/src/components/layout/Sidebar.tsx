@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
     { href: '/resources', label: 'Resources', icon: Box },
     { href: '/bookings', label: 'Bookings', icon: Calendar },
     { href: '/leads', label: 'Leads', icon: Users },
+    { href: '/dashboards', label: 'Custom Dashboards', icon: LayoutDashboard },
     { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

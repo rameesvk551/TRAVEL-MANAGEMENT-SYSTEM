@@ -8,6 +8,8 @@ const pageTitles: Record<string, string> = {
     '/resources': 'Resources',
     '/bookings': 'Bookings',
     '/leads': 'Leads & CRM',
+    '/dashboards': 'Custom Dashboards',
+    '/dashboards/builder': 'Dashboard Builder',
     '/settings': 'Settings',
 };
 
