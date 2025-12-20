@@ -7,3 +7,5 @@ export {
 } from './useResources';
 export { useLogin, useRegister, useLogout } from './useAuth';
 export * from './useBookings';
+export * from './useCrm';
+export * from './useDashboard';

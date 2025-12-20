@@ -2,7 +2,6 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import { config } from './config/index.js';
 import { createApiRouter } from './presentation/routes/index.js';
-import { createCrmRoutes } from './presentation/routes/crmRoutes.js';
 import { errorMiddleware } from './presentation/middleware/index.js';
 import { createAuthMiddleware } from './presentation/middleware/auth.middleware.js';
 import {
@@ -10,18 +9,27 @@ import {
     ResourceService,
     TenantService,
     BookingService,
-    AvailabilityService
+    AvailabilityService,
+    LeadService,
+    ContactService,
+    PipelineService,
+    DashboardService
 } from './application/services/index.js';
 import {
     AuthController,
     ResourceController,
-    BookingController
+    BookingController,
+    DashboardController,
+    LeadController
 } from './presentation/controllers/index.js';
 import {
     UserRepository,
     ResourceRepository,
     TenantRepository,
-    BookingRepository
+    BookingRepository,
+    LeadRepository,
+    ContactRepository,
+    PipelineRepository
 } from './infrastructure/repositories/index.js';
 
 /**
@@ -40,6 +48,7 @@ export function createApp(): Express {
     const resourceRepository = new ResourceRepository();
     const userRepository = new UserRepository();
     const bookingRepository = new BookingRepository();
+    const leadRepository = new LeadRepository();
 
     // Services
     const tenantService = new TenantService(tenantRepository);
@@ -47,11 +56,14 @@ export function createApp(): Express {
     const authService = new AuthService(userRepository, tenantRepository);
     const availabilityService = new AvailabilityService(bookingRepository, resourceRepository);
     const bookingService = new BookingService(bookingRepository, availabilityService);
+    const leadService = new LeadService(leadRepository, new ContactService(new ContactRepository()), new PipelineService(new PipelineRepository()), bookingService);
+    const dashboardService = new DashboardService(resourceRepository, bookingRepository, leadRepository);
 
     // Controllers
     const resourceController = new ResourceController(resourceService);
     const authController = new AuthController(authService);
     const bookingController = new BookingController(bookingService);
+    const dashboardController = new DashboardController(dashboardService);
 
     // Initialize Middleware
     const authMiddleware = createAuthMiddleware(authService, userRepository);
@@ -61,11 +73,10 @@ export function createApp(): Express {
         resourceController,
         authController,
         bookingController,
+        dashboardController,
         tenantService,
         authMiddleware,
     }));
-
-    app.use('/api/crm', createCrmRoutes(authMiddleware));
 
     // Welcome route
     app.get('/', (_req, res) => {

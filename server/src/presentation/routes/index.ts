@@ -9,10 +9,15 @@ import { BookingController } from '../controllers/BookingController.js';
 import { createTenantMiddleware } from '../middleware/index.js';
 import { TenantService } from '../../application/services/TenantService.js';
 
+import { createCrmRoutes } from './crmRoutes.js';
+import { createDashboardRoutes } from './dashboard.routes.js';
+import { DashboardController } from '../controllers/DashboardController.js';
+
 interface RoutesDependencies {
     resourceController: ResourceController;
     authController: AuthController;
     bookingController: BookingController;
+    dashboardController: DashboardController;
     tenantService: TenantService;
     authMiddleware: RequestHandler;
 }
@@ -29,11 +34,15 @@ export function createApiRouter(deps: RoutesDependencies): Router {
     }));
 
     // Protected routes (tenant + auth required)
+    router.use('/dashboard', tenantMiddleware, createDashboardRoutes(deps.dashboardController));
     router.use('/resources', tenantMiddleware, createResourceRoutes(deps.resourceController));
-    router.use('/bookings', tenantMiddleware, createBookingRoutes({ // Added booking routes
+    router.use('/bookings', tenantMiddleware, createBookingRoutes({
         bookingController: deps.bookingController,
         authMiddleware: deps.authMiddleware,
     }));
+
+    // CRM Routes (Apply tenant middleware here!)
+    router.use('/crm', tenantMiddleware, createCrmRoutes(deps.authMiddleware));
 
     return router;
 }

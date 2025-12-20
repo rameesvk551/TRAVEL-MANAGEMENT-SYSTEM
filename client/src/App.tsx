@@ -12,6 +12,7 @@ import Register from '@/pages/Register';
 import { PipelineBoard } from '@/pages/crm/PipelineBoard';
 import { LeadDetail } from '@/pages/crm/LeadDetail';
 import { LeadForm } from '@/pages/crm/LeadForm';
+import { Leads } from '@/pages/crm/Leads';
 
 function App() {
     return (
@@ -31,6 +32,7 @@ function App() {
                     <Route path="resources/:id/edit" element={<EditResource />} />
                     <Route path="bookings" element={<Bookings />} />
                     <Route path="bookings/new" element={<CreateBooking />} />
+                    <Route path="leads" element={<Leads />} />
                     <Route path="crm" element={<PipelineBoard />} />
                     <Route path="crm/leads/new" element={<LeadForm />} />
                     <Route path="crm/leads/:id" element={<LeadDetail />} />
