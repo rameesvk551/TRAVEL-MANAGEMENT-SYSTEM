@@ -2,14 +2,49 @@ import { Lead, LeadProps } from '../../domain/entities/Lead.js';
 import { LeadRepository } from '../../infrastructure/repositories/LeadRepository.js';
 import { ContactService } from './ContactService.js';
 import { PipelineService } from './PipelineService.js';
+import { BookingService, CreateBookingDTO } from './BookingService.js';
 import { LeadFilters } from '../../domain/interfaces/ILeadRepository.js';
 
 export class LeadService {
     constructor(
         private leadRepository: LeadRepository,
         private contactService: ContactService,
-        private pipelineService: PipelineService
+        private pipelineService: PipelineService,
+        private bookingService: BookingService // Inject Booking Service
     ) { }
+
+    async convertToBooking(leadId: string, tenantId: string, bookingDetails: Partial<CreateBookingDTO>): Promise<void> {
+        const lead = await this.leadRepository.findById(leadId, tenantId);
+        if (!lead) throw new Error('Lead not found');
+
+        // 1. Create Booking
+        // Map Lead details to Booking if missing
+        await this.bookingService.createBooking({
+            tenantId,
+            leadId: lead.id,
+            createdById: lead.assignedToId || 'system', // TODO: Pass user ID from context
+            source: lead.source || 'CRM',
+            status: 'CONFIRMED', // Default for conversion
+            resourceId: bookingDetails.resourceId!, // Required
+            startDate: bookingDetails.startDate!, // Required
+            endDate: bookingDetails.endDate!, // Required
+            baseAmount: bookingDetails.baseAmount || lead.score * 10, // Dummy fallback
+            totalAmount: bookingDetails.totalAmount || lead.score * 10,
+            currency: 'USD',
+            guestName: lead.name,
+            ...bookingDetails
+        } as CreateBookingDTO);
+
+        // 2. Mark Lead as WON (Move to WON stage)
+        const pipelines = await this.pipelineService.getPipelines(tenantId);
+        const pipeline = pipelines.find(p => p.id === (lead.pipelineId || pipelines[0].id));
+        if (pipeline) {
+            const wonStage = pipeline.stages.find(s => s.type === 'WON');
+            if (wonStage) {
+                await this.moveStage(leadId, tenantId, wonStage.id);
+            }
+        }
+    }
 
     async createLead(props: LeadProps): Promise<Lead> {
         // 1. Ensure Contact Exists

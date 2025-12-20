@@ -2,6 +2,7 @@ import express, { Express } from 'express';
 import cors from 'cors';
 import { config } from './config/index.js';
 import { createApiRouter } from './presentation/routes/index.js';
+import { createCrmRoutes } from './presentation/routes/crmRoutes.js';
 import { errorMiddleware } from './presentation/middleware/index.js';
 import { createAuthMiddleware } from './presentation/middleware/auth.middleware.js';
 import {
@@ -63,6 +64,8 @@ export function createApp(): Express {
         tenantService,
         authMiddleware,
     }));
+
+    app.use('/api/crm', createCrmRoutes(authMiddleware));
 
     // Welcome route
     app.get('/', (_req, res) => {

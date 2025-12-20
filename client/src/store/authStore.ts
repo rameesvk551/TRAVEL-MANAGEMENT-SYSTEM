@@ -23,7 +23,7 @@ export const useAuthStore = create<AuthState>()(
         (set) => ({
             user: null,
             token: null,
-            tenantSlug: 'demo', // Default tenant
+            tenantSlug: 'demo-travel', // Default tenant
             isAuthenticated: false,
 
             setAuth: (user, token) => set({

@@ -1,7 +1,7 @@
 import { Contact } from '../entities/Contact.js';
-import { Pagination } from '../../shared/types/Pagination.js';
+import { PaginationParams } from '../../shared/types/index.js';
 
-export interface ContactFilters extends Pagination {
+export interface ContactFilters extends PaginationParams {
     search?: string; // Search by name, email, phone
     tags?: string[];
 }

@@ -5,13 +5,19 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "migrate": "tsx src/scripts/run_migrations.ts",
+    "seed": "tsx src/scripts/seed.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "test": "jest"
   },
-  "keywords": ["travel", "saas", "multi-tenant"],
+  "keywords": [
+    "travel",
+    "saas",
+    "multi-tenant"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {

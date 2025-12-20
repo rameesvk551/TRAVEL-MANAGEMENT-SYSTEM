@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PipelineService } from '../../application/services/PipelineService.js';
-import { RequestContext } from '../../shared/types/RequestContext.js';
+import { RequestContext } from '../../shared/types/index.js';
 
 export class PipelineController {
     constructor(private pipelineService: PipelineService) { }

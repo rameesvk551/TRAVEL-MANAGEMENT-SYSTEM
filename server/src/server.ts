@@ -1,4 +1,4 @@
-import './types/express.js';
+
 import { createApp } from './app.js';
 import { config } from './config/index.js';
 import { testConnection, closePool } from './infrastructure/database/index.js';

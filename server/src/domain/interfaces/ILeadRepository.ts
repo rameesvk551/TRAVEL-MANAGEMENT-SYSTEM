@@ -1,7 +1,7 @@
 import { Lead } from '../entities/Lead.js';
-import { Pagination } from '../../shared/types/Pagination.js';
+import { PaginationParams } from '../../shared/types/index.js';
 
-export interface LeadFilters extends Pagination {
+export interface LeadFilters extends PaginationParams {
     pipelineId?: string;
     stageId?: string;
     assignedToId?: string;

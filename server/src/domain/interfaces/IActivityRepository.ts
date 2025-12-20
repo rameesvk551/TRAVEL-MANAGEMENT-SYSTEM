@@ -1,7 +1,7 @@
 import { Activity } from '../entities/Activity.js';
-import { Pagination } from '../../shared/types/Pagination.js';
+import { PaginationParams } from '../../shared/types/index.js';
 
-export interface ActivityFilters extends Pagination {
+export interface ActivityFilters extends PaginationParams {
     leadId?: string;
     contactId?: string;
     bookingId?: string;

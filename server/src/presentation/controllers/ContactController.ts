@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ContactService } from '../../application/services/ContactService.js';
-import { RequestContext } from '../../shared/types/RequestContext.js';
+import { RequestContext } from '../../shared/types/index.js';
 
 export class ContactController {
     constructor(private contactService: ContactService) { }
@@ -24,7 +24,8 @@ export class ContactController {
             const result = await this.contactService.getContacts(context.tenantId, {
                 ...req.query,
                 limit: req.query.limit ? Number(req.query.limit) : 20,
-                offset: req.query.offset ? Number(req.query.offset) : 0
+                offset: req.query.offset ? Number(req.query.offset) : 0,
+                page: req.query.page ? Number(req.query.page) : 1
             });
             res.status(200).json(result);
         } catch (error) {

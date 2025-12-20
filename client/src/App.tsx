@@ -9,6 +9,9 @@ import Bookings from '@/pages/Bookings';
 import CreateBooking from '@/pages/CreateBooking';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import { PipelineBoard } from '@/pages/crm/PipelineBoard';
+import { LeadDetail } from '@/pages/crm/LeadDetail';
+import { LeadForm } from '@/pages/crm/LeadForm';
 
 function App() {
     return (
@@ -28,6 +31,9 @@ function App() {
                     <Route path="resources/:id/edit" element={<EditResource />} />
                     <Route path="bookings" element={<Bookings />} />
                     <Route path="bookings/new" element={<CreateBooking />} />
+                    <Route path="crm" element={<PipelineBoard />} />
+                    <Route path="crm/leads/new" element={<LeadForm />} />
+                    <Route path="crm/leads/:id" element={<LeadDetail />} />
                 </Route>
             </Route>
         </Routes>

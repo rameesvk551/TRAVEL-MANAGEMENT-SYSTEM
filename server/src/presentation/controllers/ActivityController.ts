@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ActivityService } from '../../application/services/ActivityService.js';
-import { RequestContext } from '../../shared/types/RequestContext.js';
+import { RequestContext } from '../../shared/types/index.js';
 
 export class ActivityController {
     constructor(private activityService: ActivityService) { }
@@ -25,7 +25,8 @@ export class ActivityController {
             const result = await this.activityService.getActivities(context.tenantId, {
                 ...req.query,
                 limit: req.query.limit ? Number(req.query.limit) : 20,
-                offset: req.query.offset ? Number(req.query.offset) : 0
+                offset: req.query.offset ? Number(req.query.offset) : 0,
+                page: req.query.page ? Number(req.query.page) : 1
             });
             res.status(200).json(result);
         } catch (error) {
