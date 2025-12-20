@@ -5,6 +5,8 @@ import Dashboard from '@/pages/Dashboard';
 import Resources from '@/pages/Resources';
 import CreateResource from '@/pages/CreateResource';
 import EditResource from '@/pages/EditResource';
+import Bookings from '@/pages/Bookings';
+import CreateBooking from '@/pages/CreateBooking';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 
@@ -24,6 +26,8 @@ function App() {
                     <Route path="resources" element={<Resources />} />
                     <Route path="resources/new" element={<CreateResource />} />
                     <Route path="resources/:id/edit" element={<EditResource />} />
+                    <Route path="bookings" element={<Bookings />} />
+                    <Route path="bookings/new" element={<CreateBooking />} />
                 </Route>
             </Route>
         </Routes>

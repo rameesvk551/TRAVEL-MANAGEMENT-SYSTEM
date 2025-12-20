@@ -4,9 +4,11 @@ export interface BookingFilters {
     resourceId?: string;
     status?: BookingStatus;
     source?: BookingSource;
-    startDateFrom?: Date;
-    startDateTo?: Date;
+    startDate?: Date; // For overlap check
+    endDate?: Date;   // For overlap check
     search?: string;
+    limit?: number;
+    offset?: number;
 }
 
 /**
@@ -21,10 +23,8 @@ export interface IBookingRepository {
     ): Promise<Booking | null>;
     findAll(
         tenantId: string,
-        filters?: BookingFilters,
-        limit?: number,
-        offset?: number
-    ): Promise<Booking[]>;
+        filters: BookingFilters & { limit: number; offset: number }
+    ): Promise<{ bookings: Booking[]; total: number }>;
     count(tenantId: string, filters?: BookingFilters): Promise<number>;
     save(booking: Booking): Promise<Booking>;
     update(booking: Booking): Promise<Booking>;

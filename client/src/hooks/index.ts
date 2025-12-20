@@ -6,3 +6,4 @@ export {
     useDeleteResource,
 } from './useResources';
 export { useLogin, useRegister, useLogout } from './useAuth';
+export * from './useBookings';
