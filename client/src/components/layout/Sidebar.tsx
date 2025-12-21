@@ -7,6 +7,7 @@ import {
     Settings,
     ChevronLeft,
     Package,
+    UserCog,
 } from 'lucide-react';
 import { cn } from '@/utils';
 import { Button } from '@/components/ui';
@@ -23,6 +24,7 @@ const navItems: NavItem[] = [
     { href: '/resources', label: 'Resources', icon: Box },
     { href: '/bookings', label: 'Bookings', icon: Calendar },
     { href: '/leads', label: 'Leads', icon: Users },
+    { href: '/hrms', label: 'HR Management', icon: UserCog },
     { href: '/dashboards', label: 'Custom Dashboards', icon: LayoutDashboard },
     { href: '/settings', label: 'Settings', icon: Settings },
 ];

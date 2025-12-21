@@ -13,6 +13,7 @@ import { TenantService } from '../../application/services/TenantService.js';
 import { createCrmRoutes } from './crmRoutes.js';
 import { createDashboardRoutes } from './dashboard.routes.js';
 import { DashboardController } from '../controllers/DashboardController.js';
+import { createHRMSRoutes } from './hrms/index.js';
 
 interface RoutesDependencies {
     resourceController: ResourceController;
@@ -47,6 +48,9 @@ export function createApiRouter(deps: RoutesDependencies): Router {
 
     // Inventory Routes
     router.use('/inventory', tenantMiddleware, createInventoryRoutes(deps.authMiddleware));
+
+    // HRMS Routes
+    router.use('/hrms', tenantMiddleware, createHRMSRoutes(deps.authMiddleware));
 
     return router;
 }

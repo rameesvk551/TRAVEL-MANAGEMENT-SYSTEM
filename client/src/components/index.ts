@@ -20,3 +20,14 @@ export {
     BookingDrawer,
     DepartureDetail,
 } from './inventory';
+
+// HRMS components
+export {
+    EmployeeList,
+    EmployeeForm,
+    MobileCheckIn,
+    LeaveRequestForm,
+    LeaveApprovals,
+    PayslipCard,
+    TeamAttendanceDashboard,
+} from './hrms';

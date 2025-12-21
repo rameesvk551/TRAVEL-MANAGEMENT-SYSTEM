@@ -21,10 +21,8 @@ export type HoldSource = 'WEBSITE' | 'ADMIN' | 'OTA' | 'MANUAL';
  */
 export type HoldType = 'CART' | 'PAYMENT_PENDING' | 'APPROVAL_PENDING';
 
-/**
- * Booking source for multi-channel tracking
- */
-export type BookingSource = 'DIRECT' | 'OTA' | 'MANUAL' | 'CSV' | 'EMAIL';
+// BookingSource is exported from booking.types.ts
+import type { BookingSource } from './booking.types';
 
 /**
  * Booking lifecycle status

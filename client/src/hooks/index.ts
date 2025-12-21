@@ -10,3 +10,4 @@ export * from './useBookings';
 export * from './useCrm';
 export * from './useDashboard';
 export * from './useInventory';
+export * from './hrms';

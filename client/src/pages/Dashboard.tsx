@@ -104,7 +104,7 @@ export default function Dashboard() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" />
                                 <YAxis tickFormatter={(value) => `₹${value / 1000}k`} />
-                                <Tooltip formatter={(value: number) => `₹${value.toLocaleString()}`} />
+                                <Tooltip formatter={(value) => `₹${(value as number).toLocaleString()}`} />
                                 <Line
                                     type="monotone"
                                     dataKey="amount"

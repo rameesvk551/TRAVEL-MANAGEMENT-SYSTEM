@@ -17,6 +17,15 @@ import DashboardList from '@/pages/dashboards/DashboardList';
 import DashboardBuilder from '@/pages/dashboards/DashboardBuilder';
 import InventoryDashboard from '@/pages/inventory/InventoryDashboard';
 import DepartureDetail from '@/pages/inventory/DepartureDetail';
+import {
+    HrmsDashboard,
+    EmployeesPage,
+    NewEmployeePage,
+    AttendancePage,
+    LeavesPage,
+    PayrollPage,
+    TeamDashboardPage,
+} from '@/pages/hrms';
 
 function App() {
     return (
@@ -48,6 +57,18 @@ function App() {
                     {/* Dashboard Builder Routes */}
                     <Route path="dashboards" element={<DashboardList />} />
                     <Route path="dashboards/builder" element={<DashboardBuilder />} />
+
+                    {/* HRMS Routes */}
+                    <Route path="hrms" element={<HrmsDashboard />} />
+                    <Route path="hrms/employees" element={<EmployeesPage />} />
+                    <Route path="hrms/employees/new" element={<NewEmployeePage />} />
+                    <Route path="hrms/attendance" element={<AttendancePage />} />
+                    <Route path="hrms/attendance/check-in" element={<AttendancePage />} />
+                    <Route path="hrms/leaves" element={<LeavesPage />} />
+                    <Route path="hrms/leaves/apply" element={<LeavesPage />} />
+                    <Route path="hrms/payroll" element={<PayrollPage />} />
+                    <Route path="hrms/payroll/latest" element={<PayrollPage />} />
+                    <Route path="hrms/team" element={<TeamDashboardPage />} />
                 </Route>
             </Route>
         </Routes>

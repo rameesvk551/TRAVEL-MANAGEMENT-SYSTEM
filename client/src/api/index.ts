@@ -4,3 +4,4 @@ export { authApi, type LoginInput, type RegisterInput, type AuthUser, type AuthR
 export * from './bookingApi';
 export { crmApi } from './crmApi';
 export { inventoryApi, bookingOrchestratorApi } from './inventoryApi';
+export * from './hrms';

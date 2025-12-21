@@ -2,3 +2,4 @@ export type { Resource, ResourceType, CreateResourceInput, UpdateResourceInput }
 export type { ApiResponse, PaginatedResponse, ListParams } from './api.types';
 export * from './booking.types';
 export * from './inventory.types';
+export * from './hrms.types';
