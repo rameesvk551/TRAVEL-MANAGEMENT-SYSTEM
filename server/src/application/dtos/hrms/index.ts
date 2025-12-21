@@ -6,3 +6,4 @@ export * from './AttendanceDTO';
 export * from './LeaveDTO';
 export * from './PayrollDTO';
 export * from './TripAssignmentDTO';
+export * from './DocumentDTO';

@@ -6,3 +6,4 @@ export * from './AttendanceService';
 export * from './LeaveService';
 export * from './TripAssignmentService';
 export * from './PayrollService';
+export * from './DocumentService';

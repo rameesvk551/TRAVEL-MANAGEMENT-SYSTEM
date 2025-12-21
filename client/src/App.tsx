@@ -25,6 +25,7 @@ import {
     LeavesPage,
     PayrollPage,
     TeamDashboardPage,
+    DocumentsPage,
 } from '@/pages/hrms';
 
 function App() {
@@ -66,6 +67,7 @@ function App() {
                     <Route path="hrms/attendance/check-in" element={<AttendancePage />} />
                     <Route path="hrms/leaves" element={<LeavesPage />} />
                     <Route path="hrms/leaves/apply" element={<LeavesPage />} />
+                    <Route path="hrms/documents" element={<DocumentsPage />} />
                     <Route path="hrms/payroll" element={<PayrollPage />} />
                     <Route path="hrms/payroll/latest" element={<PayrollPage />} />
                     <Route path="hrms/team" element={<TeamDashboardPage />} />

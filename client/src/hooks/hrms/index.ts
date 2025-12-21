@@ -5,3 +5,4 @@ export * from './useEmployees';
 export * from './useAttendance';
 export * from './useLeaves';
 export * from './usePayroll';
+export * from './useDocuments';

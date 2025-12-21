@@ -6,3 +6,4 @@ export { attendanceApi } from './attendanceApi';
 export { leaveApi } from './leaveApi';
 export { tripAssignmentApi } from './tripAssignmentApi';
 export { payrollApi } from './payrollApi';
+export { documentApi } from './documentApi';

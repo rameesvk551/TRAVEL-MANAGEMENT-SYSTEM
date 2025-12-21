@@ -28,6 +28,13 @@ const HRMS_MODULES = [
         color: 'bg-yellow-50 hover:bg-yellow-100',
     },
     {
+        title: 'Documents',
+        description: 'Employee documents, certificates, and permits',
+        icon: '📁',
+        path: '/hrms/documents',
+        color: 'bg-indigo-50 hover:bg-indigo-100',
+    },
+    {
         title: 'Trip Assignments',
         description: 'View and manage trip assignments',
         icon: '🚌',

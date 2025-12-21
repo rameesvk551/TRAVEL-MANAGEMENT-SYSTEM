@@ -6,3 +6,4 @@ export * from './attendanceValidator';
 export * from './leaveValidator';
 export * from './tripAssignmentValidator';
 export * from './payrollValidator';
+export * from './documentValidator';

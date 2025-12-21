@@ -6,3 +6,4 @@ export * from './AttendanceRepository';
 export * from './LeaveRepository';
 export * from './TripAssignmentRepository';
 export * from './PayrollRepository';
+export * from './DocumentRepository';

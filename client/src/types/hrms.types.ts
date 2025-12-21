@@ -176,3 +176,75 @@ export interface EmployeeSkill {
     proficiency: 'beginner' | 'intermediate' | 'expert';
     certifiedAt?: string;
 }
+
+// Document Types
+export type DocumentCategory = 
+    | 'IDENTITY' | 'CONTRACT' | 'CERTIFICATION' 
+    | 'PERMIT' | 'MEDICAL' | 'EDUCATION' 
+    | 'BANK' | 'TAX' | 'OTHER';
+
+export type DocumentStatus = 
+    | 'PENDING' | 'VERIFIED' | 'REJECTED' | 'EXPIRED';
+
+export interface EmployeeDocument {
+    id: string;
+    employeeId: string;
+    name: string;
+    category: DocumentCategory;
+    documentType: string;
+    documentNumber?: string;
+    fileUrl: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    issuedDate?: string;
+    expiryDate?: string;
+    status: DocumentStatus;
+    verifiedBy?: string;
+    verifiedAt?: string;
+    rejectionReason?: string;
+    isConfidential: boolean;
+    notes?: string;
+    createdAt: string;
+    updatedAt: string;
+    uploadedBy: string;
+    // Joined employee info
+    employeeName?: string;
+    employeeCode?: string;
+}
+
+export interface CreateDocumentDTO {
+    employeeId: string;
+    name: string;
+    category: DocumentCategory;
+    documentType: string;
+    documentNumber?: string;
+    fileUrl: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    issuedDate?: string;
+    expiryDate?: string;
+    isConfidential?: boolean;
+    notes?: string;
+}
+
+export interface UpdateDocumentDTO {
+    name?: string;
+    category?: DocumentCategory;
+    documentType?: string;
+    documentNumber?: string;
+    issuedDate?: string;
+    expiryDate?: string;
+    isConfidential?: boolean;
+    notes?: string;
+}
+
+export interface DocumentQuery {
+    employeeId?: string;
+    category?: DocumentCategory;
+    status?: DocumentStatus;
+    isConfidential?: boolean;
+    expiringWithinDays?: number;
+    search?: string;
+}

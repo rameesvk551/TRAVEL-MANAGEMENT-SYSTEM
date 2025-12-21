@@ -60,34 +60,59 @@ async function runMigrations() {
     }
 
     try {
-        const files = fs.readdirSync(migrationsDir).sort();
+        // Run main migrations
+        const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
         let count = 0;
 
         for (const file of files) {
-            if (file.endsWith('.sql')) {
-                console.log(`📄 Checking ${file}...`);
-                const filePath = path.join(migrationsDir, file);
+            console.log(`📄 Checking ${file}...`);
+            const filePath = path.join(migrationsDir, file);
+            const sql = fs.readFileSync(filePath, 'utf-8');
+
+            try {
+                await query(sql, []);
+                console.log(`✅ ${file} applied successfully.`);
+                count++;
+            } catch (err: any) {
+                if (err.code === '42P07') { // Relation exists
+                    console.log(`⚠️  ${file} - Skipped (Relation already exists).`);
+                } else if (err.message && err.message.includes('already exists')) {
+                    console.log(`⚠️  ${file} - Skipped (Already exists).`);
+                } else {
+                    console.error(`❌ Error applying ${file}:`, err.message);
+                    process.exit(1);
+                }
+            }
+        }
+
+        // Run HRMS migrations
+        const hrmsDir = path.join(migrationsDir, 'hrms');
+        if (fs.existsSync(hrmsDir)) {
+            console.log('\n📂 Running HRMS migrations...');
+            const hrmsFiles = fs.readdirSync(hrmsDir).filter(f => f.endsWith('.sql')).sort();
+            
+            for (const file of hrmsFiles) {
+                console.log(`📄 Checking hrms/${file}...`);
+                const filePath = path.join(hrmsDir, file);
                 const sql = fs.readFileSync(filePath, 'utf-8');
 
                 try {
                     await query(sql, []);
-                    console.log(`✅ ${file} applied successfully.`);
+                    console.log(`✅ hrms/${file} applied successfully.`);
                     count++;
                 } catch (err: any) {
-                    if (err.code === '42P07') { // Relation exists
-                        console.log(`⚠️  ${file} - Skipped (Relation already exists).`);
+                    if (err.code === '42P07' || err.code === '42710') {
+                        console.log(`⚠️  hrms/${file} - Skipped (Already exists).`);
                     } else if (err.message && err.message.includes('already exists')) {
-                        console.log(`⚠️  ${file} - Skipped (Already exists).`);
+                        console.log(`⚠️  hrms/${file} - Skipped (Already exists).`);
                     } else {
-                        console.error(`❌ Error applying ${file}:`, err.message);
-                        // We continue to try others? Or fail?
-                        // For dev setup, often better to fail fast, but here we might have partials.
-                        // Let's stop.
+                        console.error(`❌ Error applying hrms/${file}:`, err.message);
                         process.exit(1);
                     }
                 }
             }
         }
+
         console.log(`✨ Migration Check Complete. ${count} scripts processed.`);
     } catch (error) {
         console.error('Migration failed:', error);
