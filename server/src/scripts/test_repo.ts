@@ -7,7 +7,7 @@ async function testRepo() {
 
     try {
         console.log('Testing repository findAll...');
-        const result = await repo.findAll(tenantId, {});
+        const result = await repo.findAll(tenantId, { page: 1, limit: 10, offset: 0 });
         console.log('Total leads found by repo:', result.total);
         console.log('Leads array length:', result.leads.length);
         if (result.leads.length > 0) {

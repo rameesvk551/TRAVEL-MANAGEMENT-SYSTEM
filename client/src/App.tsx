@@ -15,6 +15,8 @@ import { LeadForm } from '@/pages/crm/LeadForm';
 import { Leads } from '@/pages/crm/Leads';
 import DashboardList from '@/pages/dashboards/DashboardList';
 import DashboardBuilder from '@/pages/dashboards/DashboardBuilder';
+import InventoryDashboard from '@/pages/inventory/InventoryDashboard';
+import DepartureDetail from '@/pages/inventory/DepartureDetail';
 
 function App() {
     return (
@@ -38,6 +40,10 @@ function App() {
                     <Route path="crm" element={<PipelineBoard />} />
                     <Route path="crm/leads/new" element={<LeadForm />} />
                     <Route path="crm/leads/:id" element={<LeadDetail />} />
+
+                    {/* Inventory Management Routes */}
+                    <Route path="inventory" element={<InventoryDashboard />} />
+                    <Route path="inventory/departures/:id" element={<DepartureDetail />} />
 
                     {/* Dashboard Builder Routes */}
                     <Route path="dashboards" element={<DashboardList />} />

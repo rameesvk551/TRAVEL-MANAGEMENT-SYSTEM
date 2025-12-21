@@ -29,4 +29,5 @@ export interface IBookingRepository {
     save(booking: Booking): Promise<Booking>;
     update(booking: Booking): Promise<Booking>;
     delete(id: string, tenantId: string): Promise<void>;
+    updateStatus(id: string, status: BookingStatus, tenantId: string): Promise<Booking | null>;
 }

@@ -11,3 +11,12 @@ export {
     badgeVariants,
     Input,
 } from './ui';
+
+// Inventory components
+export {
+    CapacityBar,
+    StatusBadge,
+    InventoryCalendar,
+    BookingDrawer,
+    DepartureDetail,
+} from './inventory';

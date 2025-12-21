@@ -197,4 +197,15 @@ export class BookingRepository implements IBookingRepository {
             [id, tenantId]
         );
     }
+
+    async updateStatus(id: string, status: BookingStatus, tenantId: string): Promise<Booking | null> {
+        const result = await query<BookingRow>(
+            `UPDATE bookings 
+             SET status = $1, updated_at = NOW() 
+             WHERE id = $2 AND tenant_id = $3
+             RETURNING *`,
+            [status, id, tenantId]
+        );
+        return result.rows[0] ? toEntity(result.rows[0]) : null;
+    }
 }

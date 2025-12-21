@@ -7,3 +7,14 @@ export { DashboardService } from './DashboardService.js';
 export { LeadService } from './LeadService.js';
 export { ContactService } from './ContactService.js';
 export { PipelineService } from './PipelineService.js';
+
+// Inventory Management Services
+export { InventoryService, type CreateDepartureDTO, type DepartureWithInventory } from './InventoryService.js';
+export { HoldService, type CreateHoldDTO, type ActiveHold } from './HoldService.js';
+export {
+    BookingOrchestrator,
+    type InitiateBookingDTO,
+    type BookingInitResult,
+    type BookingLifecycleStatus,
+    type GuestDetails,
+} from './BookingOrchestrator.js';

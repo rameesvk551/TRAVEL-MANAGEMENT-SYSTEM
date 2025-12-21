@@ -24,12 +24,16 @@ export function createAuthMiddleware(authService: AuthService, userRepository: U
                 throw new UnauthorizedError('User not found');
             }
 
-            // Attach to request context
+            // Attach to request context (including tenantId from JWT payload)
             req.context = {
                 ...req.context,
                 userId: user.id,
                 userRole: user.role,
+                tenantId: payload.tenantId,
             };
+
+            // Also set tenantId directly for backward compatibility
+            (req as any).tenantId = payload.tenantId;
 
             next();
         } catch (error) {

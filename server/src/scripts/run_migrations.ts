@@ -4,11 +4,9 @@ import path from 'path';
 import pg from 'pg';
 import { query, closePool } from '../infrastructure/database/index.js';
 
-import { fileURLToPath } from 'url';
-
 const { Client } = pg;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Use process.cwd() to get the project root and construct paths
+const migrationsDir = path.resolve(process.cwd(), 'src/infrastructure/database/migrations');
 
 async function ensureDatabaseExists() {
     const dbUrl = process.env.DATABASE_URL;
@@ -53,9 +51,6 @@ async function runMigrations() {
     await ensureDatabaseExists();
 
     console.log('🔄 Running Migrations...');
-
-    // Resolve relative to this script
-    const migrationsDir = path.resolve(__dirname, '../infrastructure/database/migrations');
 
     console.log(`📂 Looking for migrations in: ${migrationsDir}`);
 

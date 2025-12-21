@@ -3,6 +3,7 @@ import { createHealthRoutes } from './health.routes.js';
 import { createResourceRoutes } from './resource.routes.js';
 import { createAuthRoutes } from './auth.routes.js';
 import { createBookingRoutes } from './booking.routes.js';
+import { createInventoryRoutes } from './inventoryRoutes.js';
 import { ResourceController } from '../controllers/ResourceController.js';
 import { AuthController } from '../controllers/AuthController.js';
 import { BookingController } from '../controllers/BookingController.js';
@@ -43,6 +44,9 @@ export function createApiRouter(deps: RoutesDependencies): Router {
 
     // CRM Routes (Apply tenant middleware here!)
     router.use('/crm', tenantMiddleware, createCrmRoutes(deps.authMiddleware));
+
+    // Inventory Routes
+    router.use('/inventory', tenantMiddleware, createInventoryRoutes(deps.authMiddleware));
 
     return router;
 }

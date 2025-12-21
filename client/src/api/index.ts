@@ -3,3 +3,4 @@ export { resourceApi, type ResourceFilters } from './resourceApi';
 export { authApi, type LoginInput, type RegisterInput, type AuthUser, type AuthResponse } from './authApi';
 export * from './bookingApi';
 export { crmApi } from './crmApi';
+export { inventoryApi, bookingOrchestratorApi } from './inventoryApi';

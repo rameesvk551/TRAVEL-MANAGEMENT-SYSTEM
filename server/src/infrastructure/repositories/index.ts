@@ -5,3 +5,5 @@ export { BookingRepository } from './BookingRepository.js';
 export { LeadRepository } from './LeadRepository.js';
 export { ContactRepository } from './ContactRepository.js';
 export { PipelineRepository } from './PipelineRepository.js';
+export { DepartureRepository } from './DepartureRepository.js';
+export { PaymentRepository } from './PaymentRepository.js';

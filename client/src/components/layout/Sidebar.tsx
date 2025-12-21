@@ -6,6 +6,7 @@ import {
     Calendar,
     Settings,
     ChevronLeft,
+    Package,
 } from 'lucide-react';
 import { cn } from '@/utils';
 import { Button } from '@/components/ui';
@@ -18,6 +19,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/inventory', label: 'Inventory', icon: Package },
     { href: '/resources', label: 'Resources', icon: Box },
     { href: '/bookings', label: 'Bookings', icon: Calendar },
     { href: '/leads', label: 'Leads', icon: Users },
