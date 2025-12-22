@@ -11,3 +11,12 @@ export { TeamAttendanceDashboard } from './TeamAttendanceDashboard';
 export { DocumentList } from './DocumentList';
 export { DocumentUpload } from './DocumentUpload';
 export { EmployeeDocuments } from './EmployeeDocuments';
+
+// Growth Phase 2 - Availability
+export * from './availability';
+
+// Growth Phase 2 - Expenses
+export * from './expenses';
+
+// Growth Phase 2 - Schedule
+export * from './schedule';

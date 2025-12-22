@@ -26,6 +26,9 @@ import {
     PayrollPage,
     TeamDashboardPage,
     DocumentsPage,
+    AvailabilityPage,
+    ExpensesPage,
+    SchedulePage,
 } from '@/pages/hrms';
 
 function App() {
@@ -71,6 +74,9 @@ function App() {
                     <Route path="hrms/payroll" element={<PayrollPage />} />
                     <Route path="hrms/payroll/latest" element={<PayrollPage />} />
                     <Route path="hrms/team" element={<TeamDashboardPage />} />
+                    <Route path="hrms/availability" element={<AvailabilityPage />} />
+                    <Route path="hrms/expenses" element={<ExpensesPage />} />
+                    <Route path="hrms/schedule" element={<SchedulePage />} />
                 </Route>
             </Route>
         </Routes>

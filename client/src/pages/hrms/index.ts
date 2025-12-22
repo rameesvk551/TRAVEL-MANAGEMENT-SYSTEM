@@ -9,3 +9,6 @@ export { default as LeavesPage } from './LeavesPage';
 export { default as PayrollPage } from './PayrollPage';
 export { default as TeamDashboardPage } from './TeamDashboardPage';
 export { default as DocumentsPage } from './DocumentsPage';
+export { default as AvailabilityPage } from './AvailabilityPage';
+export { default as ExpensesPage } from './ExpensesPage';
+export { default as SchedulePage } from './SchedulePage';
