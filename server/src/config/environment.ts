@@ -20,11 +20,26 @@ interface ServerConfig {
     corsOrigin: string;
 }
 
+interface WhatsAppMetaConfig {
+    accessToken?: string;
+    phoneNumberId?: string;
+    businessAccountId?: string;
+    apiVersion?: string;
+}
+
+interface WhatsAppConfig {
+    provider: 'meta' | 'twilio' | 'vonage' | 'mock';
+    meta?: WhatsAppMetaConfig;
+    appSecret?: string;
+    verifyToken?: string;
+}
+
 interface Config {
     server: ServerConfig;
     database: DatabaseConfig;
     jwt: JwtConfig;
     defaultTenantSlug: string;
+    whatsapp: WhatsAppConfig;
 }
 
 function getEnvOrThrow(key: string): string {
@@ -55,7 +70,23 @@ export const config: Config = {
         expiresIn: getEnvOrDefault('JWT_EXPIRES_IN', '7d'),
     },
     defaultTenantSlug: getEnvOrDefault('DEFAULT_TENANT_SLUG', 'default'),
+    whatsapp: {
+        provider: (getEnvOrDefault('WHATSAPP_PROVIDER', 'mock') as WhatsAppConfig['provider']),
+        meta: {
+            accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
+            phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
+            businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
+            apiVersion: getEnvOrDefault('WHATSAPP_API_VERSION', 'v18.0'),
+        },
+        appSecret: process.env.WHATSAPP_APP_SECRET,
+        verifyToken: process.env.WHATSAPP_VERIFY_TOKEN,
+    },
 };
 
 export const isDevelopment = config.server.nodeEnv === 'development';
 export const isProduction = config.server.nodeEnv === 'production';
+
+// Export config getter for DI
+export function getConfig(): Config {
+    return config;
+}

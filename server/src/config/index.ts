@@ -1,1 +1,1 @@
-export { config, isDevelopment, isProduction } from './environment.js';
+export { config, isDevelopment, isProduction, getConfig } from './environment.js';
