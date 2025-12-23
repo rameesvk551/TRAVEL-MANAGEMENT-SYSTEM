@@ -3,7 +3,7 @@
  * Manager view for pending leave requests
  */
 import { useState } from 'react';
-import { usePendingApprovals, useApproveLeave, useRejectLeave } from '@/hooks/hrms';
+import { useLeavePendingApprovals, useApproveLeave, useRejectLeave } from '@/hooks/hrms';
 import { Button, Badge, Card, CardHeader, CardContent, Input } from '@/components/ui';
 import type { Leave } from '@/types/hrms.types';
 
@@ -15,7 +15,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export function LeaveApprovals() {
-    const { data, isLoading, refetch } = usePendingApprovals();
+    const { data, isLoading, refetch } = useLeavePendingApprovals();
     const approveMutation = useApproveLeave();
     const rejectMutation = useRejectLeave();
 

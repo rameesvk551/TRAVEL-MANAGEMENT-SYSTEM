@@ -29,6 +29,12 @@ import {
     AvailabilityPage,
     ExpensesPage,
     SchedulePage,
+    // Enterprise Phase 3
+    ApprovalChainsPage,
+    PerformancePage,
+    HRAnalyticsPage,
+    CostCentersPage,
+    PayrollExportPage,
 } from '@/pages/hrms';
 
 function App() {
@@ -77,6 +83,13 @@ function App() {
                     <Route path="hrms/availability" element={<AvailabilityPage />} />
                     <Route path="hrms/expenses" element={<ExpensesPage />} />
                     <Route path="hrms/schedule" element={<SchedulePage />} />
+                    
+                    {/* Enterprise Phase 3 - HRMS */}
+                    <Route path="hrms/approvals" element={<ApprovalChainsPage />} />
+                    <Route path="hrms/performance" element={<PerformancePage />} />
+                    <Route path="hrms/analytics" element={<HRAnalyticsPage />} />
+                    <Route path="hrms/cost-centers" element={<CostCentersPage />} />
+                    <Route path="hrms/payroll-export" element={<PayrollExportPage />} />
                 </Route>
             </Route>
         </Routes>
