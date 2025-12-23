@@ -73,6 +73,14 @@ async function seedHRMS() {
     console.log('Creating Payroll Records...');
     await seedPayroll(tenantId, employees);
 
+    // 12. Create Trip Assignments
+    console.log('Creating Trip Assignments...');
+    await seedTripAssignments(tenantId, employees);
+
+    // 13. Create Expenses
+    console.log('Creating Expense Claims...');
+    await seedExpenses(tenantId, employees);
+
     console.log('✅ HRMS seed completed successfully!');
     console.log(`Created: ${employees.length} employees, ${Object.keys(leaveTypes).length} leave types`);
 
@@ -176,7 +184,7 @@ async function seedEmployees(
   departments: Record<string, string>
 ): Promise<EmployeeInfo[]> {
   const employeeData = [
-    // Office Staff
+    // Office Staff - Operations & Management
     { code: 'EMP001', first: 'Rajesh', last: 'Kumar', type: 'FULL_TIME', cat: 'OFFICE_STAFF', 
       branch: 'DEL', dept: 'OPS', email: 'rajesh@demo.com', phone: '+919876543001', salary: 45000 },
     { code: 'EMP002', first: 'Priya', last: 'Sharma', type: 'FULL_TIME', cat: 'OFFICE_STAFF',
@@ -187,26 +195,62 @@ async function seedEmployees(
       branch: 'DEL', dept: 'FIN', email: 'sneha@demo.com', phone: '+919876543004', salary: 50000 },
     { code: 'EMP005', first: 'Vikram', last: 'Singh', type: 'FULL_TIME', cat: 'OFFICE_STAFF',
       branch: 'DEL', dept: 'HR', email: 'vikram@demo.com', phone: '+919876543005', salary: 48000 },
+    { code: 'EMP006', first: 'Kavya', last: 'Nair', type: 'FULL_TIME', cat: 'OFFICE_STAFF',
+      branch: 'DEL', dept: 'SALES', email: 'kavya@demo.com', phone: '+919876543006', salary: 38000 },
+    { code: 'EMP007', first: 'Arjun', last: 'Reddy', type: 'FULL_TIME', cat: 'OFFICE_STAFF',
+      branch: 'MUM', dept: 'OPS', email: 'arjun@demo.com', phone: '+919876543007', salary: 43000 },
+    { code: 'EMP008', first: 'Meera', last: 'Joshi', type: 'FULL_TIME', cat: 'OFFICE_STAFF',
+      branch: 'DEL', dept: 'FIN', email: 'meera@demo.com', phone: '+919876543008', salary: 46000 },
+    { code: 'EMP009', first: 'Karan', last: 'Malhotra', type: 'FULL_TIME', cat: 'OFFICE_STAFF',
+      branch: 'MUM', dept: 'SALES', email: 'karan@demo.com', phone: '+919876543009', salary: 41000 },
+    { code: 'EMP010', first: 'Anita', last: 'Das', type: 'FULL_TIME', cat: 'OFFICE_STAFF',
+      branch: 'DEL', dept: 'HR', email: 'anita@demo.com', phone: '+919876543010', salary: 44000 },
     
-    // Field Staff - Guides
+    // Field Staff - Trek Guides (Senior & Junior)
     { code: 'GD001', first: 'Tenzing', last: 'Sherpa', type: 'FULL_TIME', cat: 'FIELD_STAFF',
-      branch: 'MNL', dept: 'GUIDES', email: 'tenzing@demo.com', phone: '+919876543010', salary: 35000 },
+      branch: 'MNL', dept: 'GUIDES', email: 'tenzing@demo.com', phone: '+919876543011', salary: 38000 },
     { code: 'GD002', first: 'Dorje', last: 'Lama', type: 'FULL_TIME', cat: 'FIELD_STAFF',
-      branch: 'MNL', dept: 'GUIDES', email: 'dorje@demo.com', phone: '+919876543011', salary: 32000 },
+      branch: 'MNL', dept: 'GUIDES', email: 'dorje@demo.com', phone: '+919876543012', salary: 35000 },
     { code: 'GD003', first: 'Ravi', last: 'Thakur', type: 'CONTRACT', cat: 'FIELD_STAFF',
-      branch: 'MNL', dept: 'GUIDES', email: 'ravi@demo.com', phone: '+919876543012', salary: 0, tripRate: 2500 },
+      branch: 'MNL', dept: 'GUIDES', email: 'ravi@demo.com', phone: '+919876543013', salary: 0, tripRate: 2800 },
+    { code: 'GD004', first: 'Lakpa', last: 'Sherpa', type: 'FULL_TIME', cat: 'FIELD_STAFF',
+      branch: 'MNL', dept: 'GUIDES', email: 'lakpa@demo.com', phone: '+919876543014', salary: 36000 },
+    { code: 'GD005', first: 'Nima', last: 'Tamang', type: 'CONTRACT', cat: 'FIELD_STAFF',
+      branch: 'MNL', dept: 'GUIDES', email: 'nima@demo.com', phone: '+919876543015', salary: 0, tripRate: 2600 },
+    { code: 'GD006', first: 'Bhim', last: 'Bahadur', type: 'FULL_TIME', cat: 'FIELD_STAFF',
+      branch: 'MNL', dept: 'GUIDES', email: 'bhim@demo.com', phone: '+919876543016', salary: 32000 },
+    { code: 'GD007', first: 'Sonam', last: 'Wangchuk', type: 'CONTRACT', cat: 'FIELD_STAFF',
+      branch: 'MNL', dept: 'GUIDES', email: 'sonam@demo.com', phone: '+919876543017', salary: 0, tripRate: 3000 },
+    { code: 'GD008', first: 'Karma', last: 'Lama', type: 'FULL_TIME', cat: 'FIELD_STAFF',
+      branch: 'MNL', dept: 'GUIDES', email: 'karma@demo.com', phone: '+919876543018', salary: 34000 },
     
-    // Drivers
+    // Drivers & Transport Staff
     { code: 'DR001', first: 'Suresh', last: 'Yadav', type: 'FULL_TIME', cat: 'FIELD_STAFF',
-      branch: 'DEL', dept: 'LOGISTICS', email: 'suresh@demo.com', phone: '+919876543020', salary: 28000 },
+      branch: 'DEL', dept: 'LOGISTICS', email: 'suresh@demo.com', phone: '+919876543020', salary: 30000 },
     { code: 'DR002', first: 'Ramesh', last: 'Chauhan', type: 'FULL_TIME', cat: 'FIELD_STAFF',
-      branch: 'MUM', dept: 'LOGISTICS', email: 'ramesh@demo.com', phone: '+919876543021', salary: 26000 },
+      branch: 'MUM', dept: 'LOGISTICS', email: 'ramesh@demo.com', phone: '+919876543021', salary: 28000 },
+    { code: 'DR003', first: 'Dinesh', last: 'Kumar', type: 'FULL_TIME', cat: 'FIELD_STAFF',
+      branch: 'DEL', dept: 'LOGISTICS', email: 'dinesh@demo.com', phone: '+919876543022', salary: 29000 },
+    { code: 'DR004', first: 'Vijay', last: 'Singh', type: 'FULL_TIME', cat: 'FIELD_STAFF',
+      branch: 'MNL', dept: 'LOGISTICS', email: 'vijay@demo.com', phone: '+919876543023', salary: 31000 },
+    { code: 'DR005', first: 'Mukesh', last: 'Sharma', type: 'CONTRACT', cat: 'FIELD_STAFF',
+      branch: 'MUM', dept: 'LOGISTICS', email: 'mukesh@demo.com', phone: '+919876543024', salary: 0, tripRate: 1800 },
+    { code: 'DR006', first: 'Prakash', last: 'Bisht', type: 'FULL_TIME', cat: 'FIELD_STAFF',
+      branch: 'MNL', dept: 'LOGISTICS', email: 'prakash@demo.com', phone: '+919876543025', salary: 30000 },
     
-    // Seasonal Workers
+    // Seasonal Workers & Support Staff
     { code: 'SS001', first: 'Deepak', last: 'Negi', type: 'CONTRACT', cat: 'SEASONAL',
       branch: 'MNL', dept: 'GUIDES', email: 'deepak@demo.com', phone: '+919876543030', salary: 0, dailyRate: 1200 },
     { code: 'SS002', first: 'Manoj', last: 'Rawat', type: 'CONTRACT', cat: 'SEASONAL',
-      branch: 'MNL', dept: 'GUIDES', email: 'manoj@demo.com', phone: '+919876543031', salary: 0, dailyRate: 1000 },
+      branch: 'MNL', dept: 'GUIDES', email: 'manoj@demo.com', phone: '+919876543031', salary: 0, dailyRate: 1100 },
+    { code: 'SS003', first: 'Ashok', last: 'Bhatt', type: 'CONTRACT', cat: 'SEASONAL',
+      branch: 'MNL', dept: 'GUIDES', email: 'ashok@demo.com', phone: '+919876543032', salary: 0, dailyRate: 1300 },
+    { code: 'SS004', first: 'Ganesh', last: 'Chauhan', type: 'CONTRACT', cat: 'SEASONAL',
+      branch: 'MNL', dept: 'GUIDES', email: 'ganesh@demo.com', phone: '+919876543033', salary: 0, dailyRate: 1150 },
+    { code: 'SS005', first: 'Harish', last: 'Negi', type: 'CONTRACT', cat: 'SEASONAL',
+      branch: 'MNL', dept: 'LOGISTICS', email: 'harish@demo.com', phone: '+919876543034', salary: 0, dailyRate: 1000 },
+    { code: 'SS006', first: 'Ishwar', last: 'Singh', type: 'CONTRACT', cat: 'SEASONAL',
+      branch: 'MNL', dept: 'LOGISTICS', email: 'ishwar@demo.com', phone: '+919876543035', salary: 0, dailyRate: 950 },
   ];
 
   const employees: EmployeeInfo[] = [];
@@ -444,6 +488,75 @@ async function seedPayroll(tenantId: string, employees: EmployeeInfo[]) {
         ]
       );
     }
+  }
+}
+
+// ============================================
+// TRIP ASSIGNMENTS
+// ============================================
+async function seedTripAssignments(tenantId: string, employees: EmployeeInfo[]) {
+  const fieldStaff = employees.filter(e => e.cat === 'FIELD_STAFF' || e.cat === 'SEASONAL');
+  
+  // Get some bookings to assign
+  const bookingsRes = await query(
+    `SELECT id, start_date, end_date FROM bookings WHERE tenant_id = $1 AND status = 'confirmed' LIMIT 30`,
+    [tenantId]
+  );
+  
+  for (let i = 0; i < bookingsRes.rows.length && i < 40; i++) {
+    const booking = bookingsRes.rows[i];
+    const emp = fieldStaff[i % fieldStaff.length];
+    
+    const roles = ['GUIDE', 'DRIVER', 'SUPPORT', 'COORDINATOR'];
+    const role = emp.code.startsWith('GD') ? 'GUIDE' : 
+                 emp.code.startsWith('DR') ? 'DRIVER' : 'SUPPORT';
+    
+    const allowance = role === 'GUIDE' ? 500 : role === 'DRIVER' ? 400 : 300;
+    
+    await query(
+      `INSERT INTO hrms.trip_assignments (
+        tenant_id, employee_id, booking_id, role, status,
+        start_date, end_date, daily_allowance, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        tenantId, emp.id, booking.id, role, 
+        i < 30 ? 'COMPLETED' : 'ASSIGNED',
+        booking.start_date, booking.end_date, allowance,
+        `Assigned to ${role} for booking`
+      ]
+    );
+  }
+}
+
+// ============================================
+// EXPENSES
+// ============================================
+async function seedExpenses(tenantId: string, employees: EmployeeInfo[]) {
+  const categories = ['TRAVEL', 'FOOD', 'ACCOMMODATION', 'EQUIPMENT', 'MEDICAL', 'OTHER'];
+  const statuses = ['APPROVED', 'APPROVED', 'APPROVED', 'PENDING', 'REJECTED'];
+  
+  for (let i = 0; i < 50; i++) {
+    const emp = employees[Math.floor(Math.random() * employees.length)];
+    const category = categories[Math.floor(Math.random() * categories.length)];
+    const amount = 500 + Math.random() * 4500;
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    
+    const expenseDate = new Date();
+    expenseDate.setDate(expenseDate.getDate() - Math.floor(Math.random() * 60));
+    
+    await query(
+      `INSERT INTO hrms.expenses (
+        tenant_id, employee_id, expense_date, category, amount,
+        currency, description, status, receipt_url
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [
+        tenantId, emp.id, expenseDate, category, amount,
+        'INR', 
+        `${category} expense for ${['client meeting', 'trek', 'office work', 'field visit'][i % 4]}`,
+        status,
+        status !== 'PENDING' ? `https://example.com/receipts/${i}.pdf` : null
+      ]
+    );
   }
 }
 
