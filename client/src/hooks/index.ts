@@ -12,3 +12,4 @@ export * from './useDashboard';
 export * from './useInventory';
 export * from './hrms';
 export * from './vendor';
+export * from './useGear';

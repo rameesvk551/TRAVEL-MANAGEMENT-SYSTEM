@@ -14,6 +14,10 @@ async function seedWhatsApp() {
     }
     const tenantId = tenantRes.rows[0].id;
 
+    // Get users for created_by references
+    const usersRes = await query(`SELECT id FROM users WHERE tenant_id = $1 LIMIT 1`, [tenantId]);
+    const userId = usersRes.rows[0]?.id || null;
+
     // Get contacts
     const contactsRes = await query(
       `SELECT id, first_name, last_name, phone FROM contacts WHERE tenant_id = $1 LIMIT 30`,
@@ -25,54 +29,62 @@ async function seedWhatsApp() {
 
     // Cleanup WhatsApp data
     console.log('Cleaning WhatsApp data...');
-    await query('DELETE FROM whatsapp.messages WHERE tenant_id = $1', [tenantId]);
-    await query('DELETE FROM whatsapp.conversations WHERE tenant_id = $1', [tenantId]);
-    await query('DELETE FROM whatsapp.templates WHERE tenant_id = $1', [tenantId]);
-    await query('DELETE FROM whatsapp.campaigns WHERE tenant_id = $1', [tenantId]);
+    await query('DELETE FROM unified_timeline WHERE tenant_id = $1', [tenantId]);
+    await query('DELETE FROM whatsapp_messages WHERE tenant_id = $1', [tenantId]);
+    await query('DELETE FROM whatsapp_conversation_entities WHERE conversation_id IN (SELECT id FROM whatsapp_conversations WHERE tenant_id = $1)', [tenantId]);
+    await query('DELETE FROM whatsapp_conversations WHERE tenant_id = $1', [tenantId]);
+    await query('DELETE FROM whatsapp_templates WHERE tenant_id = $1', [tenantId]);
+    await query('DELETE FROM whatsapp_opt_ins WHERE tenant_id = $1', [tenantId]);
 
     // 1. Create Message Templates
     console.log('Creating Message Templates...');
     const templates = [
       {
         name: 'booking_confirmation',
-        category: 'TRANSACTIONAL',
+        category: 'UTILITY',
+        useCase: 'BOOKING_CONFIRMATION',
         language: 'en',
-        content: 'Hi {{1}}! Your booking for {{2}} is confirmed. Trip starts on {{3}}. Reference: {{4}}',
+        body: 'Hi {{1}}! Your booking for {{2}} is confirmed. Trip starts on {{3}}. Reference: {{4}}',
         status: 'APPROVED'
       },
       {
         name: 'payment_reminder',
-        category: 'TRANSACTIONAL',
+        category: 'UTILITY',
+        useCase: 'PAYMENT_REMINDER',
         language: 'en',
-        content: 'Dear {{1}}, your payment of ₹{{2}} for {{3}} is pending. Please complete by {{4}}.',
+        body: 'Dear {{1}}, your payment of ₹{{2}} for {{3}} is pending. Please complete by {{4}}.',
         status: 'APPROVED'
       },
       {
         name: 'welcome_message',
         category: 'MARKETING',
+        useCase: 'WELCOME',
         language: 'en',
-        content: 'Welcome to Demo Travel! 🌍 Explore amazing destinations with us. Check our latest packages: {{1}}',
+        body: 'Welcome to Demo Travel! 🌍 Explore amazing destinations with us. Check our latest packages: {{1}}',
         status: 'APPROVED'
       },
       {
         name: 'trip_reminder',
         category: 'UTILITY',
+        useCase: 'TRIP_REMINDER',
         language: 'en',
-        content: 'Hi {{1}}! Your trip to {{2}} starts in {{3}} days. Meeting point: {{4}} at {{5}}.',
+        body: 'Hi {{1}}! Your trip to {{2}} starts in {{3}} days. Meeting point: {{4}} at {{5}}.',
         status: 'APPROVED'
       },
       {
         name: 'feedback_request',
         category: 'UTILITY',
+        useCase: 'FEEDBACK',
         language: 'en',
-        content: 'Thank you for traveling with us, {{1}}! How was your {{2}} experience? Rate us: {{3}}',
+        body: 'Thank you for traveling with us, {{1}}! How was your {{2}} experience? Rate us: {{3}}',
         status: 'APPROVED'
       },
       {
         name: 'special_offer',
         category: 'MARKETING',
+        useCase: 'PROMOTION',
         language: 'en',
-        content: '🎉 Special Offer! {{1}} Get {{2}}% off on {{3}}. Book now: {{4}}. Valid till {{5}}.',
+        body: '🎉 Special Offer! {{1}} Get {{2}}% off on {{3}}. Book now: {{4}}. Valid till {{5}}.',
         status: 'APPROVED'
       }
     ];
@@ -80,183 +92,131 @@ async function seedWhatsApp() {
     const templateIds: Record<string, string> = {};
     for (const t of templates) {
       const res = await query(
-        `INSERT INTO whatsapp.templates (
-          tenant_id, name, category, language, content, status, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        `INSERT INTO whatsapp_templates (
+          tenant_id, template_name, category, use_case, language, body_content, status, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
         [
-          tenantId, t.name, t.category, t.language, t.content, t.status,
-          JSON.stringify({ approvedAt: new Date(), variables: t.content.match(/\{\{\d+\}\}/g)?.length || 0 })
+          tenantId, t.name, t.category, t.useCase, t.language, t.body, t.status, userId
         ]
       );
       templateIds[t.name] = res.rows[0].id;
     }
 
-    // 2. Create Conversations
+    // 2. Create Opt-Ins
+    console.log('Creating Opt-Ins...');
+    for (let i = 0; i < contacts.length; i++) {
+      const contact = contacts[i];
+      const optedIn = i < 25; // Most contacts opted in
+      
+      await query(
+        `INSERT INTO whatsapp_opt_ins (
+          tenant_id, phone_number, contact_id, status, source, consent_text,
+          allow_utility_messages, allow_marketing_messages
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          tenantId, contact.phone || `+919${String(i).padStart(9, '0')}`,
+          contact.id, optedIn ? 'OPTED_IN' : 'PENDING',
+          'WEBSITE', 'I consent to receive WhatsApp messages from Demo Travel',
+          true, optedIn && i < 20
+        ]
+      );
+    }
+
+    // 3. Create Conversations
     console.log('Creating Conversations...');
     const conversationIds: string[] = [];
     
-    for (let i = 0; i < contacts.length; i++) {
+    for (let i = 0; i < Math.min(contacts.length, 20); i++) {
       const contact = contacts[i];
-      const status = i < 10 ? 'ACTIVE' : (i < 20 ? 'PENDING' : 'CLOSED');
-      const lastMessageAt = new Date();
-      lastMessageAt.setHours(lastMessageAt.getHours() - Math.floor(Math.random() * 48));
+      const status = i < 10 ? 'ACTIVE' : (i < 15 ? 'PENDING' : 'IDLE');
+      const phone = contact.phone || `+919${String(i).padStart(9, '0')}`;
+      
+      const sessionExpiry = new Date();
+      sessionExpiry.setHours(sessionExpiry.getHours() + 24);
       
       const res = await query(
-        `INSERT INTO whatsapp.conversations (
-          tenant_id, phone_number, contact_name, status,
-          last_message_at, unread_count, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        `INSERT INTO whatsapp_conversations (
+          tenant_id, whatsapp_thread_id, primary_actor_type, primary_actor_contact_id,
+          primary_actor_phone, primary_actor_name, state, session_expires_at, message_count
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
         [
-          tenantId, 
-          contact.phone,
+          tenantId, `thread_${phone.replace('+', '')}`,
+          'CONTACT', contact.id, phone,
           `${contact.first_name} ${contact.last_name}`,
-          status,
-          lastMessageAt,
-          status === 'ACTIVE' ? Math.floor(Math.random() * 5) : 0,
-          JSON.stringify({
-            source: ['INBOUND', 'OUTBOUND', 'CAMPAIGN'][i % 3],
-            tags: ['inquiry', 'booking', 'support'].slice(0, Math.floor(Math.random() * 3) + 1)
-          })
+          status, sessionExpiry, Math.floor(Math.random() * 20) + 1
         ]
       );
       conversationIds.push(res.rows[0].id);
     }
 
-    // 3. Create Messages (250+ messages)
+    // 4. Create Messages
     console.log('Creating Messages...');
-    const messageContents = [
-      { direction: 'INBOUND', text: 'Hi, I\'m interested in the Manali trek package' },
-      { direction: 'OUTBOUND', text: 'Hello! Thank you for your interest. Our Manali trek is a 10-day adventure.' },
-      { direction: 'INBOUND', text: 'What\'s the cost per person?' },
-      { direction: 'OUTBOUND', text: 'The package costs ₹50,000 per person including accommodation and meals.' },
-      { direction: 'INBOUND', text: 'Are there any upcoming batches?' },
-      { direction: 'OUTBOUND', text: 'Yes, we have departures on 15th Jan, 22nd Jan, and 5th Feb.' },
-      { direction: 'INBOUND', text: 'Can I book for 2 people?' },
-      { direction: 'OUTBOUND', text: 'Absolutely! I\'ll send you the booking form and payment details.' },
-      { direction: 'INBOUND', text: 'What documents do I need?' },
-      { direction: 'OUTBOUND', text: 'You\'ll need ID proof, medical certificate, and passport size photos.' },
-      { direction: 'INBOUND', text: 'Is advance payment required?' },
-      { direction: 'OUTBOUND', text: 'Yes, 30% advance to confirm your booking. Remaining 70% before departure.' },
-      { direction: 'INBOUND', text: 'What about cancellation policy?' },
-      { direction: 'OUTBOUND', text: 'Cancellation: 100% refund if cancelled 30+ days before. Check T&C for details.' },
-      { direction: 'INBOUND', text: 'Sounds good! I\'ll confirm by tomorrow.' },
-      { direction: 'OUTBOUND', text: 'Great! Let me know if you have any questions. Looking forward to your booking!' }
-    ];
-
-    for (let i = 0; i < 250; i++) {
-      const convId = conversationIds[i % conversationIds.length];
-      const msgTemplate = messageContents[i % messageContents.length];
+    const messageTypes = ['text', 'text', 'text', 'image', 'document'];
+    const directions = ['INBOUND', 'OUTBOUND'];
+    
+    let messageCount = 0;
+    for (let i = 0; i < conversationIds.length; i++) {
+      const conversationId = conversationIds[i];
+      const contact = contacts[i];
+      const phone = contact.phone || `+919${String(i).padStart(9, '0')}`;
+      const numMessages = 5 + Math.floor(Math.random() * 15);
       
-      const timestamp = new Date();
-      timestamp.setMinutes(timestamp.getMinutes() - (250 - i) * 15); // Spread over time
-      
-      const status = msgTemplate.direction === 'OUTBOUND' 
-        ? ['SENT', 'DELIVERED', 'READ'][Math.floor(Math.random() * 3)]
-        : 'RECEIVED';
-      
-      await query(
-        `INSERT INTO whatsapp.messages (
-          tenant_id, conversation_id, direction, type, content,
-          status, timestamp, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          tenantId, convId, msgTemplate.direction, 'TEXT',
-          JSON.stringify({ text: msgTemplate.text }),
-          status, timestamp,
-          JSON.stringify({
-            messageId: `msg_${Date.now()}_${i}`,
-            source: 'WHATSAPP_BUSINESS'
-          })
-        ]
-      );
+      for (let j = 0; j < numMessages; j++) {
+        const direction = directions[j % 2];
+        const messageType = messageTypes[j % messageTypes.length];
+        const timestamp = new Date();
+        timestamp.setMinutes(timestamp.getMinutes() - (numMessages - j) * 30);
+        
+        const senderPhone = direction === 'INBOUND' ? phone : '+919999999999';
+        const recipientPhone = direction === 'INBOUND' ? '+919999999999' : phone;
+        
+        const textContent = messageType === 'text' ? JSON.stringify({
+          body: direction === 'INBOUND' 
+            ? ['Hi, I want to book a trek', 'What are the available dates?', 'How much does it cost?', 'I want to confirm my booking', 'Thank you!'][j % 5]
+            : ['Hello! Welcome to Demo Travel', 'We have departures every weekend', 'The cost is ₹15,000 per person', 'Your booking is confirmed!', 'Have a great trip!'][j % 5]
+        }) : null;
+        
+        await query(
+          `INSERT INTO whatsapp_messages (
+            tenant_id, conversation_id, provider_message_id, provider_timestamp,
+            direction, sender_phone, recipient_phone, message_type, text_content,
+            status, idempotency_key
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          [
+            tenantId, conversationId, `wamid.${Date.now()}${messageCount}`,
+            timestamp, direction, senderPhone, recipientPhone, messageType,
+            textContent, direction === 'OUTBOUND' ? 'DELIVERED' : 'RECEIVED',
+            `idem_${tenantId}_${conversationId}_${j}`
+          ]
+        );
+        messageCount++;
+      }
     }
 
-    // 4. Create Campaigns
-    console.log('Creating Campaigns...');
-    const campaigns = [
-      {
-        name: 'Summer Specials 2024',
-        templateId: templateIds['special_offer'],
-        status: 'COMPLETED',
-        scheduled: -7,
-        sent: 450,
-        delivered: 438,
-        read: 312,
-        replied: 89
-      },
-      {
-        name: 'Payment Reminders - Dec',
-        templateId: templateIds['payment_reminder'],
-        status: 'COMPLETED',
-        scheduled: -3,
-        sent: 125,
-        delivered: 122,
-        read: 115,
-        replied: 45
-      },
-      {
-        name: 'New Year Packages',
-        templateId: templateIds['welcome_message'],
-        status: 'ACTIVE',
-        scheduled: -1,
-        sent: 580,
-        delivered: 562,
-        read: 423,
-        replied: 134
-      },
-      {
-        name: 'Trip Reminders - Jan',
-        templateId: templateIds['trip_reminder'],
-        status: 'SCHEDULED',
-        scheduled: 2,
-        sent: 0,
-        delivered: 0,
-        read: 0,
-        replied: 0
-      },
-      {
-        name: 'Feedback Collection',
-        templateId: templateIds['feedback_request'],
-        status: 'DRAFT',
-        scheduled: 5,
-        sent: 0,
-        delivered: 0,
-        read: 0,
-        replied: 0
-      }
-    ];
-
-    for (const c of campaigns) {
-      const scheduledFor = new Date();
-      scheduledFor.setDate(scheduledFor.getDate() + c.scheduled);
-      
-      const stats = {
-        sent: c.sent,
-        delivered: c.delivered,
-        read: c.read,
-        replied: c.replied,
-        failed: c.sent - c.delivered
-      };
+    // 5. Create Unified Timeline entries
+    console.log('Creating Timeline entries...');
+    const entryTypes = ['WHATSAPP_MESSAGE', 'STATUS_CHANGE', 'NOTE', 'CALL'];
+    
+    for (let i = 0; i < 50; i++) {
+      const timestamp = new Date();
+      timestamp.setHours(timestamp.getHours() - Math.floor(Math.random() * 72));
       
       await query(
-        `INSERT INTO whatsapp.campaigns (
-          tenant_id, name, template_id, status, scheduled_for,
-          target_count, stats, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        `INSERT INTO unified_timeline (
+          tenant_id, source, entry_type, visibility, actor_id, actor_type, actor_name,
+          title, description, occurred_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
-          tenantId, c.name, c.templateId, c.status, scheduledFor,
-          c.sent > 0 ? c.sent : 200,
-          JSON.stringify(stats),
-          JSON.stringify({
-            segmentation: 'all_customers',
-            createdBy: 'admin@demo.com'
-          })
+          tenantId, 'WHATSAPP', entryTypes[i % entryTypes.length], 'INTERNAL',
+          userId || 'system', 'USER', 'System',
+          `Activity ${i + 1}`, `Timeline entry description ${i + 1}`,
+          timestamp
         ]
       );
     }
 
     console.log('✅ WhatsApp seed completed successfully!');
-    console.log(`Created: ${Object.keys(templateIds).length} templates, ${conversationIds.length} conversations, 250 messages, ${campaigns.length} campaigns`);
+    console.log(`Created: ${Object.keys(templateIds).length} templates, ${contacts.length} opt-ins, ${conversationIds.length} conversations, ${messageCount} messages, 50 timeline entries`);
 
   } catch (error) {
     console.error('❌ WhatsApp seed failed:', error);

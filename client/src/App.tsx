@@ -27,6 +27,11 @@ import {
     AssignmentsList,
 } from '@/pages/vendor';
 import {
+    GearDashboard,
+    GearItemsList,
+    GearCategoriesList,
+} from '@/pages/gear';
+import {
     HrmsDashboard,
     EmployeesPage,
     NewEmployeePage,
@@ -110,6 +115,11 @@ function App() {
                     <Route path="vendors/settlements" element={<SettlementsList />} />
                     <Route path="vendors/settlements/new" element={<SettlementsList />} />
                     <Route path="vendors/assignments" element={<AssignmentsList />} />
+
+                    {/* Gear Management Routes */}
+                    <Route path="gear" element={<GearDashboard />} />
+                    <Route path="gear/items" element={<GearItemsList />} />
+                    <Route path="gear/categories" element={<GearCategoriesList />} />
                 </Route>
             </Route>
         </Routes>

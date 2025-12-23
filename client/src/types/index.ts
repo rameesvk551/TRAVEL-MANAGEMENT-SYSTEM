@@ -4,3 +4,4 @@ export * from './booking.types';
 export * from './inventory.types';
 export * from './hrms.types';
 export * from './vendor.types';
+export * from './gear.types';
