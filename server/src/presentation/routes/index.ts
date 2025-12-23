@@ -14,6 +14,7 @@ import { createCrmRoutes } from './crmRoutes.js';
 import { createDashboardRoutes } from './dashboard.routes.js';
 import { DashboardController } from '../controllers/DashboardController.js';
 import { createHRMSRoutes } from './hrms/index.js';
+import { createVendorRoutes } from './vendor.routes.js';
 
 interface RoutesDependencies {
     resourceController: ResourceController;
@@ -51,6 +52,9 @@ export function createApiRouter(deps: RoutesDependencies): Router {
 
     // HRMS Routes
     router.use('/hrms', tenantMiddleware, createHRMSRoutes(deps.authMiddleware));
+
+    // Vendor Management Routes
+    router.use('/vendors', tenantMiddleware, createVendorRoutes(deps.authMiddleware));
 
     return router;
 }

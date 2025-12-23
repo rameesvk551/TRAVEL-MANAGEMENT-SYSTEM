@@ -5,3 +5,4 @@ export * from './bookingApi';
 export { crmApi } from './crmApi';
 export { inventoryApi, bookingOrchestratorApi } from './inventoryApi';
 export * from './hrms';
+export * from './vendor';

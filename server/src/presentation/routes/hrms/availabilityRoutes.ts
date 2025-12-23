@@ -3,7 +3,7 @@
 
 import { Router } from 'express';
 import { AvailabilityController } from '../../controllers/hrms/AvailabilityController';
-import { validate } from '../../middleware/validate';
+import { validate } from '../../middleware/index.js';
 import {
   createAvailabilitySchema,
   updateAvailabilitySchema,

@@ -18,6 +18,15 @@ import DashboardBuilder from '@/pages/dashboards/DashboardBuilder';
 import InventoryDashboard from '@/pages/inventory/InventoryDashboard';
 import DepartureDetail from '@/pages/inventory/DepartureDetail';
 import {
+    VendorDashboard,
+    VendorList,
+    VendorDetail,
+    VendorForm,
+    PayablesList,
+    SettlementsList,
+    AssignmentsList,
+} from '@/pages/vendor';
+import {
     HrmsDashboard,
     EmployeesPage,
     NewEmployeePage,
@@ -90,6 +99,17 @@ function App() {
                     <Route path="hrms/analytics" element={<HRAnalyticsPage />} />
                     <Route path="hrms/cost-centers" element={<CostCentersPage />} />
                     <Route path="hrms/payroll-export" element={<PayrollExportPage />} />
+
+                    {/* Vendor Management Routes */}
+                    <Route path="vendors" element={<VendorDashboard />} />
+                    <Route path="vendors/list" element={<VendorList />} />
+                    <Route path="vendors/new" element={<VendorForm />} />
+                    <Route path="vendors/:id" element={<VendorDetail />} />
+                    <Route path="vendors/:id/edit" element={<VendorForm />} />
+                    <Route path="vendors/payables" element={<PayablesList />} />
+                    <Route path="vendors/settlements" element={<SettlementsList />} />
+                    <Route path="vendors/settlements/new" element={<SettlementsList />} />
+                    <Route path="vendors/assignments" element={<AssignmentsList />} />
                 </Route>
             </Route>
         </Routes>

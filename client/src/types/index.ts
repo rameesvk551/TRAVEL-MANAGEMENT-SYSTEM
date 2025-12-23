@@ -3,3 +3,4 @@ export type { ApiResponse, PaginatedResponse, ListParams } from './api.types';
 export * from './booking.types';
 export * from './inventory.types';
 export * from './hrms.types';
+export * from './vendor.types';

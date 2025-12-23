@@ -3,7 +3,7 @@
 
 import { Router } from 'express';
 import { ExpenseController } from '../../controllers/hrms/ExpenseController';
-import { validate } from '../../middleware/validate';
+import { validate } from '../../middleware/index.js';
 import {
   createExpenseClaimSchema,
   updateExpenseClaimSchema,

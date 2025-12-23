@@ -3,7 +3,7 @@
 
 import { Router } from 'express';
 import { ScheduleController } from '../../controllers/hrms/ScheduleController';
-import { validate } from '../../middleware/validate';
+import { validate } from '../../middleware/index.js';
 import {
   createShiftSchema,
   updateShiftSchema,

@@ -10,3 +10,6 @@ export { default as CreateBooking } from './CreateBooking';
 // Inventory pages
 export { default as InventoryDashboard } from './inventory/InventoryDashboard';
 export { default as DepartureDetail } from './inventory/DepartureDetail';
+
+// Vendor pages
+export * from './vendor';
