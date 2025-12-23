@@ -15,9 +15,11 @@
 6. [Inventory Management](#-inventory-management)
 7. [Resource Management](#-resource-management)
 8. [HRMS - People Management](#-hrms---people-management)
-9. [User Roles & Permissions](#-user-roles--permissions)
-10. [Common Workflows](#-common-workflows)
-11. [Tips & Best Practices](#-tips--best-practices)
+9. [Vendor & Supplier Management](#-vendor--supplier-management)
+10. [WhatsApp Operations](#-whatsapp-operations)
+11. [User Roles & Permissions](#-user-roles--permissions)
+12. [Common Workflows](#-common-workflows)
+13. [Tips & Best Practices](#-tips--best-practices)
 
 ---
 
@@ -35,6 +37,8 @@ The **Travel Management System (TMS)** is an all-in-one platform designed specif
 | **Inventory** | Control tour departures & seats | Operations Manager |
 | **Resources** | Manage tours, hotels, vehicles | Admin |
 | **HRMS** | Manage staff, attendance, payroll | HR & Employees |
+| **Vendors** | Manage suppliers & settlements | Finance & Ops |
+| **WhatsApp** | Automated communication | Sales & Ops |
 
 ### How It All Connects
 
@@ -50,12 +54,12 @@ The **Travel Management System (TMS)** is an all-in-one platform designed specif
 │                    DASHBOARD                          │
 │           (See everything at a glance)               │
 └──────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌──────────────────────────────────────────────────────┐
-│                      HRMS                            │
-│        (Staff assignments, attendance, payroll)      │
-└──────────────────────────────────────────────────────┘
+       │                   │                   │
+       ▼                   ▼                   ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│     HRMS     │    │   VENDORS    │    │   WHATSAPP   │
+│ (Staffing)   │    │ (Suppliers)  │    │ (Automation) │
+└──────────────┘    └──────────────┘    └──────────────┘
 ```
 
 ---
@@ -81,6 +85,7 @@ The main navigation is located in the **left sidebar**:
 │ 📦 Inventory    │ ← Tour Departures
 │ 🎒 Resources    │ ← Tours, Hotels, Vehicles
 │ 👤 HRMS         │ ← People Management
+│ 🤝 Vendors      │ ← Supplier Management
 └─────────────────┘
 ```
 
@@ -476,10 +481,10 @@ The HRMS module manages your entire workforce - from guides and drivers to offic
 ├─────────────────┬─────────────────┬─────────────────┬───────────────────────┤
 │  PEOPLE CORE    │   WORK FLOW     │   MONEY FLOW    │    INSIGHTS           │
 ├─────────────────┼─────────────────┼─────────────────┼───────────────────────┤
-│ • Employees     │ • Attendance    │ • Payroll       │ • Analytics           │
-│ • Roles         │ • Leave         │ • Expenses      │ • Cost Centers        │
-│ • Documents     │ • Schedules     │ • Advances      │ • Reports             │
-│ • Skills        │ • Availability  │ • Incentives    │                       │
+│ • Employees     │ • Attendance    │ • Payroll       │ • HR Analytics        │
+│ • Roles         │ • Leave         │ • Expenses      │ • Performance         │
+│ • Documents     │ • Schedules     │ • Advances      │ • Cost Centers        │
+│ • Skills        │ • Availability  │ • Incentives    │ • Reports             │
 └─────────────────┴─────────────────┴─────────────────┴───────────────────────┘
 ```
 
@@ -711,6 +716,84 @@ Reports show:
 - Monthly trends
 - Budget vs actual
 
+#### 11. Performance Management
+
+**Tracking Employee Growth**
+1. **Goals**: Set and track individual and team KPIs
+2. **Reviews**: Conduct periodic performance evaluations
+3. **Feedback**: Continuous 360-degree feedback loop
+4. **Cycles**: Manage annual or quarterly review cycles
+
+#### 12. HR Analytics
+
+**Data-Driven People Decisions**
+- **Headcount Trends**: Monitor team growth and turnover
+- **Attendance Patterns**: Identify absenteeism or overtime trends
+- **Cost Analysis**: Deep dive into labor costs and trip profitability
+- **Skill Mapping**: Visualize team capabilities and training needs
+
+---
+
+## 🤝 Vendor & Supplier Management
+
+Manage your ecosystem of partners, from transport providers to local hotels.
+
+### Vendor Types Supported
+
+| Type | Description |
+|------|-------------|
+| **TRANSPORT** | Vehicle owners (cars, jeeps, buses) |
+| **HOTEL** | Hotels, homestays, and lodges |
+| **EQUIPMENT** | Gear and equipment rental vendors |
+| **GUIDE** | Local guides and specialized instructors |
+| **CATERING** | Food and beverage service providers |
+
+### Key Features
+
+#### 1. Vendor Profiles (Single Source of Truth)
+- **Identity**: Legal and display names, internal vendor codes
+- **Financials**: Bank details, UPI IDs, and Tax information (GST/PAN)
+- **Compliance**: Track licenses and certifications with expiry alerts
+- **Performance**: Automated reliability scores and on-time rates
+
+#### 2. Contracts & Rates
+- Manage multi-year contracts with digital storage
+- Define seasonal rates and special pricing tiers
+- Track contract renewals and amendments
+
+#### 3. Assignments & Payables
+- **Assign Vendors**: Link vendors to specific bookings or trip departures
+- **Track Payables**: Automatically generate payables based on assignments
+- **Settlements**: Process payments and manage disputes in a unified view
+
+---
+
+## 💬 WhatsApp Operations
+
+The WhatsApp Operations Layer turns WhatsApp into a powerful control surface for your business.
+
+### Core Capabilities
+
+#### 1. Automated Lead Capture
+- New inquiries via WhatsApp automatically create leads in the CRM
+- AI-driven context mapping links conversations to existing bookings
+
+#### 2. Unified Timeline
+- See every WhatsApp message, system notification, and payment update in a single, chronological timeline for every booking.
+
+#### 3. Message Templates
+- Send automated, pre-approved notifications for:
+  - Booking confirmations
+  - Payment reminders
+  - Departure details
+  - Feedback requests
+
+#### 4. Staff Commands
+- Field staff can perform actions via WhatsApp:
+  - Check-in/Check-out for trips
+  - Report issues or delays
+  - Update trip status
+
 ---
 
 ## 🔐 User Roles & Permissions
@@ -721,13 +804,14 @@ Reports show:
 |------|-------------|
 | **Super Admin** | Full system access, all modules |
 | **Admin** | Manage users, settings, all operational modules |
-| **Manager** | Full access to CRM, Bookings, Inventory |
-| **Sales** | CRM (leads), view bookings |
-| **Operations** | Bookings, Inventory, HRMS (staff scheduling) |
+| **Manager** | Full access to CRM, Bookings, Inventory, Vendors |
+| **Sales** | CRM (leads), view bookings, WhatsApp communication |
+| **Operations** | Bookings, Inventory, HRMS (staff scheduling), Vendor assignments |
+| **Finance** | Payroll, Vendor settlements, Expense approvals |
 | **HR Manager** | Full HRMS access |
 | **HR Executive** | HRMS (limited - no payroll approval) |
 | **Employee** | Self-service (own attendance, leaves, payslips) |
-| **Guide/Driver** | Mobile app (check-in, trips, leaves) |
+| **Guide/Driver** | Mobile app & WhatsApp (check-in, trips, leaves) |
 
 ### Permission Areas
 
@@ -746,14 +830,14 @@ Reports show:
 
 ```
 1. LEAD CAPTURE
-   └─► New lead enters system (website form, manual entry)
+   └─► New lead enters system (website form, WhatsApp, manual entry)
    
 2. QUALIFICATION
-   └─► Sales rep contacts lead
+   └─► Sales rep contacts lead (Phone/WhatsApp)
    └─► Qualifies interest and budget
    
 3. QUOTATION
-   └─► Send detailed itinerary and pricing
+   └─► Send detailed itinerary and pricing (Email/WhatsApp)
    └─► Negotiate if needed
    
 4. CONVERSION
@@ -763,18 +847,19 @@ Reports show:
 5. PAYMENT
    └─► Customer pays (full or deposit)
    └─► Booking confirmed
+   └─► Automated WhatsApp confirmation sent
    
 6. PRE-DEPARTURE
    └─► Staff assigned to trip
-   └─► Guest receives details
+   └─► Guest receives details (WhatsApp/Email)
    
 7. DEPARTURE
-   └─► Staff check in (mobile)
+   └─► Staff check in (Mobile App or WhatsApp)
    └─► Trip begins
    
 8. COMPLETION
    └─► Trip ends
-   └─► Feedback collected
+   └─► Feedback collected via WhatsApp
    └─► Staff attendance recorded
 ```
 
@@ -827,7 +912,7 @@ Reports show:
    └─► System checks for conflicts
    
 5. NOTIFICATION
-   └─► Staff receives assignment notification
+   └─► Staff receives assignment notification (App/WhatsApp)
    └─► Can Accept or Decline
    
 6. CONFIRMATION
@@ -835,13 +920,37 @@ Reports show:
    └─► Calendar updated
    
 7. TRIP DAY
-   └─► Staff check in via mobile
+   └─► Staff check in via mobile or WhatsApp
    └─► Attendance auto-tracked as "ON_TRIP"
    
 8. COMPLETION
    └─► Trip ends
    └─► Performance feedback recorded
    └─► Trip earnings added to payroll
+```
+
+### Workflow 4: Vendor Assignment & Settlement
+
+```
+1. VENDOR ASSIGNMENT
+   └─► Ops assigns Transport/Hotel vendor to a departure
+   
+2. RATE CONFIRMATION
+   └─► System pulls rates from vendor contract
+   └─► Manual adjustment if needed
+   
+3. SERVICE DELIVERY
+   └─► Vendor provides service (e.g., vehicle for trip)
+   
+4. PAYABLE GENERATION
+   └─► System generates payable record upon trip completion
+   
+5. VERIFICATION
+   └─► Ops/Finance verifies service quality and final amount
+   
+6. SETTLEMENT
+   └─► Finance processes payment to vendor
+   └─► Status updated to "SETTLED"
 ```
 
 ---
