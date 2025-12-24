@@ -42,7 +42,25 @@ async function verify() {
     console.log('Activities:', await safeCount('SELECT count(*) FROM activities'));
 
     console.log('\n=== Inventory Data ===');
-    console.log('Inventory Departures:', await safeCount('SELECT count(*) FROM inventory.departures'));
+    console.log('Departure Instances:', await safeCount('SELECT count(*) FROM departure_instances'));
+    console.log('Inventory Holds:', await safeCount('SELECT count(*) FROM inventory_holds'));
+    console.log('Seat Blocks:', await safeCount('SELECT count(*) FROM seat_blocks'));
+    console.log('Waitlist Entries:', await safeCount('SELECT count(*) FROM waitlist_entries'));
+
+    console.log('\n=== Vendor Data ===');
+    console.log('Vendors:', await safeCount('SELECT count(*) FROM vendors'));
+    console.log('Vendor Contacts:', await safeCount('SELECT count(*) FROM vendor_contacts'));
+    console.log('Vendor Contracts:', await safeCount('SELECT count(*) FROM vendor_contracts'));
+    console.log('Vendor Rates:', await safeCount('SELECT count(*) FROM vendor_rates'));
+    console.log('Vendor Payables:', await safeCount('SELECT count(*) FROM vendor_payables'));
+    console.log('Vendor Settlements:', await safeCount('SELECT count(*) FROM vendor_settlements'));
+
+    console.log('\n=== WhatsApp Data ===');
+    console.log('Templates:', await safeCount('SELECT count(*) FROM whatsapp_templates'));
+    console.log('Conversations:', await safeCount('SELECT count(*) FROM whatsapp_conversations'));
+    console.log('Messages:', await safeCount('SELECT count(*) FROM whatsapp_messages'));
+    console.log('Opt-Ins:', await safeCount('SELECT count(*) FROM whatsapp_opt_ins'));
+    console.log('Timeline Entries:', await safeCount('SELECT count(*) FROM unified_timeline'));
 
     console.log('\n✅ Verification complete!');
     console.log('(Values of -1 indicate table does not exist)');

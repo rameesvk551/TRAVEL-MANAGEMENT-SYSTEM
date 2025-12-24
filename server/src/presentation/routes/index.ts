@@ -16,6 +16,7 @@ import { DashboardController } from '../controllers/DashboardController.js';
 import { createHRMSRoutes } from './hrms/index.js';
 import { createVendorRoutes } from './vendor.routes.js';
 import { createGearRoutes } from './gear.routes.js';
+import { createBranchRoutes } from './branch.routes.js';
 
 interface RoutesDependencies {
     resourceController: ResourceController;
@@ -59,6 +60,9 @@ export function createApiRouter(deps: RoutesDependencies): Router {
 
     // Gear Management Routes
     router.use('/gear', tenantMiddleware, createGearRoutes(deps.authMiddleware));
+
+    // Branch Management Routes
+    router.use('/branches', tenantMiddleware, createBranchRoutes(deps.authMiddleware));
 
     return router;
 }

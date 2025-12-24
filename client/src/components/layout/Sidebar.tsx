@@ -10,6 +10,7 @@ import {
     UserCog,
     Building2,
     Backpack,
+    GitBranch,
 } from 'lucide-react';
 import { cn } from '@/utils';
 import { Button } from '@/components/ui';
@@ -29,6 +30,7 @@ const navItems: NavItem[] = [
     { href: '/leads', label: 'Leads', icon: Users },
     { href: '/hrms', label: 'HR Management', icon: UserCog },
     { href: '/vendors', label: 'Vendors', icon: Building2 },
+    { href: '/branches', label: 'Branches', icon: GitBranch },
     { href: '/dashboards', label: 'Custom Dashboards', icon: LayoutDashboard },
     { href: '/settings', label: 'Settings', icon: Settings },
 ];

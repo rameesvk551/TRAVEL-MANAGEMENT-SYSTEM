@@ -7,3 +7,4 @@ export { ContactRepository } from './ContactRepository.js';
 export { PipelineRepository } from './PipelineRepository.js';
 export { DepartureRepository } from './DepartureRepository.js';
 export { PaymentRepository } from './PaymentRepository.js';
+export { BranchRepository, type BranchListParams, type BranchWithStats } from './BranchRepository.js';

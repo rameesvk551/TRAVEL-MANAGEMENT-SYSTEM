@@ -191,6 +191,8 @@ async function seedVendors() {
 
     // 4. Create Vendor Rates
     console.log('Creating Vendor Rates...');
+    const rateTypes = ['PER_DAY', 'PER_NIGHT', 'PER_TRIP', 'PER_PERSON', 'FLAT'];
+    
     for (let i = 0; i < vendorIds.length; i++) {
       const vendorId = vendorIds[i];
       const vendor = vendorData[i];
@@ -200,19 +202,24 @@ async function seedVendors() {
                       vendor.type === 'GUIDE' ? 3000 + Math.random() * 4000 :
                       1000 + Math.random() * 3000;
       
+      const rateType = vendor.type === 'HOTEL' ? 'PER_NIGHT' :
+                       vendor.type === 'TRANSPORT' ? 'PER_DAY' :
+                       vendor.type === 'GUIDE' ? 'PER_TRIP' :
+                       'FLAT';
+      
       await query(
         `INSERT INTO vendor_rates (
           tenant_id, vendor_id, rate_name, rate_type, valid_from, base_rate, currency, is_active, created_by
-        ) VALUES ($1, $2, $3, 'FIXED'::rate_type, $4, $5, 'INR', true, $6)`,
+        ) VALUES ($1, $2, $3, $4::rate_type, $5, $6, 'INR', true, $7)`,
         [
-          tenantId, vendorId, 'Standard Rate', new Date(), baseRate, userId
+          tenantId, vendorId, 'Standard Rate', rateType, new Date(), baseRate, userId
         ]
       );
     }
 
     // 5. Create Vendor Payables (100 payables)
     console.log('Creating Vendor Payables...');
-    const payableStatuses = ['PAID', 'PAID', 'PAID', 'PENDING', 'APPROVED'];
+    const payableStatuses = ['FULLY_SETTLED', 'FULLY_SETTLED', 'FULLY_SETTLED', 'PENDING', 'APPROVED'];
     
     for (let i = 0; i < 100; i++) {
       const vendorId = vendorIds[i % vendorIds.length];

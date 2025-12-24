@@ -577,7 +577,7 @@ CREATE TRIGGER update_gear_maintenance_updated_at BEFORE UPDATE ON gear_maintena
 -- Gear Availability Summary View
 CREATE OR REPLACE VIEW gear_availability_summary AS
 SELECT 
-    gi.tenant_id,
+    g.tenant_id,
     gc.type as category_type,
     gc.name as category_name,
     gw.name as warehouse_name,
@@ -591,7 +591,7 @@ JOIN gear_categories gc ON g.category_id = gc.id
 LEFT JOIN gear_inventory inv ON g.id = inv.gear_item_id
 LEFT JOIN gear_warehouses gw ON inv.warehouse_id = gw.id
 WHERE g.is_active = true
-GROUP BY gi.tenant_id, gc.type, gc.name, gw.name, gw.code, inv.status;
+GROUP BY g.tenant_id, gc.type, gc.name, gw.name, gw.code, inv.status;
 
 -- Gear Financial Summary View
 CREATE OR REPLACE VIEW gear_financial_summary AS

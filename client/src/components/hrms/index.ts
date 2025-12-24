@@ -12,6 +12,9 @@ export { DocumentList } from './DocumentList';
 export { DocumentUpload } from './DocumentUpload';
 export { EmployeeDocuments } from './EmployeeDocuments';
 
+// Dashboard Widgets
+export * from './dashboard';
+
 // Growth Phase 2 - Availability
 export * from './availability';
 

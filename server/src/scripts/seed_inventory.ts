@@ -164,7 +164,7 @@ async function seedInventory() {
       await query(
         `INSERT INTO waitlist_entries (
           tenant_id, departure_id, position, seat_count,
-          guest_name, guest_email, guest_phone, source, notes
+          guest_name, guest_email, guest_phone, source, status
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           tenantId, departureId, i + 1, seatCount,
@@ -172,7 +172,7 @@ async function seedInventory() {
           `${firstName.toLowerCase()}.${lastName.toLowerCase()}@email.com`,
           `+919${String(Math.floor(Math.random() * 900000000) + 100000000)}`,
           'WEBSITE',
-          `Waitlist entry for ${seatCount} seat(s)`
+          'WAITING'
         ]
       );
     }

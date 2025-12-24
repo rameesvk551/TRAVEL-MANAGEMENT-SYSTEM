@@ -2,6 +2,9 @@
  * HRMS Pages - Barrel Export
  */
 export { default as HrmsDashboard } from './HrmsDashboard';
+export { default as FieldStaffDashboard } from './FieldStaffDashboard';
+export { default as HRManagerDashboard } from './HRManagerDashboard';
+export { default as FounderDashboard } from './FounderDashboard';
 export { default as EmployeesPage } from './EmployeesPage';
 export { default as NewEmployeePage } from './NewEmployeePage';
 export { default as AttendancePage } from './AttendancePage';

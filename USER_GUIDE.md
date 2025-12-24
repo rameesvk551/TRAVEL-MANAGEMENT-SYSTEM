@@ -14,12 +14,13 @@
 5. [Booking Engine](#-booking-engine)
 6. [Inventory Management](#-inventory-management)
 7. [Resource Management](#-resource-management)
-8. [HRMS - People Management](#-hrms---people-management)
-9. [Vendor & Supplier Management](#-vendor--supplier-management)
-10. [WhatsApp Operations](#-whatsapp-operations)
-11. [User Roles & Permissions](#-user-roles--permissions)
-12. [Common Workflows](#-common-workflows)
-13. [Tips & Best Practices](#-tips--best-practices)
+8. [Gear Management](#-gear-management)
+9. [HRMS - People Management](#-hrms---people-management)
+10. [Vendor & Supplier Management](#-vendor--supplier-management)
+11. [WhatsApp Operations](#-whatsapp-operations)
+12. [User Roles & Permissions](#-user-roles--permissions)
+13. [Common Workflows](#-common-workflows)
+14. [Tips & Best Practices](#-tips--best-practices)
 
 ---
 
@@ -36,6 +37,7 @@ The **Travel Management System (TMS)** is an all-in-one platform designed specif
 | **Bookings** | Manage reservations | Operations Team |
 | **Inventory** | Control tour departures & seats | Operations Manager |
 | **Resources** | Manage tours, hotels, vehicles | Admin |
+| **Gear** | Track trekking equipment & rentals | Operations & Guides |
 | **HRMS** | Manage staff, attendance, payroll | HR & Employees |
 | **Vendors** | Manage suppliers & settlements | Finance & Ops |
 | **WhatsApp** | Automated communication | Sales & Ops |
@@ -54,12 +56,12 @@ The **Travel Management System (TMS)** is an all-in-one platform designed specif
 │                    DASHBOARD                          │
 │           (See everything at a glance)               │
 └──────────────────────────────────────────────────────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│     HRMS     │    │   VENDORS    │    │   WHATSAPP   │
-│ (Staffing)   │    │ (Suppliers)  │    │ (Automation) │
-└──────────────┘    └──────────────┘    └──────────────┘
+       │           │           │           │
+       ▼           ▼           ▼           ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│   HRMS   │ │ VENDORS  │ │   GEAR   │ │ WHATSAPP │
+│(Staffing)│ │(Suppliers│ │(Equipment│ │(Automation│
+└──────────┘ └──────────┘ └──────────┘ └──────────┘
 ```
 
 ---
@@ -84,6 +86,7 @@ The main navigation is located in the **left sidebar**:
 │ 📅 Bookings     │ ← Reservations
 │ 📦 Inventory    │ ← Tour Departures
 │ 🎒 Resources    │ ← Tours, Hotels, Vehicles
+│ ⛺ Gear         │ ← Equipment Management
 │ 👤 HRMS         │ ← People Management
 │ 🤝 Vendors      │ ← Supplier Management
 └─────────────────┘
@@ -466,6 +469,152 @@ Resources are the products and services you offer.
 │ $2,400          │         │                 │         │                 │
 └─────────────────┘         └─────────────────┘         └─────────────────┘
 ```
+
+---
+
+## ⛺ Gear Management
+
+The Gear Management module helps you track, maintain, and assign trekking equipment and adventure gear.
+
+### Gear Dashboard Overview
+
+The Gear Dashboard provides a real-time view of your entire equipment inventory:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  GEAR MANAGEMENT DASHBOARD                                                   │
+├─────────────────┬─────────────────┬─────────────────┬───────────────────────┤
+│  TOTAL ITEMS    │   AVAILABLE     │   IN USE        │   MAINTENANCE         │
+│      156        │      98         │      42         │       16              │
+└─────────────────┴─────────────────┴─────────────────┴───────────────────────┘
+```
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Inventory Tracking** | Track all equipment with SKU, condition, and location |
+| **Trip Assignments** | Assign gear to specific trips/departures |
+| **Maintenance Management** | Schedule and track equipment maintenance |
+| **Rental Management** | Manage gear rentals to guests |
+| **Safety Alerts** | Immediate alerts for unsafe or damaged gear |
+| **Inspection Tracking** | Track inspection schedules and overdue items |
+
+### Gear Status Types
+
+| Status | Description |
+|--------|-------------|
+| **AVAILABLE** | Ready for assignment |
+| **IN_USE** | Currently assigned to a trip |
+| **UNDER_MAINTENANCE** | Being repaired or serviced |
+| **DAMAGED** | Requires assessment or repair |
+| **RETIRED** | No longer in service |
+
+### Gear Condition Ratings
+
+| Condition | Meaning | Action |
+|-----------|---------|--------|
+| **EXCELLENT** | Like new, no issues | Ready for use |
+| **GOOD** | Minor wear, fully functional | Ready for use |
+| **FAIR** | Noticeable wear but safe | Monitor closely |
+| **POOR** | Significant wear, needs attention | Schedule maintenance |
+| **DAMAGED** | Requires repair | Pull from service |
+| **UNSAFE** | Safety risk | Immediate action required |
+
+### Module Deep-Dives
+
+#### 1. Gear Items
+
+**View All Gear**
+- See complete inventory with filtering options
+- Filter by category, status, condition, warehouse
+- Quick actions: view details, assign to trip, mark for maintenance
+
+**Add New Gear**
+1. Go to `Gear → Items → Add New Gear`
+2. Fill item details:
+   - Name and SKU
+   - Category (Tents, Sleeping Bags, Climbing Gear, etc.)
+   - Purchase date and cost
+   - Condition rating
+   - Warehouse location
+3. Upload photos
+4. Save item
+
+#### 2. Categories
+
+Organize gear into logical categories:
+- **Shelter**: Tents, tarps, bivvy bags
+- **Sleeping**: Sleeping bags, mats, pillows
+- **Climbing**: Ropes, harnesses, carabiners, helmets
+- **Cooking**: Stoves, cookware, fuel containers
+- **Navigation**: GPS devices, compasses, maps
+- **Safety**: First aid kits, emergency beacons, radios
+
+#### 3. Warehouses
+
+Track gear across multiple storage locations:
+- Main warehouse
+- Branch offices
+- Trip staging areas
+- Vendor storage
+
+#### 4. Trip Assignments
+
+**Assigning Gear to a Trip**
+1. Go to `Gear → Assignments`
+2. Select the departure/trip
+3. Choose required gear items
+4. Confirm assignment
+5. Gear status changes to "IN_USE"
+
+**Assignment Types**
+| Type | Description |
+|------|-------------|
+| **SHARED** | Shared gear like tents, stoves |
+| **GUIDE** | Guide-specific equipment |
+| **GUEST** | Guest rental items |
+| **SUPPORT** | Porter/support staff gear |
+
+**Assignment Lifecycle**
+```
+PLANNED → ASSIGNED → CHECKED_OUT → IN_USE → RETURNED → INSPECTED
+```
+
+#### 5. Rentals
+
+Manage gear rentals to guests:
+- Track rental agreements
+- Calculate rental fees
+- Monitor return dates
+- Assess condition on return
+- Process damage deposits
+
+#### 6. Maintenance
+
+**Scheduling Maintenance**
+1. Select gear item
+2. Choose maintenance type (routine, repair, inspection)
+3. Set scheduled date
+4. Assign to technician/vendor
+5. Track progress
+
+**Maintenance Types**
+- Routine cleaning and inspection
+- Repair (minor/major)
+- Parts replacement
+- Professional servicing
+
+### Alerts & Safety
+
+The system provides critical safety alerts:
+
+| Alert Type | Priority | Description |
+|------------|----------|-------------|
+| **Unsafe Gear** | 🔴 Critical | Items marked unsafe - remove from service |
+| **Inspection Overdue** | 🟠 High | Past inspection due date |
+| **Pending Returns** | 🔵 Medium | Gear awaiting return from trips |
+| **Damaged Items** | 🟠 High | Items needing repair assessment |
 
 ---
 
@@ -953,6 +1102,46 @@ The WhatsApp Operations Layer turns WhatsApp into a powerful control surface for
    └─► Status updated to "SETTLED"
 ```
 
+### Workflow 5: Gear Assignment for Trip
+
+```
+1. TRIP CREATED
+   └─► Departure added to inventory
+   
+2. GEAR REQUIREMENT ASSESSMENT
+   └─► Ops identifies gear needed for trip
+   └─► Tents, sleeping bags, cooking equipment, etc.
+   
+3. AVAILABILITY CHECK
+   └─► System shows available gear by category
+   └─► Filters by condition and location
+   
+4. ASSIGNMENT
+   └─► Select gear items for the trip
+   └─► System checks for conflicts (already assigned)
+   └─► Assign by type: Shared, Guide, Guest, Support
+   
+5. CHECK-OUT
+   └─► Gear physically checked out from warehouse
+   └─► Status changes to "IN_USE"
+   └─► Condition noted at departure
+   
+6. TRIP EXECUTION
+   └─► Gear used during the trip
+   └─► Any issues reported by staff
+   
+7. RETURN & INSPECTION
+   └─► Trip ends
+   └─► Gear returned to warehouse
+   └─► Condition assessed on return
+   └─► Damage noted if any
+   
+8. POST-TRIP MAINTENANCE
+   └─► Schedule cleaning/maintenance
+   └─► Update condition rating
+   └─► Mark available for next trip
+```
+
 ---
 
 ## 💡 Tips & Best Practices
@@ -972,6 +1161,14 @@ The WhatsApp Operations Layer turns WhatsApp into a powerful control surface for
 3. **Plan staffing early** - Assign crew 2 weeks ahead
 4. **Track sources** - Know where bookings come from
 5. **Use manifests** - Export guest lists before departure
+
+### For Gear Management
+
+1. **Inspect after every trip** - Update condition ratings promptly
+2. **Act on safety alerts** - Never ignore unsafe gear warnings
+3. **Track maintenance schedules** - Prevent equipment failure
+4. **Verify returns** - Check all gear is returned and assessed
+5. **Monitor rental agreements** - Follow up on overdue returns
 
 ### For HR
 
@@ -1000,8 +1197,8 @@ The WhatsApp Operations Layer turns WhatsApp into a powerful control surface for
 
 ---
 
-> **Version**: 1.0  
-> **Last Updated**: December 2024  
+> **Version**: 1.1  
+> **Last Updated**: December 2025  
 > **Platform**: Travel Management System (TMS)
 
 ---

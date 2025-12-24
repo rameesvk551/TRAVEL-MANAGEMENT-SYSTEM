@@ -7,3 +7,4 @@ export { inventoryApi, bookingOrchestratorApi } from './inventoryApi';
 export * from './hrms';
 export * from './vendor';
 export * from './gear';
+export { branchApi } from './branchApi';

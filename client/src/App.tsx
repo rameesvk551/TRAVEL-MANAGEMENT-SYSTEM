@@ -32,7 +32,14 @@ import {
     GearCategoriesList,
 } from '@/pages/gear';
 import {
+    BranchList,
+    BranchForm,
+} from '@/pages/branches';
+import {
     HrmsDashboard,
+    FieldStaffDashboard,
+    HRManagerDashboard,
+    FounderDashboard,
     EmployeesPage,
     NewEmployeePage,
     AttendancePage,
@@ -84,16 +91,21 @@ function App() {
 
                     {/* HRMS Routes */}
                     <Route path="hrms" element={<HrmsDashboard />} />
+                    <Route path="hrms/my-dashboard" element={<FieldStaffDashboard />} />
+                    <Route path="hrms/hr-dashboard" element={<HRManagerDashboard />} />
+                    <Route path="hrms/executive-dashboard" element={<FounderDashboard />} />
                     <Route path="hrms/employees" element={<EmployeesPage />} />
                     <Route path="hrms/employees/new" element={<NewEmployeePage />} />
                     <Route path="hrms/attendance" element={<AttendancePage />} />
                     <Route path="hrms/attendance/check-in" element={<AttendancePage />} />
                     <Route path="hrms/leaves" element={<LeavesPage />} />
                     <Route path="hrms/leaves/apply" element={<LeavesPage />} />
+                    <Route path="hrms/leaves/approvals" element={<TeamDashboardPage />} />
                     <Route path="hrms/documents" element={<DocumentsPage />} />
                     <Route path="hrms/payroll" element={<PayrollPage />} />
                     <Route path="hrms/payroll/latest" element={<PayrollPage />} />
                     <Route path="hrms/team" element={<TeamDashboardPage />} />
+                    <Route path="hrms/trips" element={<AvailabilityPage />} />
                     <Route path="hrms/availability" element={<AvailabilityPage />} />
                     <Route path="hrms/expenses" element={<ExpensesPage />} />
                     <Route path="hrms/schedule" element={<SchedulePage />} />
@@ -120,6 +132,11 @@ function App() {
                     <Route path="gear" element={<GearDashboard />} />
                     <Route path="gear/items" element={<GearItemsList />} />
                     <Route path="gear/categories" element={<GearCategoriesList />} />
+
+                    {/* Branch Management Routes */}
+                    <Route path="branches" element={<BranchList />} />
+                    <Route path="branches/new" element={<BranchForm />} />
+                    <Route path="branches/:id/edit" element={<BranchForm />} />
                 </Route>
             </Route>
         </Routes>

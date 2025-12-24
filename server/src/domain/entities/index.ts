@@ -9,6 +9,23 @@ export {
 } from './Booking.js';
 export { Lead, type LeadProps } from './Lead.js';
 
+// Branch Management Entities
+export {
+    Branch,
+    type BranchProps,
+    type BranchType,
+    type BranchAddress,
+    type BranchSettings,
+    type BranchOperatingHours,
+    BranchPermission,
+    type BranchPermissionProps,
+    type PermissionLevel,
+    BranchTransfer,
+    type BranchTransferProps,
+    type TransferType,
+    type TransferStatus,
+} from './Branch.js';
+
 // Inventory Management Entities
 export {
     DepartureInstance,

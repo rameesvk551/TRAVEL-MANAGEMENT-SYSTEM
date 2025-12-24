@@ -3,6 +3,7 @@
  */
 export * from './useEmployees';
 export * from './useAttendance';
+export * from './useTripAssignments';
 export { 
   useMyLeaves,
   useLeaveBalance,
