@@ -36,6 +36,13 @@ import {
     BranchForm,
 } from '@/pages/branches';
 import {
+    AccountingDashboard,
+    ChartOfAccounts,
+    JournalEntries,
+    GeneralLedger,
+    FinancialReports,
+} from '@/pages/accounting';
+import {
     HrmsDashboard,
     FieldStaffDashboard,
     HRManagerDashboard,
@@ -137,6 +144,13 @@ function App() {
                     <Route path="branches" element={<BranchList />} />
                     <Route path="branches/new" element={<BranchForm />} />
                     <Route path="branches/:id/edit" element={<BranchForm />} />
+
+                    {/* Accounting Routes */}
+                    <Route path="accounting" element={<AccountingDashboard />} />
+                    <Route path="accounting/accounts" element={<ChartOfAccounts />} />
+                    <Route path="accounting/journal-entries" element={<JournalEntries />} />
+                    <Route path="accounting/ledger" element={<GeneralLedger />} />
+                    <Route path="accounting/reports" element={<FinancialReports />} />
                 </Route>
             </Route>
         </Routes>

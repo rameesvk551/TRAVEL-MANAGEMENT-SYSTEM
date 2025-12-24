@@ -13,3 +13,6 @@ export { default as DepartureDetail } from './inventory/DepartureDetail';
 
 // Vendor pages
 export * from './vendor';
+
+// Accounting pages
+export * from './accounting';

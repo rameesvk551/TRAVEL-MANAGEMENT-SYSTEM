@@ -6,3 +6,4 @@ export * from './hrms.types';
 export * from './vendor.types';
 export * from './gear.types';
 export * from './branch.types';
+export * from './accounting.types';

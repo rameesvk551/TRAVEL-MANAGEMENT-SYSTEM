@@ -17,6 +17,7 @@ import { createHRMSRoutes } from './hrms/index.js';
 import { createVendorRoutes } from './vendor.routes.js';
 import { createGearRoutes } from './gear.routes.js';
 import { createBranchRoutes } from './branch.routes.js';
+import accountingRoutes from './accountingRoutes.js';
 
 interface RoutesDependencies {
     resourceController: ResourceController;
@@ -63,6 +64,9 @@ export function createApiRouter(deps: RoutesDependencies): Router {
 
     // Branch Management Routes
     router.use('/branches', tenantMiddleware, createBranchRoutes(deps.authMiddleware));
+
+    // Accounting Routes
+    router.use('/accounting', tenantMiddleware, accountingRoutes);
 
     return router;
 }
