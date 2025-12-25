@@ -1,12 +1,12 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { ChartOfAccountsService } from '../../../application/services/accounting/ChartOfAccountsService.js';
-import { JournalEntryService } from '../../../application/services/accounting/JournalEntryService.js';
-import { LedgerService } from '../../../application/services/accounting/LedgerService.js';
-import { FiscalPeriodService } from '../../../application/services/accounting/FiscalPeriodService.js';
-import { TaxEngineService } from '../../../application/services/accounting/TaxEngineService.js';
-import { BankReconciliationService } from '../../../application/services/accounting/BankReconciliationService.js';
-import { FinancialReportingService } from '../../../application/services/accounting/FinancialReportingService.js';
-import { AccountingEventHandlers } from '../../../application/services/accounting/AccountingEventHandlers.js';
+import { ChartOfAccountsService } from '../../application/services/accounting/ChartOfAccountsService.js';
+import { JournalEntryService } from '../../application/services/accounting/JournalEntryService.js';
+import { LedgerService } from '../../application/services/accounting/LedgerService.js';
+import { FiscalPeriodService } from '../../application/services/accounting/FiscalPeriodService.js';
+import { TaxEngineService } from '../../application/services/accounting/TaxEngineService.js';
+import { BankReconciliationService } from '../../application/services/accounting/BankReconciliationService.js';
+import { FinancialReportingService } from '../../application/services/accounting/FinancialReportingService.js';
+import { AccountingEventHandlers } from '../../application/services/accounting/AccountingEventHandlers.js';
 
 const router = Router();
 
