@@ -103,10 +103,10 @@ export default function HRManagerDashboard() {
   const notificationCount = pendingLeaveRequests.length + 3;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 w-full">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+        <div className="flex items-center justify-between w-full">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">HR Dashboard</h1>
             <p className="text-sm text-gray-500 mt-1">{formattedDate}</p>
@@ -124,7 +124,7 @@ export default function HRManagerDashboard() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="w-full p-6 space-y-6">
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard

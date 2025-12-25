@@ -41,11 +41,11 @@ export function LaborCostChart({ period: _period }: LaborCostChartProps) {
   const laborCostRatio = ((totalLaborCost / totalRevenue) * 100).toFixed(1);
 
   return (
-    <div className="bg-white rounded-xl border shadow-sm p-6 h-full">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-xl border shadow-sm p-4 h-full">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-blue-500" />
-          <h2 className="font-semibold text-gray-800">Labor Cost vs Revenue</h2>
+          <TrendingUp className="w-4 h-4 text-blue-500" />
+          <h2 className="font-semibold text-gray-800 text-sm">Labor Cost vs Revenue</h2>
         </div>
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-2">

@@ -9,6 +9,7 @@ import Bookings from '@/pages/Bookings';
 import CreateBooking from '@/pages/CreateBooking';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import Settings from '@/pages/Settings';
 import { PipelineBoard } from '@/pages/crm/PipelineBoard';
 import { LeadDetail } from '@/pages/crm/LeadDetail';
 import { LeadForm } from '@/pages/crm/LeadForm';
@@ -151,6 +152,9 @@ function App() {
                     <Route path="accounting/journal-entries" element={<JournalEntries />} />
                     <Route path="accounting/ledger" element={<GeneralLedger />} />
                     <Route path="accounting/reports" element={<FinancialReports />} />
+
+                    {/* Settings Route */}
+                    <Route path="settings" element={<Settings />} />
                 </Route>
             </Route>
         </Routes>

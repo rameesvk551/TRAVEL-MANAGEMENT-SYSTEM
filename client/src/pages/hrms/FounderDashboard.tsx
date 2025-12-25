@@ -78,14 +78,14 @@ export default function FounderDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <div className="bg-white border-b py-2 px-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <BarChart3 className="w-7 h-7 text-blue-600" />
+            <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <BarChart3 className="w-6 h-6 text-blue-600" />
               People Insights
             </h1>
-            <p className="text-sm text-gray-500 mt-1">{currentMonth}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{currentMonth}</p>
           </div>
           <div className="flex items-center gap-3">
             {/* Period Selector */}
@@ -93,47 +93,47 @@ export default function FounderDashboard() {
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value as typeof period)}
-                className="appearance-none bg-white border rounded-lg px-4 py-2 pr-10 text-sm font-medium text-gray-700 cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="appearance-none bg-white border rounded-lg px-3 py-1.5 pr-8 text-xs font-medium text-gray-700 cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
                 <option value="yearly">Yearly</option>
               </select>
-              <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown className="w-3 h-3 absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
-              <Download className="w-4 h-4" />
+            <button className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium">
+              <Download className="w-3 h-3" />
               Export Report
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="p-2 space-y-4">
         {/* Executive KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {kpis.map((kpi) => (
-            <div key={kpi.title} className="bg-white rounded-xl border shadow-sm p-5">
+            <div key={kpi.title} className="bg-white rounded-xl border shadow-sm p-3">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">{kpi.title}</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{kpi.value}</p>
-                  <div className={`flex items-center gap-1 mt-2 text-sm ${
+                  <p className="text-xs text-gray-500">{kpi.title}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-0.5">{kpi.value}</p>
+                  <div className={`flex items-center gap-1 mt-1 text-xs ${
                     kpi.change >= 0 
                       ? (kpi.title === 'Attrition' ? 'text-green-600' : 'text-green-600') 
                       : (kpi.title === 'Attrition' ? 'text-green-600' : 'text-red-600')
                   }`}>
                     {kpi.change >= 0 ? (
                       kpi.title === 'Attrition' ? (
-                        <TrendingDown className="w-4 h-4" />
+                        <TrendingDown className="w-3 h-3" />
                       ) : (
-                        <TrendingUp className="w-4 h-4" />
+                        <TrendingUp className="w-3 h-3" />
                       )
                     ) : (
                       kpi.title === 'Cost/Trip' ? (
-                        <TrendingDown className="w-4 h-4 text-green-600" />
+                        <TrendingDown className="w-3 h-3 text-green-600" />
                       ) : (
-                        <TrendingDown className="w-4 h-4" />
+                        <TrendingDown className="w-3 h-3" />
                       )
                     )}
                     <span className={kpi.title === 'Cost/Trip' && kpi.change < 0 ? 'text-green-600' : ''}>
@@ -141,7 +141,7 @@ export default function FounderDashboard() {
                     </span>
                   </div>
                 </div>
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${kpi.color}`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${kpi.color}`}>
                   {kpi.icon}
                 </div>
               </div>

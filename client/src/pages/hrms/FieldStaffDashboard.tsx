@@ -140,42 +140,55 @@ export default function FieldStaffDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header / Greeting */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-b-3xl">
-        <div className="flex items-center gap-3 mb-2">
-          {greeting.icon}
-          <span className="text-lg opacity-90">{greeting.text},</span>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/30">
+      {/* Modern Header */}
+      <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 px-6 pt-8 pb-24 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full -ml-24 -mb-24"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 mb-3">
+            {greeting.icon}
+            <span className="text-white/90 text-base">{greeting.text},</span>
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-1">{user.firstName}! 👋</h1>
+          <div className="flex items-center gap-2 text-white/80 text-sm">
+            <span>{user.role}</span>
+            <span>·</span>
+            <span>{user.company}</span>
+          </div>
         </div>
-        <h1 className="text-2xl font-bold">{user.firstName}! 👋</h1>
-        <p className="text-blue-100 mt-1">{user.role} · {user.company}</p>
       </div>
 
-      <div className="px-4 -mt-6 space-y-4">
-        {/* Check-In Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-gray-500">
+      <div className="px-6 -mt-16 pb-8 space-y-5">
+        {/* Check-In Card - Premium Design */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 backdrop-blur-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2 text-gray-600">
               <MapPin className="w-4 h-4" />
-              <span className="text-sm">{isGettingLocation ? 'Getting location...' : locationName}</span>
+              <span className="text-sm font-medium">{isGettingLocation ? 'Getting location...' : locationName}</span>
             </div>
             {attendance?.checkInTime && (
-              <div className="text-xs text-gray-400">
-                Last: {new Date(attendance.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </div>
+              <span className="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
+                {new Date(attendance.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
             )}
           </div>
 
           {loadingStatus ? (
-            <div className="text-center py-4 text-gray-400">Loading status...</div>
+            <div className="text-center py-8 text-gray-400">
+              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
+              <p>Loading status...</p>
+            </div>
           ) : isCheckedOut ? (
-            <div className="text-center py-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-8 h-8 text-green-600" />
+            <div className="text-center py-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-200">
+                <Clock className="w-10 h-10 text-white" />
               </div>
-              <div className="text-green-600 font-semibold text-lg">Day Complete ✓</div>
-              <div className="text-sm text-gray-500 mt-1">
-                {attendance?.workHours?.toFixed(1)}h worked today
+              <div className="text-green-600 font-bold text-xl mb-2">Day Complete ✓</div>
+              <div className="text-gray-500">
+                <span className="font-semibold text-gray-700">{attendance?.workHours?.toFixed(1)}h</span> worked today
               </div>
             </div>
           ) : (
@@ -183,15 +196,17 @@ export default function FieldStaffDashboard() {
               onClick={isCheckedIn ? handleCheckOut : handleCheckIn}
               disabled={checkInMutation.isPending || checkOutMutation.isPending || !location}
               className={`
-                w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-2
-                transition-all duration-200 disabled:opacity-50
+                w-full py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3
+                transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+                shadow-lg
                 ${isCheckedIn 
-                  ? 'bg-red-500 hover:bg-red-600 text-white' 
-                  : 'bg-green-500 hover:bg-green-600 text-white'
+                  ? 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-red-200' 
+                  : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-green-200'
                 }
               `}
             >
-              <MapPin className="w-5 h-5" />
+              <MapPin className="w-6 h-6" />
               {checkInMutation.isPending || checkOutMutation.isPending 
                 ? 'Processing...' 
                 : isCheckedIn 
@@ -202,53 +217,67 @@ export default function FieldStaffDashboard() {
           )}
         </div>
 
-        {/* Upcoming Trips */}
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-500" />
-              Upcoming Trips
-            </h2>
-            <Link to="/hrms/trips" className="text-blue-600 text-sm flex items-center">
+        {/* Upcoming Trips - Modern Card */}
+        <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="font-bold text-gray-900 text-lg">Upcoming Trips</h2>
+            </div>
+            <Link to="/hrms/trips" className="text-blue-600 text-sm font-medium flex items-center hover:text-blue-700 transition-colors">
               View All <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
 
           {loadingTrips ? (
-            <div className="text-gray-400 text-center py-4">Loading trips...</div>
+            <div className="text-center py-8">
+              <div className="w-10 h-10 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-gray-400">Loading trips...</p>
+            </div>
           ) : upcomingTrips.length === 0 ? (
-            <div className="text-center py-6 text-gray-400">
-              <Briefcase className="w-10 h-10 mx-auto mb-2 opacity-50" />
-              <p>No upcoming trips assigned</p>
+            <div className="text-center py-10 px-4">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Briefcase className="w-10 h-10 text-gray-400" />
+              </div>
+              <p className="text-gray-500 font-medium mb-1">No upcoming trips assigned</p>
+              <p className="text-gray-400 text-sm">You're all caught up!</p>
             </div>
           ) : (
             <div className="space-y-3">
               {upcomingTrips.slice(0, 3).map((trip) => (
                 <div
                   key={trip.id}
-                  className="border border-gray-100 rounded-xl p-4 hover:bg-gray-50 transition-colors"
+                  className="border-2 border-gray-100 rounded-2xl p-5 hover:border-blue-200 hover:bg-blue-50/50 transition-all cursor-pointer group"
                 >
-                  <div className="font-medium text-gray-800">
-                    Trip #{trip.tripId.slice(0, 8)}
-                  </div>
-                  <div className="flex items-center justify-between mt-2 text-sm">
-                    <span className="text-gray-500">
-                      {formatDateRange(trip.startDate, trip.endDate)}
-                    </span>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="font-bold text-gray-900 mb-1">
+                        Trip #{trip.tripId.slice(0, 8)}
+                      </div>
+                      <div className="text-sm text-gray-600 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        {formatDateRange(trip.startDate, trip.endDate)}
+                      </div>
+                    </div>
                     <span className={`
-                      px-2 py-1 rounded-full text-xs font-medium
-                      ${trip.role === 'guide' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}
+                      px-3 py-1 rounded-full text-xs font-bold
+                      ${trip.role === 'guide' 
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
+                        : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white'}
                     `}>
                       {ROLE_DISPLAY[trip.role] || trip.role}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3 h-3" />
+                  <div className="flex items-center gap-4 text-xs">
+                    <span className="flex items-center gap-1 text-gray-500">
+                      <Users className="w-4 h-4" />
                       Team assigned
                     </span>
                     <span className={`
-                      ${trip.status === 'confirmed' ? 'text-green-600' : 'text-yellow-600'}
+                      font-semibold
+                      ${trip.status === 'confirmed' ? 'text-green-600' : 'text-amber-600'}
                     `}>
                       {trip.status === 'confirmed' ? '✓ Confirmed' : '⏳ Pending'}
                     </span>
@@ -259,48 +288,61 @@ export default function FieldStaffDashboard() {
           )}
         </div>
 
-        {/* This Month Stats */}
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            📊 This Month
+        {/* This Month Stats - Premium Grid */}
+        <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100">
+          <h2 className="font-bold text-gray-900 mb-5 flex items-center gap-2 text-lg">
+            <span className="text-2xl">📊</span>
+            This Month
           </h2>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="text-center p-3 bg-green-50 rounded-xl">
-              <div className="text-2xl font-bold text-green-600">{monthStats.present}</div>
-              <div className="text-xs text-gray-500 mt-1">Present</div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 p-5 text-center border-2 border-green-100">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-green-200/30 rounded-full -mr-8 -mt-8"></div>
+              <div className="relative">
+                <div className="text-3xl font-black text-green-600 mb-1">{monthStats.present}</div>
+                <div className="text-xs font-semibold text-green-700/70 uppercase tracking-wide">Present</div>
+              </div>
             </div>
-            <div className="text-center p-3 bg-blue-50 rounded-xl">
-              <div className="text-2xl font-bold text-blue-600">{monthStats.onTrip}</div>
-              <div className="text-xs text-gray-500 mt-1">On Trip</div>
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 p-5 text-center border-2 border-blue-100">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-blue-200/30 rounded-full -mr-8 -mt-8"></div>
+              <div className="relative">
+                <div className="text-3xl font-black text-blue-600 mb-1">{monthStats.onTrip}</div>
+                <div className="text-xs font-semibold text-blue-700/70 uppercase tracking-wide">On Trip</div>
+              </div>
             </div>
-            <div className="text-center p-3 bg-amber-50 rounded-xl">
-              <div className="text-2xl font-bold text-amber-600">{monthStats.leave}</div>
-              <div className="text-xs text-gray-500 mt-1">Leave</div>
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 p-5 text-center border-2 border-amber-100">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-amber-200/30 rounded-full -mr-8 -mt-8"></div>
+              <div className="relative">
+                <div className="text-3xl font-black text-amber-600 mb-1">{monthStats.leave}</div>
+                <div className="text-xs font-semibold text-amber-700/70 uppercase tracking-wide">Leave</div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Leave Balance */}
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-              💰 Leave Balance
-            </h2>
-            <Link to="/hrms/leaves" className="text-blue-600 text-sm flex items-center">
+        {/* Leave Balance - Modern Design */}
+        <div className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">💰</span>
+              <h2 className="font-bold text-gray-900 text-lg">Leave Balance</h2>
+            </div>
+            <Link to="/hrms/leaves" className="text-blue-600 text-sm font-medium flex items-center hover:text-blue-700 transition-colors">
               Apply <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
           
           {loadingBalance ? (
-            <div className="text-gray-400 text-center py-4">Loading...</div>
+            <div className="text-center py-6">
+              <div className="w-10 h-10 border-3 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
+            </div>
           ) : leaveBalances.length === 0 ? (
-            <div className="text-gray-400 text-center py-4">No leave data</div>
+            <div className="text-center py-6 text-gray-400">No leave data</div>
           ) : (
-            <div className="flex justify-between">
+            <div className="grid grid-cols-3 gap-4">
               {leaveBalances.slice(0, 3).map((balance) => (
-                <div key={balance.leaveType} className="text-center">
-                  <div className="text-xl font-bold text-gray-800">{balance.remaining}</div>
-                  <div className="text-xs text-gray-500 capitalize mt-1">
+                <div key={balance.leaveType} className="text-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-4 border border-gray-200">
+                  <div className="text-2xl font-black text-gray-800 mb-1">{balance.remaining}</div>
+                  <div className="text-xs font-semibold text-gray-600 capitalize leading-tight">
                     {balance.leaveType.replace('_', ' ')}
                   </div>
                 </div>
@@ -309,34 +351,34 @@ export default function FieldStaffDashboard() {
           )}
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Quick Actions - Modern Grid */}
+        <div className="grid grid-cols-3 gap-4">
           <Link
             to="/hrms/leaves/apply"
-            className="bg-white rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow"
+            className="bg-white rounded-2xl p-5 text-center shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 border border-gray-100"
           >
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              📝
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-200">
+              <span className="text-2xl">📝</span>
             </div>
-            <div className="text-xs text-gray-600">Apply Leave</div>
+            <div className="text-xs font-bold text-gray-700">Apply Leave</div>
           </Link>
           <Link
             to="/hrms/payroll"
-            className="bg-white rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow"
+            className="bg-white rounded-2xl p-5 text-center shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 border border-gray-100"
           >
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              💵
+            <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-green-200">
+              <span className="text-2xl">💵</span>
             </div>
-            <div className="text-xs text-gray-600">Payslips</div>
+            <div className="text-xs font-bold text-gray-700">Payslips</div>
           </Link>
           <Link
             to="/hrms/attendance"
-            className="bg-white rounded-xl p-4 text-center shadow-sm hover:shadow-md transition-shadow"
+            className="bg-white rounded-2xl p-5 text-center shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 border border-gray-100"
           >
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              📅
+            <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-purple-200">
+              <span className="text-2xl">📅</span>
             </div>
-            <div className="text-xs text-gray-600">Attendance</div>
+            <div className="text-xs font-bold text-gray-700">Attendance</div>
           </Link>
         </div>
       </div>

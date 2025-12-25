@@ -101,14 +101,14 @@ export function TopInsightsPanel() {
   };
 
   return (
-    <div className="bg-white rounded-xl border shadow-sm p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <span className="text-2xl">🔥</span>
-        <h2 className="font-semibold text-gray-800 text-lg">Top Insights</h2>
-        <span className="ml-auto text-sm text-gray-400">AI-powered recommendations</span>
+    <div className="bg-white rounded-xl border shadow-sm p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xl">🔥</span>
+        <h2 className="font-semibold text-gray-800 text-base">Top Insights</h2>
+        <span className="ml-auto text-xs text-gray-400">AI-powered recommendations</span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {insights.map((insight) => {
           const style = getInsightStyle(insight.type);
           return (

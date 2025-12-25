@@ -24,13 +24,13 @@ export function HeadcountByTypeChart() {
   const maxCount = Math.max(...categories.map(c => c.count));
 
   return (
-    <div className="bg-white rounded-xl border shadow-sm p-6 h-full">
-      <div className="flex items-center gap-2 mb-6">
-        <Users className="w-5 h-5 text-purple-500" />
-        <h2 className="font-semibold text-gray-800">Headcount by Type</h2>
+    <div className="bg-white rounded-xl border shadow-sm p-4 h-full">
+      <div className="flex items-center gap-2 mb-4">
+        <Users className="w-4 h-4 text-purple-500" />
+        <h2 className="font-semibold text-gray-800 text-sm">Headcount by Type</h2>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         {categories.map((category) => {
           const percentage = Math.round((category.count / total) * 100);
           const barWidth = (category.count / maxCount) * 100;
