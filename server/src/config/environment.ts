@@ -5,6 +5,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 interface DatabaseConfig {
     url: string;
+    mongodbUrl: string;
     poolMin: number;
     poolMax: number;
 }
@@ -62,6 +63,7 @@ export const config: Config = {
     },
     database: {
         url: getEnvOrThrow('DATABASE_URL'),
+        mongodbUrl: getEnvOrDefault('MONGODB_URL', 'mongodb://localhost:27017/travel_management'),
         poolMin: parseInt(getEnvOrDefault('DATABASE_POOL_MIN', '2'), 10),
         poolMax: parseInt(getEnvOrDefault('DATABASE_POOL_MAX', '10'), 10),
     },

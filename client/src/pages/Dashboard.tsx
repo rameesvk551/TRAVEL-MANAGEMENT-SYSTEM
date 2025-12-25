@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { Box, Calendar, Users, TrendingUp, Loader2 } from 'lucide-react';
+import { Box, Calendar, Users, TrendingUp, Loader2, Building2 } from 'lucide-react';
 import { useDashboardStats } from '@/hooks';
+import { BranchSelector } from '@/components/common';
 import {
     BarChart,
     Bar,
@@ -47,7 +49,8 @@ function StatCard({ title, value, change, icon: Icon }: StatCardProps) {
 }
 
 export default function Dashboard() {
-    const { data: stats, isLoading, error } = useDashboardStats();
+    const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
+    const { data: stats, isLoading, error } = useDashboardStats({ branchId: selectedBranchId });
 
     if (isLoading) {
         return (
@@ -67,6 +70,26 @@ export default function Dashboard() {
 
     return (
         <div className="space-y-6">
+            {/* Dashboard Header with Branch Selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+                    <p className="text-muted-foreground">
+                        {selectedBranchId ? 'Branch-specific overview' : 'Overview of all branches combined'}
+                    </p>
+                </div>
+                <div className="w-full sm:w-72">
+                    <BranchSelector
+                        value={selectedBranchId}
+                        onChange={setSelectedBranchId}
+                        showAllOption={true}
+                        allOptionLabel="All Branches (Combined)"
+                        placeholder="Select a branch"
+                        size="md"
+                    />
+                </div>
+            </div>
+
             {/* Stats Grid */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard

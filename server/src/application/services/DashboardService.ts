@@ -22,12 +22,24 @@ export class DashboardService {
         private leadRepository: ILeadRepository
     ) { }
 
-    async getStats(tenantId: string): Promise<DashboardStats> {
-        // 1. Get Core Counts
-        const [resourceCount, bookingCount] = await Promise.all([
-            this.resourceRepository.count(tenantId, { isActive: true }),
-            this.bookingRepository.count(tenantId, { status: 'confirmed' }),
-        ]);
+    async getStats(tenantId: string, branchId?: string): Promise<DashboardStats> {
+        // Build branch filter condition
+        const branchFilter = branchId ? ` AND branch_id = '${branchId}'` : '';
+        const branchParam = branchId ? [tenantId, branchId] : [tenantId];
+        const branchParamIndex = branchId ? 2 : 1;
+
+        // 1. Get Core Counts (with branch filter if specified)
+        const resourceCountResult = await query<{ count: string }>(
+            `SELECT COUNT(*) as count FROM resources WHERE tenant_id = $1 AND is_active = true${branchFilter}`,
+            branchParam
+        );
+        const resourceCount = parseInt(resourceCountResult.rows[0]?.count || '0', 10);
+
+        const bookingCountResult = await query<{ count: string }>(
+            `SELECT COUNT(*) as count FROM bookings WHERE tenant_id = $1 AND status = 'confirmed'${branchFilter}`,
+            branchParam
+        );
+        const bookingCount = parseInt(bookingCountResult.rows[0]?.count || '0', 10);
 
         // 2. Calculate Revenue MTD (Month to Date)
         const startOfMonth = new Date();
@@ -36,22 +48,22 @@ export class DashboardService {
 
         const revenueResult = await query<{ sum: string }>(
             `SELECT SUM(total_amount) as sum FROM bookings 
-             WHERE tenant_id = $1 AND status != 'cancelled' AND created_at >= $2`,
-            [tenantId, startOfMonth]
+             WHERE tenant_id = $1 AND status != 'cancelled' AND created_at >= $${branchId ? 3 : 2}${branchFilter}`,
+            branchId ? [tenantId, branchId, startOfMonth] : [tenantId, startOfMonth]
         );
 
         // 3. Lead Pipeline Stats
         const openLeadsResult = await query<{ count: string }>(
             `SELECT COUNT(*) as count FROM leads 
-             WHERE tenant_id = $1 AND stage_id NOT IN ('won', 'lost')`,
-            [tenantId]
+             WHERE tenant_id = $1 AND stage_id NOT IN ('won', 'lost')${branchFilter}`,
+            branchParam
         );
 
         const pipelineStatsResult = await query<{ stage_id: string; count: string }>(
             `SELECT stage_id, COUNT(*) as count FROM leads 
-             WHERE tenant_id = $1 
+             WHERE tenant_id = $1${branchFilter} 
              GROUP BY stage_id`,
-            [tenantId]
+            branchParam
         );
 
         const pipelineStats: Record<string, number> = {};
@@ -65,19 +77,19 @@ export class DashboardService {
                 TO_CHAR(created_at, 'Mon') as name,
                 SUM(total_amount) as amount
              FROM bookings
-             WHERE tenant_id = $1 AND created_at >= NOW() - INTERVAL '6 months'
+             WHERE tenant_id = $1${branchFilter} AND created_at >= NOW() - INTERVAL '6 months'
              GROUP BY TO_CHAR(created_at, 'Mon'), DATE_TRUNC('month', created_at)
              ORDER BY DATE_TRUNC('month', created_at) ASC`,
-            [tenantId]
+            branchParam
         );
 
         // 5. Leads by Source
         const leadsBySourceResult = await query<{ name: string; count: string }>(
             `SELECT source as name, COUNT(*) as count
              FROM leads
-             WHERE tenant_id = $1
+             WHERE tenant_id = $1${branchFilter}
              GROUP BY source`,
-            [tenantId]
+            branchParam
         );
 
         // 6. Bookings by Resource Type
@@ -85,9 +97,9 @@ export class DashboardService {
             `SELECT r.type as name, COUNT(b.id) as count
              FROM bookings b
              JOIN resources r ON b.resource_id = r.id
-             WHERE b.tenant_id = $1
+             WHERE b.tenant_id = $1${branchFilter.replace('branch_id', 'b.branch_id')}
              GROUP BY r.type`,
-            [tenantId]
+            branchParam
         );
 
         // 7. Get Recent Bookings
@@ -95,10 +107,10 @@ export class DashboardService {
             `SELECT b.*, r.name as resource_name 
              FROM bookings b
              LEFT JOIN resources r ON b.resource_id = r.id
-             WHERE b.tenant_id = $1 
+             WHERE b.tenant_id = $1${branchFilter.replace('branch_id', 'b.branch_id')} 
              ORDER BY b.created_at DESC 
              LIMIT 5`,
-            [tenantId]
+            branchParam
         );
 
         return {

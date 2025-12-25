@@ -12,7 +12,17 @@ export interface DashboardStats {
     bookingsByResource: { name: string; count: number }[];
 }
 
-export const getDashboardStats = async (): Promise<DashboardStats> => {
-    const response = await apiClient.get<DashboardStats>('/dashboard/stats');
+export interface DashboardParams {
+    branchId?: string | null;
+}
+
+export const getDashboardStats = async (params?: DashboardParams): Promise<DashboardStats> => {
+    const queryParams = new URLSearchParams();
+    if (params?.branchId) {
+        queryParams.append('branchId', params.branchId);
+    }
+    const queryString = queryParams.toString();
+    const url = queryString ? `/dashboard/stats?${queryString}` : '/dashboard/stats';
+    const response = await apiClient.get<DashboardStats>(url);
     return response.data;
 };
