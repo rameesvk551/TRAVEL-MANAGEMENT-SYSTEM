@@ -1,0 +1,804 @@
+// Travel Management System - Advanced Database Model
+// Visualization for dbdiagram.io
+
+// ==========================================
+// CORE MODULE
+// ==========================================
+
+Table tenants {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  name varchar
+  slug varchar [unique]
+  settings jsonb
+  is_active boolean
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table users {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  email varchar
+  password_hash varchar
+  name varchar
+  role varchar
+  profile jsonb
+  is_active boolean
+  department_id uuid [ref: > departments.id]
+  salary decimal
+  joining_date date
+  accessible_branches "uuid[]"
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table branches {
+  id uuid [pk, default: `gen_random_uuid()`]
+  tenant_id uuid [ref: > tenants.id]
+  name varchar
+  code varchar
+  type varchar
+  address_line1 varchar
+  address_line2 varchar
+  city varchar
+  state varchar
+  country varchar
+  postal_code varchar
+  phone varchar
+  email varchar
+  latitude decimal
+  longitude decimal
+  timezone varchar
+  parent_branch_id uuid [ref: > branches.id]
+  manager_id uuid [ref: > users.id]
+  currency varchar
+  settings jsonb
+  operating_hours jsonb
+  description text
+  is_active boolean
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+// ==========================================
+// CRM MODULE
+// ==========================================
+
+Table contacts {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  email varchar
+  phone varchar
+  whatsapp varchar
+  first_name varchar
+  last_name varchar
+  tags "text[]"
+  travel_history jsonb
+  preferences jsonb
+  marketing_consent boolean
+  social_handles jsonb
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table pipelines {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  name varchar
+  is_default boolean
+  stages jsonb
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table leads {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  assigned_to_id uuid [ref: > users.id]
+  contact_id uuid [ref: > contacts.id]
+  pipeline_id uuid [ref: > pipelines.id]
+  stage_id varchar
+  name varchar
+  email varchar
+  phone varchar
+  source varchar
+  source_platform varchar
+  status varchar
+  priority varchar
+  score integer
+  inquiry_details jsonb
+  travel_preferences jsonb
+  tags "text[]"
+  notes text
+  lost_reason text
+  metadata jsonb
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table activities {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  lead_id uuid [ref: > leads.id]
+  contact_id uuid [ref: > contacts.id]
+  booking_id uuid [ref: > bookings.id]
+  assigned_to_id uuid [ref: > users.id]
+  created_by_id uuid
+  type varchar
+  status varchar
+  outcome varchar
+  subject varchar
+  description text
+  scheduled_at timestamptz
+  completed_at timestamptz
+  metadata jsonb
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+// ==========================================
+// INVENTORY & BOOKINGS MODULE
+// ==========================================
+
+Table resources {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  type varchar
+  name varchar
+  description text
+  capacity integer
+  base_price decimal
+  currency varchar
+  attributes jsonb
+  accessible_branches "uuid[]"
+  is_active boolean
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table departure_instances {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  resource_id uuid [ref: > resources.id]
+  departure_date date
+  departure_time time
+  end_date date
+  cutoff_datetime timestamptz
+  total_capacity integer
+  blocked_seats integer
+  overbooking_limit integer
+  min_participants integer
+  status varchar
+  is_guaranteed boolean
+  price_override decimal
+  currency varchar
+  attributes jsonb
+  version integer
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table bookings {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  resource_id uuid [ref: > resources.id]
+  departure_id uuid [ref: > departure_instances.id]
+  lead_id uuid [ref: > leads.id]
+  created_by_id uuid [ref: > users.id]
+  hold_id uuid [ref: > inventory_holds.id]
+  booking_number varchar
+  source varchar
+  source_platform varchar
+  external_ref varchar
+  start_date date
+  end_date date
+  status varchar
+  lifecycle_status varchar
+  status_reason varchar
+  guest_name varchar
+  guest_email varchar
+  guest_phone varchar
+  guest_count integer
+  additional_guests jsonb
+  base_amount decimal
+  tax_amount decimal
+  total_amount decimal
+  amount_paid decimal
+  amount_due decimal
+  currency varchar
+  notes text
+  metadata jsonb
+  confirmed_at timestamptz
+  cancelled_at timestamptz
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table inventory_holds {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  departure_id uuid [ref: > departure_instances.id]
+  booking_id uuid [ref: > bookings.id]
+  seat_count integer
+  source varchar
+  source_platform varchar
+  hold_type varchar
+  expires_at timestamptz
+  created_by_id uuid [ref: > users.id]
+  session_id varchar
+  notes text
+  metadata jsonb
+  created_at timestamptz
+  released_at timestamptz
+  release_reason varchar
+}
+
+Table payments {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  booking_id uuid [ref: > bookings.id]
+  payment_type varchar
+  method varchar
+  amount decimal
+  currency varchar
+  status varchar
+  gateway varchar
+  gateway_payment_id varchar
+  gateway_order_id varchar
+  gateway_response jsonb
+  payment_link_id varchar
+  payment_link_url text
+  link_expires_at timestamptz
+  link_sent_at timestamptz
+  received_by_id uuid [ref: > users.id]
+  receipt_number varchar
+  refund_amount decimal
+  refund_reason text
+  refunded_at timestamptz
+  notes text
+  created_at timestamptz
+  completed_at timestamptz
+  failed_at timestamptz
+}
+
+// ==========================================
+// HRMS MODULE
+// ==========================================
+
+Table cost_centers {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  code varchar
+  name varchar
+  description text
+  parent_id uuid [ref: > cost_centers.id]
+  budget_amount decimal
+  budget_period varchar
+  is_active boolean
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table departments {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  name varchar
+  code varchar
+  description text
+  parent_id uuid [ref: > departments.id]
+  head_employee_id uuid [ref: > employees.id]
+  budget_amount decimal
+  is_active boolean
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table employees {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  user_id uuid [ref: > users.id]
+  employee_code varchar
+  first_name varchar
+  last_name varchar
+  preferred_name varchar
+  type varchar
+  category varchar
+  branch_id uuid [ref: > branches.id]
+  department_id uuid [ref: > departments.id]
+  reporting_to uuid [ref: > employees.id]
+  cost_center_id uuid [ref: > cost_centers.id]
+  joining_date date
+  probation_end_date date
+  confirmation_date date
+  lifecycle_stage varchar
+  is_active boolean
+  contact jsonb
+  emergency_contacts jsonb
+  attributes jsonb
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table employee_timeline {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  employee_id uuid [ref: > employees.id]
+  event_type varchar
+  event_category varchar
+  title varchar
+  description text
+  previous_value jsonb
+  new_value jsonb
+  triggered_by uuid
+  created_at timestamptz
+}
+
+Table skills {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  code varchar
+  name varchar
+  category varchar
+  description text
+  is_active boolean
+}
+
+Table employee_skills {
+  id uuid [pk]
+  employee_id uuid [ref: > employees.id]
+  skill_id uuid [ref: > skills.id]
+  proficiency_level integer
+  certified_at date
+  expires_at date
+}
+
+Table documents {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  employee_id uuid [ref: > employees.id]
+  type varchar
+  name varchar
+  file_url text
+  is_verified boolean
+  expiry_date date
+}
+
+Table attendance {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  employee_id uuid [ref: > employees.id]
+  date date
+  check_in jsonb
+  check_out jsonb
+  work_hours decimal
+  overtime_hours decimal
+  type varchar
+  status varchar
+  trip_id uuid
+  created_at timestamptz
+}
+
+Table leave_types {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  code varchar
+  name varchar
+  is_paid boolean
+  max_days_per_year decimal
+}
+
+Table leave_balances {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  employee_id uuid [ref: > employees.id]
+  leave_type_id uuid [ref: > leave_types.id]
+  year integer
+  opening decimal
+  accrued decimal
+  taken decimal
+  pending decimal
+}
+
+Table leave_requests {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  employee_id uuid [ref: > employees.id]
+  leave_type_id uuid [ref: > leave_types.id]
+  from_date date
+  to_date date
+  total_days decimal
+  status varchar
+  reason text
+  replacement_employee_id uuid [ref: > employees.id]
+}
+
+Table trip_assignments {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  trip_id uuid [ref: > departure_instances.id]
+  employee_id uuid [ref: > employees.id]
+  role varchar
+  is_primary boolean
+  start_date date
+  end_date date
+  status varchar
+  total_compensation decimal
+}
+
+Table payroll {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  employee_id uuid [ref: > employees.id]
+  year integer
+  month integer
+  gross_salary decimal
+  net_salary decimal
+  status varchar
+  payment_date date
+}
+
+Table salary_advances {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  employee_id uuid [ref: > employees.id]
+  amount decimal
+  status varchar
+  repayment_months integer
+}
+
+Table availability {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  employee_id uuid [ref: > employees.id]
+  date date
+  status varchar
+  block_reason varchar
+  notes text
+  source_type varchar
+  source_id varchar
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table expense_claims {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  employee_id uuid [ref: > employees.id]
+  claim_number varchar
+  title varchar
+  description text
+  trip_id uuid
+  total_amount decimal
+  currency varchar
+  status varchar
+  submitted_at timestamptz
+  reviewed_by uuid [ref: > users.id]
+  reviewed_at timestamptz
+  approved_by uuid [ref: > users.id]
+  approved_at timestamptz
+  paid_at timestamptz
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table expense_items {
+  id uuid [pk]
+  claim_id uuid [ref: > expense_claims.id]
+  description varchar
+  category varchar
+  amount decimal
+  currency varchar
+  date date
+  payment_method varchar
+  receipt_url text
+}
+
+// ==========================================
+// VENDOR MODULE
+// ==========================================
+
+Table vendors {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  legal_name varchar
+  display_name varchar
+  vendor_type varchar
+  vendor_code varchar
+  status varchar
+  primary_contact_name varchar
+  primary_contact_phone varchar
+  primary_contact_email varchar
+  bank_name varchar
+  bank_account_number varchar
+  tax_id varchar
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table vendor_contracts {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  vendor_id uuid [ref: > vendors.id]
+  contract_number varchar
+  version integer
+  start_date date
+  end_date date
+  status varchar
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table vendor_rates {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  vendor_id uuid [ref: > vendors.id]
+  contract_id uuid [ref: > vendor_contracts.id]
+  rate_name varchar
+  rate_type varchar
+  valid_from date
+  valid_until date
+  base_rate decimal
+  currency varchar
+  is_active boolean
+}
+
+Table vendor_assignments {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  vendor_id uuid [ref: > vendors.id]
+  booking_id uuid [ref: > bookings.id]
+  resource_id uuid [ref: > resources.id]
+  departure_id uuid [ref: > departure_instances.id]
+  assignment_type varchar
+  service_start_date date
+  service_end_date date
+  rate_id uuid [ref: > vendor_rates.id]
+  net_amount decimal
+  status varchar
+  created_at timestamptz
+  updated_at timestamptz
+}
+
+Table vendor_payables {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  vendor_id uuid [ref: > vendors.id]
+  assignment_id uuid [ref: > vendor_assignments.id]
+  payable_number varchar
+  net_payable decimal
+  due_date date
+  status varchar
+  amount_settled decimal
+}
+
+Table vendor_settlements {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  vendor_id uuid [ref: > vendors.id]
+  settlement_number varchar
+  amount decimal
+  payment_method varchar
+  payment_reference varchar
+  payment_date date
+  is_verified boolean
+}
+
+// ==========================================
+// GEAR MODULE
+// ==========================================
+
+Table gear_warehouses {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  name varchar
+  code varchar
+  type varchar
+  city varchar
+  is_active boolean
+}
+
+Table gear_categories {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  parent_id uuid [ref: > gear_categories.id]
+  name varchar
+  type varchar
+  is_safety_critical boolean
+}
+
+Table gear_items {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  category_id uuid [ref: > gear_categories.id]
+  sku varchar
+  name varchar
+  brand varchar
+  serial_number varchar
+  ownership_type varchar
+  vendor_id uuid [ref: > vendors.id]
+  condition varchar
+  warehouse_id uuid [ref: > gear_warehouses.id]
+  is_active boolean
+}
+
+Table gear_inventory {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  gear_item_id uuid [ref: > gear_items.id, unique]
+  warehouse_id uuid [ref: > gear_warehouses.id]
+  status varchar
+  trip_id uuid
+  rental_id uuid [ref: > gear_rentals.id]
+  assigned_to_user_id uuid [ref: > users.id]
+}
+
+Table gear_assignments {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  trip_id uuid
+  booking_id uuid [ref: > bookings.id]
+  gear_item_id uuid [ref: > gear_items.id]
+  status varchar
+  assigned_to_user_id uuid [ref: > users.id]
+  actual_issue_date timestamptz
+  actual_return_date timestamptz
+}
+
+Table gear_rentals {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  rental_number varchar
+  status varchar
+  customer_name varchar
+  start_date date
+  end_date date
+  total_amount decimal
+}
+
+// ==========================================
+// ACCOUNTING MODULE
+// ==========================================
+
+Table accounts {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  code varchar
+  name varchar
+  account_type varchar
+  normal_balance varchar
+  parent_account_id uuid [ref: > accounts.id]
+  is_header boolean
+  is_system_account boolean
+  status varchar
+}
+
+Table journal_entries {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  entry_number varchar
+  entry_date date
+  entry_type varchar
+  status varchar
+  description text
+  source_module varchar
+  source_record_id uuid
+  total_debit decimal
+  total_credit decimal
+  created_by uuid [ref: > users.id]
+}
+
+Table journal_lines {
+  id uuid [pk]
+  journal_entry_id uuid [ref: > journal_entries.id]
+  account_id uuid [ref: > accounts.id]
+  debit_amount decimal
+  credit_amount decimal
+  branch_id uuid [ref: > branches.id]
+  trip_id uuid
+  booking_id uuid [ref: > bookings.id]
+  vendor_id uuid [ref: > vendors.id]
+}
+
+Table ledger_entries {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  account_id uuid [ref: > accounts.id]
+  journal_entry_id uuid [ref: > journal_entries.id]
+  entry_date date
+  debit_amount decimal
+  credit_amount decimal
+  running_balance decimal
+}
+
+// ==========================================
+// WHATSAPP MODULE
+// ==========================================
+
+Table whatsapp_conversations {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  whatsapp_thread_id varchar
+  primary_actor_phone varchar
+  primary_actor_name varchar
+  state varchar
+  last_activity_at timestamptz
+}
+
+Table whatsapp_messages {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  conversation_id uuid [ref: > whatsapp_conversations.id]
+  direction varchar
+  message_type varchar
+  status varchar
+  linked_lead_id uuid [ref: > leads.id]
+  linked_booking_id uuid [ref: > bookings.id]
+}
+
+Table whatsapp_conversation_entities {
+  id uuid [pk]
+  conversation_id uuid [ref: > whatsapp_conversations.id]
+  entity_type varchar
+  entity_id uuid
+  is_primary boolean
+}
+
+Table whatsapp_templates {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  template_name varchar
+  category varchar
+  use_case varchar
+  body_content text
+  status varchar
+}
+
+Table whatsapp_opt_ins {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  phone_number varchar
+  status varchar
+  opt_in_date timestamptz
+}
+
+Table unified_timeline {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  lead_id uuid [ref: > leads.id]
+  booking_id uuid [ref: > bookings.id]
+  departure_id uuid [ref: > departure_instances.id]
+  source varchar
+  entry_type varchar
+  title varchar
+  occurred_at timestamptz
+}
+
+// ==========================================
+// ANALYTICS & REPORTING
+// ==========================================
+
+Table custom_metrics {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  name varchar
+  dataset varchar
+  expression jsonb
+}
+
+Table dashboard_layouts {
+  id uuid [pk]
+  tenant_id uuid [ref: > tenants.id]
+  user_id uuid [ref: > users.id]
+  name varchar
+  config jsonb
+}
