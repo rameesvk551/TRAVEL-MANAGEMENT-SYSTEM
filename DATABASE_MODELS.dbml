@@ -1,0 +1,1475 @@
+// Travel Management System - Complete Database Schema
+// Generated from Sequelize (PostgreSQL) + Mongoose (MongoDB) Models
+// Date: December 31, 2025
+
+Project TravelManagementSystem {
+  database_type: 'PostgreSQL + MongoDB'
+  Note: '''
+    # Travel Management System Database
+    
+    A comprehensive multi-tenant travel management platform featuring:
+    - Multi-branch organizational structure
+    - CRM with leads and pipelines
+    - Booking and inventory management
+    - HRMS with employee lifecycle
+    - Vendor management
+    - Gear/equipment tracking
+    - Double-entry accounting
+    - WhatsApp integration
+    - Custom analytics and dashboards
+    
+    ## Architecture
+    - **PostgreSQL (Sequelize)**: Core relational data with ACID compliance
+    - **MongoDB (Mongoose)**: Extended attributes, flexible schemas, nested documents
+    
+    MongoDB collections extend PostgreSQL tables for flexible/nested data.
+  '''
+}
+
+// ============================================================================
+// CORE MODULE - Multi-Tenant Foundation
+// ============================================================================
+
+Table tenants {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  name varchar [not null]
+  slug varchar [not null, unique, note: 'URL-friendly unique identifier']
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Root entity for multi-tenant architecture. All data is scoped to a tenant.'
+}
+
+Table branches {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  name varchar [not null]
+  code varchar [not null, note: 'Branch code for internal reference']
+  type varchar [not null, note: 'e.g., headquarters, regional, franchise']
+  address_line1 varchar
+  address_line2 varchar
+  city varchar
+  state varchar
+  country varchar
+  postal_code varchar
+  phone varchar
+  email varchar
+  latitude decimal
+  longitude decimal
+  timezone varchar
+  parent_branch_id uuid [ref: > branches.id, note: 'For hierarchical branch structure']
+  manager_id uuid [ref: > users.id]
+  currency varchar [note: 'Default currency for this branch']
+  description text
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (tenant_id, code) [unique]
+  }
+  
+  Note: 'Physical or virtual locations within an organization. Supports hierarchical structure.'
+}
+
+Table users {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  email varchar [not null, unique]
+  password_hash varchar [not null]
+  name varchar [not null]
+  role varchar [not null, note: 'e.g., admin, manager, staff, viewer']
+  is_active boolean [default: true]
+  department_id uuid [ref: > departments.id]
+  salary decimal
+  joining_date date
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'System users with authentication and authorization capabilities.'
+}
+
+// ============================================================================
+// CRM MODULE - Customer Relationship Management
+// ============================================================================
+
+Table contacts {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  email varchar
+  phone varchar
+  whatsapp varchar
+  first_name varchar [not null]
+  last_name varchar
+  marketing_consent boolean [default: false]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Customer contact information. Can be linked to leads and bookings.'
+}
+
+Table pipelines {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  name varchar [not null]
+  is_default boolean [default: false]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Sales pipelines for lead management. Stages are stored in MongoDB for flexibility.'
+}
+
+Table leads {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  assigned_to_id uuid [ref: > users.id]
+  contact_id uuid [ref: > contacts.id]
+  pipeline_id uuid [ref: > pipelines.id]
+  stage_id varchar [note: 'Current stage within the pipeline']
+  name varchar [not null]
+  email varchar
+  phone varchar
+  source varchar [note: 'e.g., website, referral, social_media']
+  source_platform varchar [note: 'Specific platform like Facebook, Instagram']
+  status varchar [note: 'e.g., new, contacted, qualified, lost, converted']
+  priority varchar [note: 'e.g., low, medium, high']
+  score integer [note: 'Lead scoring value']
+  notes text
+  lost_reason text
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Sales leads tracked through the pipeline. Can convert to bookings.'
+}
+
+Table activities {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  lead_id uuid [ref: > leads.id]
+  contact_id uuid [ref: > contacts.id]
+  booking_id uuid [ref: > bookings.id]
+  assigned_to_id uuid [ref: > users.id]
+  created_by_id uuid [ref: > users.id]
+  type varchar [not null, note: 'e.g., call, email, meeting, task, note']
+  status varchar [default: 'pending', note: 'e.g., pending, completed, cancelled']
+  outcome varchar [note: 'Result of the activity']
+  subject varchar
+  description text
+  scheduled_at timestamp
+  completed_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'CRM activities linked to leads, contacts, or bookings.'
+}
+
+// ============================================================================
+// INVENTORY & BOOKINGS MODULE
+// ============================================================================
+
+Table resources {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  type varchar [not null, note: 'e.g., tour, package, vehicle, room']
+  name varchar [not null]
+  description text
+  capacity integer [note: 'Maximum capacity per departure']
+  base_price decimal
+  currency varchar
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Bookable resources like tours, packages, vehicles, or rooms.'
+}
+
+Table departure_instances {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  resource_id uuid [not null, ref: > resources.id]
+  departure_date date [not null]
+  departure_time time
+  end_date date
+  cutoff_datetime timestamp [note: 'Booking cutoff time']
+  total_capacity integer
+  blocked_seats integer [note: 'Seats blocked for internal use']
+  overbooking_limit integer [note: 'Allowed overbooking count']
+  min_participants integer [note: 'Minimum for departure guarantee']
+  status varchar [default: 'scheduled', note: 'scheduled, confirmed, cancelled, completed']
+  is_guaranteed boolean [default: false, note: 'Departure confirmed to run']
+  price_override decimal
+  currency varchar
+  version integer [default: 1, note: 'For optimistic locking']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (resource_id, departure_date)
+  }
+  
+  Note: 'Specific instances/departures of a resource with inventory management.'
+}
+
+Table bookings {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  resource_id uuid [ref: > resources.id]
+  departure_id uuid [ref: > departure_instances.id]
+  lead_id uuid [ref: > leads.id]
+  created_by_id uuid [ref: > users.id]
+  hold_id uuid [ref: > inventory_holds.id]
+  booking_number varchar [not null, unique]
+  source varchar [note: 'e.g., direct, agent, website, api']
+  source_platform varchar
+  external_ref varchar [note: 'External system reference']
+  start_date date
+  end_date date
+  status varchar [default: 'pending', note: 'pending, confirmed, cancelled, completed']
+  lifecycle_status varchar [note: 'Detailed lifecycle tracking']
+  status_reason varchar
+  guest_name varchar [not null]
+  guest_email varchar
+  guest_phone varchar
+  guest_count integer
+  base_amount decimal
+  tax_amount decimal
+  total_amount decimal
+  amount_paid decimal
+  amount_due decimal
+  currency varchar
+  notes text
+  confirmed_at timestamp
+  cancelled_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Customer bookings with full financial tracking.'
+}
+
+Table inventory_holds {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  departure_id uuid [not null, ref: > departure_instances.id]
+  booking_id uuid [ref: > bookings.id]
+  seat_count integer [not null]
+  source varchar
+  source_platform varchar
+  hold_type varchar [not null, note: 'temporary, confirmed, blocked']
+  expires_at timestamp [not null]
+  created_by_id uuid [ref: > users.id]
+  session_id varchar [note: 'Browser session for anonymous holds']
+  notes text
+  created_at timestamp [default: `now()`]
+  released_at timestamp
+  release_reason varchar
+  
+  Note: 'Temporary or permanent seat reservations for inventory management.'
+}
+
+Table payments {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  booking_id uuid [not null, ref: > bookings.id]
+  payment_type varchar [not null, note: 'deposit, partial, full, refund']
+  method varchar [note: 'cash, card, upi, bank_transfer, gateway']
+  amount decimal [not null]
+  currency varchar
+  status varchar [default: 'pending', note: 'pending, completed, failed, refunded']
+  gateway varchar [note: 'razorpay, stripe, etc.']
+  gateway_payment_id varchar
+  gateway_order_id varchar
+  payment_link_id varchar
+  payment_link_url text
+  link_expires_at timestamp
+  link_sent_at timestamp
+  received_by_id uuid [ref: > users.id]
+  receipt_number varchar
+  refund_amount decimal
+  refund_reason text
+  refunded_at timestamp
+  notes text
+  created_at timestamp [default: `now()`]
+  completed_at timestamp
+  failed_at timestamp
+  
+  Note: 'Payment records with gateway integration support.'
+}
+
+// ============================================================================
+// HRMS MODULE - Human Resource Management System
+// ============================================================================
+
+Table cost_centers {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  code varchar [not null]
+  name varchar [not null]
+  description text
+  parent_id uuid [ref: > cost_centers.id]
+  budget_amount decimal
+  budget_period varchar [note: 'monthly, quarterly, yearly']
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Cost centers for expense tracking and budgeting.'
+}
+
+Table departments {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  name varchar [not null]
+  code varchar
+  description text
+  parent_id uuid [ref: > departments.id]
+  head_employee_id uuid [ref: > employees.id]
+  budget_amount decimal
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Organizational departments with hierarchical structure.'
+}
+
+Table employees {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  user_id uuid [ref: > users.id, note: 'Link to system user account']
+  employee_code varchar [not null]
+  first_name varchar [not null]
+  last_name varchar
+  preferred_name varchar
+  type varchar [note: 'full_time, part_time, contract, freelance']
+  category varchar [note: 'guide, driver, office, management']
+  branch_id uuid [ref: > branches.id]
+  department_id uuid [ref: > departments.id]
+  reporting_to uuid [ref: > employees.id]
+  cost_center_id uuid [ref: > cost_centers.id]
+  joining_date date
+  probation_end_date date
+  confirmation_date date
+  lifecycle_stage varchar [note: 'probation, confirmed, notice_period, exited']
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (tenant_id, employee_code) [unique]
+  }
+  
+  Note: 'Employee master data with organizational relationships.'
+}
+
+Table employee_timeline {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  employee_id uuid [not null, ref: > employees.id]
+  event_type varchar [not null, note: 'hire, promotion, transfer, salary_change, exit']
+  event_category varchar
+  title varchar [not null]
+  description text
+  triggered_by uuid [ref: > users.id]
+  created_at timestamp [default: `now()`]
+  
+  Note: 'Chronological record of employee lifecycle events.'
+}
+
+Table skills {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  code varchar [not null]
+  name varchar [not null]
+  category varchar [note: 'technical, soft, language, certification']
+  description text
+  is_active boolean [default: true]
+  
+  Note: 'Skill definitions for employee competency tracking.'
+}
+
+Table employee_skills {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  employee_id uuid [not null, ref: > employees.id]
+  skill_id uuid [not null, ref: > skills.id]
+  proficiency_level integer [note: '1-5 scale']
+  certified_at date
+  expires_at date [note: 'For certifications with expiry']
+  
+  indexes {
+    (employee_id, skill_id) [unique]
+  }
+  
+  Note: 'Employee skill assignments with proficiency levels.'
+}
+
+Table documents {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  employee_id uuid [not null, ref: > employees.id]
+  type varchar [not null, note: 'passport, id_card, license, certificate']
+  name varchar [not null]
+  file_url text
+  is_verified boolean [default: false]
+  expiry_date date
+  
+  Note: 'Employee document storage with verification and expiry tracking.'
+}
+
+Table attendance {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  employee_id uuid [not null, ref: > employees.id]
+  date date [not null]
+  work_hours decimal
+  overtime_hours decimal
+  type varchar [note: 'regular, remote, on_trip, holiday']
+  status varchar [note: 'present, absent, half_day, leave']
+  trip_id uuid [ref: > departure_instances.id]
+  created_at timestamp [default: `now()`]
+  
+  indexes {
+    (employee_id, date) [unique]
+  }
+  
+  Note: 'Daily attendance records with work hour tracking.'
+}
+
+Table leave_types {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  code varchar [not null]
+  name varchar [not null]
+  is_paid boolean [default: true]
+  max_days_per_year decimal
+  
+  Note: 'Leave type definitions with annual limits.'
+}
+
+Table leave_balances {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  employee_id uuid [not null, ref: > employees.id]
+  leave_type_id uuid [not null, ref: > leave_types.id]
+  year integer [not null]
+  opening decimal [note: 'Opening balance for the year']
+  accrued decimal [note: 'Earned during the year']
+  taken decimal [note: 'Already used']
+  pending decimal [note: 'Pending approval']
+  
+  indexes {
+    (employee_id, leave_type_id, year) [unique]
+  }
+  
+  Note: 'Annual leave balance tracking per employee per leave type.'
+}
+
+Table leave_requests {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  employee_id uuid [not null, ref: > employees.id]
+  leave_type_id uuid [not null, ref: > leave_types.id]
+  from_date date [not null]
+  to_date date [not null]
+  total_days decimal
+  status varchar [default: 'pending', note: 'pending, approved, rejected, cancelled']
+  reason text
+  replacement_employee_id uuid [ref: > employees.id]
+  
+  Note: 'Leave requests with approval workflow.'
+}
+
+Table trip_assignments {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  trip_id uuid [not null, ref: > departure_instances.id]
+  employee_id uuid [not null, ref: > employees.id]
+  role varchar [note: 'guide, driver, coordinator, photographer']
+  is_primary boolean [default: false]
+  start_date date
+  end_date date
+  status varchar [note: 'assigned, confirmed, completed, cancelled']
+  total_compensation decimal
+  
+  indexes {
+    (trip_id, employee_id) [unique]
+  }
+  
+  Note: 'Staff assignments to trips/departures.'
+}
+
+Table payroll {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  employee_id uuid [not null, ref: > employees.id]
+  year integer [not null]
+  month integer [not null]
+  gross_salary decimal
+  net_salary decimal
+  status varchar [note: 'draft, processed, paid']
+  payment_date date
+  
+  indexes {
+    (employee_id, year, month) [unique]
+  }
+  
+  Note: 'Monthly payroll records.'
+}
+
+Table salary_advances {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  employee_id uuid [not null, ref: > employees.id]
+  amount decimal [not null]
+  status varchar [note: 'pending, approved, disbursed, repaid']
+  repayment_months integer
+  
+  Note: 'Salary advance requests and tracking.'
+}
+
+Table availability {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  employee_id uuid [not null, ref: > employees.id]
+  date date [not null]
+  status varchar [not null, note: 'available, blocked, on_leave, assigned']
+  block_reason varchar
+  notes text
+  source_type varchar [note: 'manual, leave, trip, calendar']
+  source_id varchar
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  indexes {
+    (employee_id, date) [unique]
+  }
+  
+  Note: 'Employee availability calendar for scheduling.'
+}
+
+Table expense_claims {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  employee_id uuid [not null, ref: > employees.id]
+  claim_number varchar [not null]
+  title varchar [not null]
+  description text
+  trip_id uuid [ref: > departure_instances.id]
+  total_amount decimal
+  currency varchar
+  status varchar [default: 'draft', note: 'draft, submitted, reviewed, approved, rejected, paid']
+  submitted_at timestamp
+  reviewed_by uuid [ref: > users.id]
+  reviewed_at timestamp
+  approved_by uuid [ref: > users.id]
+  approved_at timestamp
+  paid_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Expense reimbursement claims with approval workflow.'
+}
+
+Table expense_items {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  claim_id uuid [not null, ref: > expense_claims.id]
+  description varchar [not null]
+  category varchar [note: 'food, transport, accommodation, equipment']
+  amount decimal [not null]
+  currency varchar
+  date date
+  payment_method varchar
+  receipt_url text
+  
+  Note: 'Individual expense line items within a claim.'
+}
+
+// ============================================================================
+// VENDOR MODULE
+// ============================================================================
+
+Table vendors {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  legal_name varchar [not null]
+  display_name varchar
+  vendor_type varchar [note: 'hotel, transport, activity, guide, equipment']
+  vendor_code varchar
+  status varchar [default: 'active', note: 'active, inactive, suspended']
+  primary_contact_name varchar
+  primary_contact_phone varchar
+  primary_contact_email varchar
+  bank_name varchar
+  bank_account_number varchar
+  tax_id varchar
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Third-party service providers and suppliers.'
+}
+
+Table vendor_contracts {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  vendor_id uuid [not null, ref: > vendors.id]
+  contract_number varchar
+  version integer [default: 1]
+  start_date date
+  end_date date
+  status varchar [default: 'draft', note: 'draft, active, expired, terminated']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Vendor contract management with versioning.'
+}
+
+Table vendor_rates {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  vendor_id uuid [not null, ref: > vendors.id]
+  contract_id uuid [ref: > vendor_contracts.id]
+  rate_name varchar [not null]
+  rate_type varchar [note: 'per_person, per_unit, flat']
+  valid_from date
+  valid_until date
+  base_rate decimal
+  currency varchar
+  is_active boolean [default: true]
+  
+  Note: 'Vendor pricing rates tied to contracts.'
+}
+
+Table vendor_assignments {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  vendor_id uuid [not null, ref: > vendors.id]
+  booking_id uuid [ref: > bookings.id]
+  resource_id uuid [ref: > resources.id]
+  departure_id uuid [ref: > departure_instances.id]
+  assignment_type varchar [note: 'service_provider, ground_handler']
+  service_start_date date
+  service_end_date date
+  rate_id uuid [ref: > vendor_rates.id]
+  net_amount decimal
+  status varchar [default: 'pending', note: 'pending, confirmed, completed, cancelled']
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Note: 'Vendor assignments to bookings or departures.'
+}
+
+Table vendor_payables {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  vendor_id uuid [not null, ref: > vendors.id]
+  assignment_id uuid [ref: > vendor_assignments.id]
+  payable_number varchar
+  net_payable decimal
+  due_date date
+  status varchar [default: 'pending', note: 'pending, partial, settled']
+  amount_settled decimal
+  
+  Note: 'Amounts payable to vendors.'
+}
+
+Table vendor_settlements {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  vendor_id uuid [not null, ref: > vendors.id]
+  settlement_number varchar
+  amount decimal
+  payment_method varchar
+  payment_reference varchar
+  payment_date date
+  is_verified boolean [default: false]
+  
+  Note: 'Payments made to vendors.'
+}
+
+// ============================================================================
+// GEAR MODULE - Equipment Management
+// ============================================================================
+
+Table gear_warehouses {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  name varchar [not null]
+  code varchar
+  type varchar [note: 'main, satellite, mobile']
+  city varchar
+  is_active boolean [default: true]
+  
+  Note: 'Storage locations for equipment.'
+}
+
+Table gear_categories {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  parent_id uuid [ref: > gear_categories.id]
+  name varchar [not null]
+  type varchar [note: 'consumable, reusable, safety']
+  is_safety_critical boolean [default: false]
+  
+  Note: 'Hierarchical equipment categories.'
+}
+
+Table gear_items {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  category_id uuid [ref: > gear_categories.id]
+  sku varchar
+  name varchar [not null]
+  brand varchar
+  serial_number varchar
+  ownership_type varchar [note: 'owned, rented, vendor']
+  vendor_id uuid [ref: > vendors.id]
+  condition varchar [note: 'new, good, fair, poor, retired']
+  warehouse_id uuid [ref: > gear_warehouses.id]
+  is_active boolean [default: true]
+  
+  Note: 'Individual equipment items with tracking.'
+}
+
+Table gear_inventory {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  gear_item_id uuid [not null, unique, ref: > gear_items.id]
+  warehouse_id uuid [ref: > gear_warehouses.id]
+  status varchar [note: 'available, assigned, maintenance, retired']
+  trip_id uuid [ref: > departure_instances.id]
+  rental_id uuid [ref: > gear_rentals.id]
+  assigned_to_user_id uuid [ref: > users.id]
+  
+  Note: 'Real-time inventory status for each gear item.'
+}
+
+Table gear_assignments {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  trip_id uuid [ref: > departure_instances.id]
+  booking_id uuid [ref: > bookings.id]
+  gear_item_id uuid [not null, ref: > gear_items.id]
+  status varchar [note: 'reserved, issued, returned, lost']
+  assigned_to_user_id uuid [ref: > users.id]
+  actual_issue_date timestamp
+  actual_return_date timestamp
+  
+  Note: 'Equipment assignments to trips or bookings.'
+}
+
+Table gear_rentals {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  rental_number varchar
+  status varchar [note: 'draft, active, completed, cancelled']
+  customer_name varchar
+  start_date date
+  end_date date
+  total_amount decimal
+  
+  Note: 'Equipment rental orders for external customers.'
+}
+
+// ============================================================================
+// ACCOUNTING MODULE - Double-Entry Bookkeeping
+// ============================================================================
+
+Table accounts {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  code varchar [not null]
+  name varchar [not null]
+  account_type varchar [not null, note: 'asset, liability, equity, revenue, expense']
+  normal_balance varchar [note: 'debit, credit']
+  parent_account_id uuid [ref: > accounts.id]
+  is_header boolean [default: false, note: 'Summary account only']
+  is_system_account boolean [default: false]
+  status varchar [default: 'active']
+  
+  indexes {
+    (tenant_id, code) [unique]
+  }
+  
+  Note: 'Chart of Accounts with hierarchical structure.'
+}
+
+Table journal_entries {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  entry_number varchar [not null]
+  entry_date date [not null]
+  entry_type varchar [note: 'manual, auto, reversal']
+  status varchar [default: 'draft', note: 'draft, posted, reversed']
+  description text
+  source_module varchar [note: 'booking, payment, payroll, vendor']
+  source_record_id uuid
+  total_debit decimal
+  total_credit decimal
+  created_by uuid [ref: > users.id]
+  
+  Note: 'Journal entries for double-entry bookkeeping.'
+}
+
+Table journal_lines {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  journal_entry_id uuid [not null, ref: > journal_entries.id]
+  account_id uuid [not null, ref: > accounts.id]
+  debit_amount decimal
+  credit_amount decimal
+  branch_id uuid [ref: > branches.id]
+  trip_id uuid [ref: > departure_instances.id]
+  booking_id uuid [ref: > bookings.id]
+  vendor_id uuid [ref: > vendors.id]
+  
+  Note: 'Individual debit/credit lines within a journal entry.'
+}
+
+Table ledger_entries {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  branch_id uuid [ref: > branches.id]
+  account_id uuid [not null, ref: > accounts.id]
+  journal_entry_id uuid [not null, ref: > journal_entries.id]
+  entry_date date [not null]
+  debit_amount decimal
+  credit_amount decimal
+  running_balance decimal
+  
+  indexes {
+    (account_id, entry_date)
+  }
+  
+  Note: 'Account ledger with running balances.'
+}
+
+// ============================================================================
+// WHATSAPP MODULE - Messaging Integration
+// ============================================================================
+
+Table whatsapp_conversations {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  whatsapp_thread_id varchar [note: 'External WhatsApp thread ID']
+  primary_actor_phone varchar
+  primary_actor_name varchar
+  state varchar [note: 'active, archived, blocked']
+  last_activity_at timestamp
+  
+  Note: 'WhatsApp conversation threads.'
+}
+
+Table whatsapp_messages {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  conversation_id uuid [not null, ref: > whatsapp_conversations.id]
+  direction varchar [note: 'inbound, outbound']
+  message_type varchar [note: 'text, image, document, template']
+  status varchar [note: 'sent, delivered, read, failed']
+  linked_lead_id uuid [ref: > leads.id]
+  linked_booking_id uuid [ref: > bookings.id]
+  
+  Note: 'Individual WhatsApp messages with entity linking.'
+}
+
+Table whatsapp_conversation_entities {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  conversation_id uuid [not null, ref: > whatsapp_conversations.id]
+  entity_type varchar [not null, note: 'lead, contact, booking']
+  entity_id uuid [not null]
+  is_primary boolean [default: false]
+  
+  Note: 'Links conversations to CRM entities.'
+}
+
+Table whatsapp_templates {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  template_name varchar [not null]
+  category varchar [note: 'marketing, utility, authentication']
+  use_case varchar
+  body_content text
+  status varchar [default: 'draft', note: 'draft, pending, approved, rejected']
+  
+  Note: 'WhatsApp message templates for business messaging.'
+}
+
+Table whatsapp_opt_ins {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  phone_number varchar [not null]
+  status varchar [default: 'pending', note: 'pending, opted_in, opted_out']
+  opt_in_date timestamp
+  
+  indexes {
+    (tenant_id, phone_number) [unique]
+  }
+  
+  Note: 'WhatsApp opt-in consent tracking for compliance.'
+}
+
+// ============================================================================
+// ANALYTICS & REPORTING MODULE
+// ============================================================================
+
+Table unified_timeline {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  lead_id uuid [ref: > leads.id]
+  booking_id uuid [ref: > bookings.id]
+  departure_id uuid [ref: > departure_instances.id]
+  source varchar [note: 'crm, booking, whatsapp, payment']
+  entry_type varchar
+  title varchar [not null]
+  occurred_at timestamp
+  
+  indexes {
+    (lead_id, occurred_at)
+    (booking_id, occurred_at)
+  }
+  
+  Note: 'Unified activity timeline across all modules.'
+}
+
+Table custom_metrics {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  name varchar [not null]
+  dataset varchar [note: 'leads, bookings, revenue, etc.']
+  
+  Note: 'Custom metric definitions for dashboards.'
+}
+
+Table dashboard_layouts {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  tenant_id uuid [not null, ref: > tenants.id]
+  user_id uuid [ref: > users.id]
+  name varchar [not null]
+  
+  Note: 'User-customizable dashboard configurations.'
+}
+
+// ============================================================================
+// TABLE GROUPS FOR VISUALIZATION
+// ============================================================================
+
+TableGroup core {
+  tenants
+  branches
+  users
+}
+
+TableGroup crm {
+  contacts
+  pipelines
+  leads
+  activities
+}
+
+TableGroup inventory_bookings {
+  resources
+  departure_instances
+  bookings
+  inventory_holds
+  payments
+}
+
+TableGroup hrms {
+  cost_centers
+  departments
+  employees
+  employee_timeline
+  skills
+  employee_skills
+  documents
+  attendance
+  leave_types
+  leave_balances
+  leave_requests
+  trip_assignments
+  payroll
+  salary_advances
+  availability
+  expense_claims
+  expense_items
+}
+
+TableGroup vendor_management {
+  vendors
+  vendor_contracts
+  vendor_rates
+  vendor_assignments
+  vendor_payables
+  vendor_settlements
+}
+
+TableGroup gear_equipment {
+  gear_warehouses
+  gear_categories
+  gear_items
+  gear_inventory
+  gear_assignments
+  gear_rentals
+}
+
+TableGroup accounting {
+  accounts
+  journal_entries
+  journal_lines
+  ledger_entries
+}
+
+TableGroup whatsapp {
+  whatsapp_conversations
+  whatsapp_messages
+  whatsapp_conversation_entities
+  whatsapp_templates
+  whatsapp_opt_ins
+}
+
+TableGroup analytics {
+  unified_timeline
+  custom_metrics
+  dashboard_layouts
+}
+
+// ============================================================================
+// ============================================================================
+// MONGODB (MONGOOSE) COLLECTIONS - Extended/Flexible Data
+// ============================================================================
+// ============================================================================
+
+// ============================================================================
+// CORE MODULE EXTENSIONS (MongoDB)
+// ============================================================================
+
+Table mongo_tenant_settings [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  tenant_id varchar [not null, unique, ref: > tenants.id, note: 'Links to PostgreSQL tenants']
+  branding__logo_url varchar
+  branding__primary_color varchar
+  branding__secondary_color varchar
+  features__crm_enabled boolean [default: true]
+  features__hrms_enabled boolean [default: true]
+  features__inventory_enabled boolean [default: true]
+  features__accounting_enabled boolean [default: true]
+  features__whatsapp_enabled boolean [default: false]
+  integrations__payment_gateway varchar
+  integrations__email_provider varchar
+  integrations__sms_provider varchar
+  custom_fields json [note: 'Flexible custom fields']
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Extended tenant configuration with flexible feature flags and branding.'
+}
+
+Table mongo_user_profiles [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  user_id varchar [not null, unique, ref: > users.id, note: 'Links to PostgreSQL users']
+  tenant_id varchar [not null, ref: > tenants.id]
+  avatar_url varchar
+  phone varchar
+  address__line1 varchar
+  address__line2 varchar
+  address__city varchar
+  address__state varchar
+  address__country varchar
+  address__postal_code varchar
+  preferences__language varchar [default: 'en']
+  preferences__timezone varchar
+  preferences__date_format varchar [default: 'YYYY-MM-DD']
+  preferences__notifications__email boolean [default: true]
+  preferences__notifications__push boolean [default: true]
+  preferences__notifications__sms boolean [default: false]
+  accessible_branches "varchar[]" [note: 'Array of branch IDs user can access']
+  custom_fields json
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Extended user profile with preferences, notifications, and multi-branch access.'
+}
+
+Table mongo_branch_settings [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  branch_id varchar [not null, unique, ref: > branches.id, note: 'Links to PostgreSQL branches']
+  tenant_id varchar [not null, ref: > tenants.id]
+  settings__booking_confirmation_email boolean [default: true]
+  settings__auto_assign_leads boolean [default: false]
+  settings__default_currency varchar [default: 'USD']
+  settings__tax_rate decimal
+  operating_hours__monday json [note: '{open, close, closed}']
+  operating_hours__tuesday json
+  operating_hours__wednesday json
+  operating_hours__thursday json
+  operating_hours__friday json
+  operating_hours__saturday json
+  operating_hours__sunday json
+  custom_fields json
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Branch-specific settings including operating hours and configurations.'
+}
+
+// ============================================================================
+// CRM MODULE EXTENSIONS (MongoDB)
+// ============================================================================
+
+Table mongo_contact_extended [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  contact_id varchar [not null, unique, ref: > contacts.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  tags "varchar[]" [note: 'Flexible tagging system']
+  travel_history json [note: 'Array: {destination, date, booking_id, trip_type, notes}']
+  preferences__preferred_destinations "varchar[]"
+  preferences__dietary_requirements "varchar[]"
+  preferences__accommodation_type varchar
+  preferences__travel_class varchar
+  preferences__special_needs varchar
+  preferences__interests "varchar[]"
+  social_handles__facebook varchar
+  social_handles__instagram varchar
+  social_handles__twitter varchar
+  social_handles__linkedin varchar
+  custom_fields json
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Extended contact data with travel history, preferences, and social handles.'
+}
+
+Table mongo_pipeline_stages [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  pipeline_id varchar [not null, unique, ref: > pipelines.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  stages json [note: 'Array: {id, name, order, color, probability, is_won, is_lost, auto_actions[]}']
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: '''
+    Pipeline stage definitions with flexible configuration.
+    Stages array contains:
+    - id: Unique stage identifier
+    - name: Display name
+    - order: Sort order (0-based)
+    - color: Hex color for UI
+    - probability: Win probability (0-100)
+    - is_won/is_lost: Terminal stage flags
+    - auto_actions: Automation triggers
+  '''
+}
+
+Table mongo_lead_extended [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  lead_id varchar [not null, unique, ref: > leads.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  tags "varchar[]"
+  inquiry_details__destination varchar
+  inquiry_details__travel_dates__start date
+  inquiry_details__travel_dates__end date
+  inquiry_details__travel_dates__flexible boolean
+  inquiry_details__group_size integer
+  inquiry_details__budget__min decimal
+  inquiry_details__budget__max decimal
+  inquiry_details__budget__currency varchar
+  inquiry_details__special_requests text
+  inquiry_details__source_campaign varchar
+  travel_preferences__accommodation_type varchar
+  travel_preferences__travel_class varchar
+  travel_preferences__dietary_requirements "varchar[]"
+  travel_preferences__interests "varchar[]"
+  travel_preferences__activity_level varchar
+  metadata__utm_source varchar
+  metadata__utm_medium varchar
+  metadata__utm_campaign varchar
+  metadata__landing_page varchar
+  metadata__referrer varchar
+  metadata__device varchar
+  metadata__browser varchar
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Extended lead data with detailed inquiry, travel preferences, and UTM tracking.'
+}
+
+Table mongo_activity_metadata [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  activity_id varchar [not null, unique, ref: > activities.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  metadata__call_duration integer [note: 'Duration in seconds']
+  metadata__call_recording_url varchar
+  metadata__email_template_id varchar
+  metadata__email_opens integer
+  metadata__email_clicks integer
+  metadata__meeting_link varchar
+  metadata__meeting_attendees "varchar[]"
+  metadata__location varchar
+  metadata__attachments json [note: 'Array: {name, url, type}']
+  metadata__custom_data json
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Extended activity metadata for calls, emails, meetings with tracking.'
+}
+
+// ============================================================================
+// INVENTORY & BOOKINGS MODULE EXTENSIONS (MongoDB)
+// ============================================================================
+
+Table mongo_resource_attributes [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  resource_id varchar [not null, unique, ref: > resources.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  accessible_branches "varchar[]" [note: 'Branch IDs that can book this resource']
+  attributes__difficulty_level varchar [note: 'easy, moderate, challenging, expert']
+  attributes__duration_hours decimal
+  attributes__included_items "varchar[]"
+  attributes__excluded_items "varchar[]"
+  attributes__requirements "varchar[]" [note: 'Prerequisites for participants']
+  attributes__meeting_point__address varchar
+  attributes__meeting_point__coordinates__lat decimal
+  attributes__meeting_point__coordinates__lng decimal
+  attributes__itinerary json [note: 'Array: {day, title, description, activities[]}']
+  attributes__images json [note: 'Array: {url, alt, is_primary}']
+  attributes__amenities "varchar[]"
+  attributes__policies__cancellation text
+  attributes__policies__refund text
+  attributes__policies__age_restriction varchar
+  attributes__custom_fields json
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Extended resource attributes with itinerary, images, and policies.'
+}
+
+Table mongo_departure_instance_attributes [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  departure_id varchar [not null, unique, ref: > departure_instances.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  attributes__guide_notes text
+  attributes__weather_forecast text
+  attributes__special_instructions text
+  attributes__pickup_points json [note: 'Array: {location, time, notes}']
+  attributes__equipment_list "varchar[]"
+  attributes__pricing_tiers json [note: 'Array: {name, price, description}']
+  attributes__custom_fields json
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Departure-specific notes, pickup points, and variable pricing tiers.'
+}
+
+Table mongo_booking_extended [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  booking_id varchar [not null, unique, ref: > bookings.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  additional_guests json [note: 'Array: {name, email, phone, age, special_requirements, document_type, document_number}']
+  metadata__source_details__ota_booking_id varchar
+  metadata__source_details__agent_name varchar
+  metadata__source_details__commission_rate decimal
+  metadata__special_requests text
+  metadata__dietary_requirements "varchar[]"
+  metadata__pickup_details__location varchar
+  metadata__pickup_details__time varchar
+  metadata__pickup_details__contact varchar
+  metadata__custom_fields json
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Extended booking data with guest details, OTA info, and special requests.'
+}
+
+Table mongo_inventory_hold_metadata [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  hold_id varchar [not null, unique, ref: > inventory_holds.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  metadata__customer_info__name varchar
+  metadata__customer_info__email varchar
+  metadata__customer_info__phone varchar
+  metadata__payment_pending boolean
+  metadata__conversion_source varchar
+  metadata__custom_fields json
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Inventory hold metadata for anonymous holds and conversion tracking.'
+}
+
+Table mongo_payment_gateway_response [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  payment_id varchar [not null, unique, ref: > payments.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  gateway_response__raw_response json [note: 'Full gateway response JSON']
+  gateway_response__error_code varchar
+  gateway_response__error_message text
+  gateway_response__transaction_id varchar
+  gateway_response__authorization_code varchar
+  gateway_response__card_last_four varchar
+  gateway_response__card_brand varchar
+  gateway_response__bank_name varchar
+  gateway_response__upi_id varchar
+  gateway_response__wallet_name varchar
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Payment gateway responses with full raw data for debugging/compliance.'
+}
+
+// ============================================================================
+// HRMS MODULE EXTENSIONS (MongoDB)
+// ============================================================================
+
+Table mongo_employee_extended [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  employee_id varchar [not null, unique, ref: > employees.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  contact__personal_email varchar
+  contact__personal_phone varchar
+  contact__address__line1 varchar
+  contact__address__line2 varchar
+  contact__address__city varchar
+  contact__address__state varchar
+  contact__address__country varchar
+  contact__address__postal_code varchar
+  emergency_contacts json [note: 'Array: {name, relationship, phone, email}']
+  attributes__date_of_birth date
+  attributes__gender varchar
+  attributes__nationality varchar
+  attributes__marital_status varchar
+  attributes__blood_group varchar
+  attributes__languages "varchar[]"
+  attributes__certifications json [note: 'Array: {name, issuer, issue_date, expiry_date, certificate_url}']
+  attributes__bank_details__bank_name varchar
+  attributes__bank_details__account_number varchar
+  attributes__bank_details__ifsc_code varchar
+  attributes__bank_details__account_holder_name varchar
+  attributes__custom_fields json
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Extended employee data with personal info, emergency contacts, certifications.'
+}
+
+Table mongo_employee_timeline_values [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  timeline_id varchar [not null, unique, ref: > employee_timeline.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  previous_value json [note: 'Snapshot before change']
+  new_value json [note: 'Snapshot after change']
+  created_at timestamp
+  
+  Note: 'Stores before/after values for employee timeline events (audit trail).'
+}
+
+Table mongo_attendance_check_in_out [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  attendance_id varchar [not null, unique, ref: > attendance.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  check_in__time timestamp
+  check_in__location__lat decimal
+  check_in__location__lng decimal
+  check_in__location__address varchar
+  check_in__method varchar [note: 'app, biometric, manual, qr_code']
+  check_in__device_id varchar
+  check_in__ip_address varchar
+  check_in__photo_url varchar
+  check_out__time timestamp
+  check_out__location__lat decimal
+  check_out__location__lng decimal
+  check_out__location__address varchar
+  check_out__method varchar
+  check_out__device_id varchar
+  check_out__ip_address varchar
+  check_out__photo_url varchar
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Detailed attendance check-in/out with geo-location and photo capture.'
+}
+
+// ============================================================================
+// ANALYTICS & REPORTING MODULE EXTENSIONS (MongoDB)
+// ============================================================================
+
+Table mongo_custom_metric_expression [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  metric_id varchar [not null, unique, ref: > custom_metrics.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  expression__type varchar [note: 'count, sum, avg, formula, ratio']
+  expression__formula varchar [note: 'Custom calculation formula']
+  expression__aggregation varchar [note: 'sum, avg, count, min, max']
+  expression__fields "varchar[]" [note: 'Fields to aggregate']
+  expression__filters json [note: 'Array: {field, operator, value}']
+  expression__groupBy "varchar[]"
+  expression__orderBy varchar
+  expression__limit integer
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: 'Custom metric calculation expressions with flexible filters and aggregations.'
+}
+
+Table mongo_dashboard_layout_config [headercolor: #4DB33D] {
+  _id ObjectId [pk]
+  layout_id varchar [not null, unique, ref: > dashboard_layouts.id]
+  tenant_id varchar [not null, ref: > tenants.id]
+  config__widgets json [note: 'Array: {id, type, title, position: {x,y,width,height}, settings}']
+  config__theme varchar
+  config__refresh_interval integer [note: 'Auto-refresh in seconds']
+  created_at timestamp
+  updated_at timestamp
+  
+  Note: '''
+    Dashboard widget configuration.
+    Widgets array contains:
+    - id: Unique widget ID
+    - type: chart, metric, table, map
+    - title: Display title
+    - position: Grid coordinates {x, y, width, height}
+    - settings: {metric_id, chart_type, date_range, filters}
+  '''
+}
+
+// ============================================================================
+// MONGODB TABLE GROUPS
+// ============================================================================
+
+TableGroup mongodb_core [color: #4DB33D] {
+  mongo_tenant_settings
+  mongo_user_profiles
+  mongo_branch_settings
+}
+
+TableGroup mongodb_crm [color: #4DB33D] {
+  mongo_contact_extended
+  mongo_pipeline_stages
+  mongo_lead_extended
+  mongo_activity_metadata
+}
+
+TableGroup mongodb_inventory_bookings [color: #4DB33D] {
+  mongo_resource_attributes
+  mongo_departure_instance_attributes
+  mongo_booking_extended
+  mongo_inventory_hold_metadata
+  mongo_payment_gateway_response
+}
+
+TableGroup mongodb_hrms [color: #4DB33D] {
+  mongo_employee_extended
+  mongo_employee_timeline_values
+  mongo_attendance_check_in_out
+}
+
+TableGroup mongodb_analytics [color: #4DB33D] {
+  mongo_custom_metric_expression
+  mongo_dashboard_layout_config
+}

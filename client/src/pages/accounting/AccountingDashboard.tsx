@@ -337,7 +337,7 @@ export default function AccountingDashboard() {
                                 title="Journal Entries"
                                 description="Create & view journals"
                                 icon={BookOpen}
-                                href="/accounting/journals"
+                                href="/accounting/journal-entries"
                                 color="bg-purple-500"
                             />
                             <QuickAction
@@ -351,7 +351,7 @@ export default function AccountingDashboard() {
                                 title="Trial Balance"
                                 description="Debit & credit summary"
                                 icon={Scale}
-                                href="/accounting/trial-balance"
+                                href="/accounting/reports"
                                 color="bg-orange-500"
                             />
                             <QuickAction
@@ -373,7 +373,7 @@ export default function AccountingDashboard() {
                                 <BookOpen className="h-5 w-5 text-primary" />
                                 Recent Journal Entries
                             </h3>
-                            <Link to="/accounting/journals">
+                            <Link to="/accounting/journal-entries">
                                 <Button variant="ghost" size="sm" className="gap-1">
                                     View All <ArrowRight className="h-4 w-4" />
                                 </Button>

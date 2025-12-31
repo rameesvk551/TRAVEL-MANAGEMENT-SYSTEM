@@ -221,24 +221,27 @@ async function createChartOfAccounts(client: any): Promise<Record<string, string
 
     for (const acc of chartOfAccounts) {
         const id = generateId();
-        accountIdMap[acc.code] = id;
-        accounts[acc.code] = id;
-
+        
         const parentId = acc.parent ? accountIdMap[acc.parent] : null;
 
-        await client.query(`
+        const result = await client.query(`
             INSERT INTO public.accounts (
                 id, tenant_id, code, name, account_type, sub_type, normal_balance,
                 parent_account_id, level, is_header, is_bank_account, is_tax_account,
                 is_system_account, allow_branch_posting, status, created_by, created_at, updated_at
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13, 'ACTIVE', $14, NOW(), NOW())
-            ON CONFLICT (tenant_id, code) DO NOTHING
+            ON CONFLICT (tenant_id, code) DO UPDATE SET name = EXCLUDED.name
+            RETURNING id
         `, [
             id, TENANT_ID, acc.code, acc.name, acc.type, acc.subType || null, acc.normal,
             parentId, acc.level, acc.isHeader || false, acc.isBank || false, acc.isTax || false,
             !acc.isHeader, // allow_branch_posting only for non-header accounts
             ADMIN_USER_ID
         ]);
+
+        const actualId = result.rows[0].id;
+        accountIdMap[acc.code] = actualId;
+        accounts[acc.code] = actualId;
     }
 
     return accounts;
@@ -249,17 +252,20 @@ async function createChartOfAccounts(client: any): Promise<Record<string, string
 async function createFiscalYear(client: any): Promise<string> {
     const fiscalYearId = generateId();
 
-    await client.query(`
+    const fyResult = await client.query(`
         INSERT INTO public.fiscal_years (
             id, tenant_id, year, name, start_date, end_date,
             is_current, is_closed, is_locked, created_at, updated_at
         ) VALUES ($1, $2, $3, $4, $5, $6, true, false, false, NOW(), NOW())
-        ON CONFLICT (tenant_id, year) DO NOTHING
+        ON CONFLICT (tenant_id, year) DO UPDATE SET updated_at = NOW()
+        RETURNING id
     `, [
         fiscalYearId, TENANT_ID, CURRENT_FY.year,
         `FY ${CURRENT_FY.year - 1}-${CURRENT_FY.year}`,
         CURRENT_FY.startDate, CURRENT_FY.endDate
     ]);
+
+    const actualFyId = fyResult.rows[0].id;
 
     // Create 12 monthly periods
     const months = ['April', 'May', 'June', 'July', 'August', 'September',
@@ -292,7 +298,7 @@ async function createFiscalYear(client: any): Promise<string> {
         ]);
     }
 
-    return fiscalYearId;
+    return actualFyId;
 }
 
 // ==================== TAX CODES ====================
@@ -352,20 +358,22 @@ async function createBankAccounts(client: any, accounts: Record<string, string>)
             const glAccountId = accounts[bankDef.glCode];
             const uniqueAccNo = `${bankDef.accNo}${branch.id.slice(-4)}`;
             
-            result.push({ id, branchId: branch.id, name: accountName, glAccountId });
-
-            await client.query(`
+            const resultRow = await client.query(`
                 INSERT INTO public.bank_accounts (
                     id, tenant_id, branch_id, account_id, bank_name,
                     account_number, account_type, ifsc_code, currency,
                     opening_balance, current_balance, is_active, is_primary, created_at, updated_at
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'INR', $9, $9, true, $10, NOW(), NOW())
-                ON CONFLICT (tenant_id, account_number) DO NOTHING
+                ON CONFLICT (tenant_id, account_number) DO UPDATE SET updated_at = NOW()
+                RETURNING id
             `, [
                 id, TENANT_ID, branch.id, glAccountId, bankDef.bank,
                 uniqueAccNo, bankDef.type, bankDef.ifsc,
                 bankDef.opening, bankDef.name.includes('HDFC') // HDFC is primary
             ]);
+
+            const actualBankId = resultRow.rows[0].id;
+            result.push({ id: actualBankId, branchId: branch.id, name: accountName, glAccountId });
         }
     }
 

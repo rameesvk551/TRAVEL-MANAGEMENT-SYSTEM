@@ -50,7 +50,10 @@ async function seedAll() {
     await runCommand('tsx src/scripts/seed_whatsapp.ts', 'STEP 4/5: WhatsApp Data (Messages, Templates, Campaigns)');
     
     // 5. Vendor seed (Vendors, contracts, services, payments)
-    await runCommand('tsx src/scripts/seed_vendors.ts', 'STEP 5/5: Vendor Data (Vendors, Contracts, Payments)');
+    await runCommand('tsx src/scripts/seed_vendors.ts', 'STEP 5/6: Vendor Data (Vendors, Contracts, Payments)');
+
+    // 6. Accounting seed (Chart of Accounts, Journal Entries, Ledger, Bank Accounts)
+    await runCommand('tsx src/scripts/seedAccountingData.ts', 'STEP 6/6: Accounting Data (COA, Journal Entries, Ledger)');
 
     console.log('\n' + '='.repeat(60));
     console.log('✅ ALL SEEDING COMPLETED SUCCESSFULLY!');
@@ -68,6 +71,9 @@ async function seedAll() {
     console.log('  • 6 Message templates and 5 campaigns');
     console.log('  • 30 Vendors with contracts and service records');
     console.log('  • 100 Vendor payments tracked');
+    console.log('  • Full Chart of Accounts with 80+ accounts');
+    console.log('  • 12 Fiscal periods and tax codes');
+    console.log('  • 100+ Journal entries and ledger postings');
     console.log('\n🔐 LOGIN CREDENTIALS:');
     console.log('  Admin: admin@demo.com / password123');
     console.log('  Staff: staff@demo.com / password123');

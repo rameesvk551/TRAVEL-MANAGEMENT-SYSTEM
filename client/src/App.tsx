@@ -31,6 +31,10 @@ import {
     GearDashboard,
     GearItemsList,
     GearCategoriesList,
+    GearWarehousesList,
+    GearAssignmentsList,
+    GearRentalsList,
+    GearMaintenanceList,
 } from '@/pages/gear';
 import {
     BranchList,
@@ -140,6 +144,10 @@ function App() {
                     <Route path="gear" element={<GearDashboard />} />
                     <Route path="gear/items" element={<GearItemsList />} />
                     <Route path="gear/categories" element={<GearCategoriesList />} />
+                    <Route path="gear/warehouses" element={<GearWarehousesList />} />
+                    <Route path="gear/assignments" element={<GearAssignmentsList />} />
+                    <Route path="gear/rentals" element={<GearRentalsList />} />
+                    <Route path="gear/maintenance" element={<GearMaintenanceList />} />
 
                     {/* Branch Management Routes */}
                     <Route path="branches" element={<BranchList />} />
@@ -150,8 +158,10 @@ function App() {
                     <Route path="accounting" element={<AccountingDashboard />} />
                     <Route path="accounting/accounts" element={<ChartOfAccounts />} />
                     <Route path="accounting/journal-entries" element={<JournalEntries />} />
+                    <Route path="accounting/journals" element={<JournalEntries />} />
                     <Route path="accounting/ledger" element={<GeneralLedger />} />
                     <Route path="accounting/reports" element={<FinancialReports />} />
+                    <Route path="accounting/trial-balance" element={<FinancialReports />} />
 
                     {/* Settings Route */}
                     <Route path="settings" element={<Settings />} />
