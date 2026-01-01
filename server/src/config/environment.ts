@@ -78,7 +78,7 @@ export const config: Config = {
             accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
             phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
             businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
-            apiVersion: getEnvOrDefault('WHATSAPP_API_VERSION', 'v18.0'),
+            apiVersion: getEnvOrDefault('WHATSAPP_API_VERSION', 'v24.0'),
         },
         appSecret: process.env.WHATSAPP_APP_SECRET,
         verifyToken: process.env.WHATSAPP_VERIFY_TOKEN,

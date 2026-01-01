@@ -153,7 +153,9 @@ export function createWhatsAppContainer(
 
   const conversationController = new ConversationController(
     conversationService,
-    timelineService
+    messageService,
+    timelineService,
+    conversationRepo
   );
 
   const timelineController = new TimelineController(

@@ -7,6 +7,9 @@ import { createWhatsAppContainer, WhatsAppContainer } from './container.js';
 import { createWhatsAppRoutes } from '../../presentation/routes/whatsapp.routes.js';
 import { captureRawBody } from '../../presentation/middleware/whatsapp/index.js';
 
+// Re-export WhatsAppContainer for external use
+export { WhatsAppContainer } from './container.js';
+
 /**
  * Integration options for WhatsApp layer
  */

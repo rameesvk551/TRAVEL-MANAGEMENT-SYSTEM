@@ -7,9 +7,11 @@ import {
   RawWebhookPayload,
 } from '../../../domain/interfaces/whatsapp/index.js';
 import { MessageService } from '../../../application/services/whatsapp/index.js';
+import { ConversationService } from '../../../application/services/whatsapp/ConversationService.js';
+import { WorkflowOrchestrator } from '../../../application/services/whatsapp/WorkflowOrchestrator.js';
 
 /**
- * WebhookController - Handles provider webhooks
+ * WebhookController - Handles provider webhooks and message sending
  * 
  * This is the entry point for all incoming WhatsApp messages.
  * Normalizes provider-specific payloads and routes to MessageService.
@@ -17,8 +19,9 @@ import { MessageService } from '../../../application/services/whatsapp/index.js'
 export class WebhookController {
   constructor(
     private provider: IWhatsAppProvider,
+    private conversationService: ConversationService,
     private messageService: MessageService,
-    private webhookVerifyToken: string
+    private workflowOrchestrator: WorkflowOrchestrator
   ) {}
 
   /**
@@ -110,6 +113,114 @@ export class WebhookController {
   private async resolveTenantId(businessPhone: string): Promise<string | null> {
     // In production: lookup tenant by configured WhatsApp number
     // For now, return default tenant
-    return process.env.DEFAULT_TENANT_ID || null;
+    return process.env.DEFAULT_TENANT_ID || 'default';
   }
+
+  // ============================================
+  // Route handler aliases for compatibility
+  // ============================================
+
+  /**
+   * Alias for handle - used by routes as handleWebhook
+   */
+  handleWebhook = this.handle;
+
+  /**
+   * Send a text message
+   */
+  sendMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { to, message, replyToMessageId } = req.body;
+
+      if (!to || !message) {
+        res.status(400).json({ 
+          error: 'Missing required fields',
+          required: { to: 'phone number', message: 'text message' }
+        });
+        return;
+      }
+
+      const result = await this.provider.sendMessage({
+        recipientPhone: to.replace(/\s/g, ''),
+        messageType: 'TEXT',
+        textContent: { body: message },
+        replyToMessageId,
+      });
+
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.providerMessageId,
+          timestamp: result.timestamp
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: result.errorMessage,
+          errorCode: result.errorCode 
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Send a template message
+   */
+  sendTemplate = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { to, templateName, language = 'en', components = [] } = req.body;
+
+      if (!to || !templateName) {
+        res.status(400).json({ 
+          error: 'Missing required fields',
+          required: { to: 'phone number', templateName: 'template name' }
+        });
+        return;
+      }
+
+      const result = await this.provider.sendTemplate(
+        to.replace(/\s/g, ''),
+        templateName,
+        language,
+        components
+      );
+
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.providerMessageId,
+          timestamp: result.timestamp
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: result.errorMessage,
+          errorCode: result.errorCode 
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get message status
+   */
+  getMessageStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { messageId } = req.params;
+
+      // In a full implementation, this would query the message repository
+      // For now, return a placeholder response
+      res.json({ 
+        messageId,
+        status: 'unknown',
+        message: 'Message status tracking requires database integration'
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

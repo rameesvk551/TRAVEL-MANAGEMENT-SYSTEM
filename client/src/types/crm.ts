@@ -65,4 +65,50 @@ export interface Activity {
     scheduledAt?: string;
     completedAt?: string;
     createdAt: string;
+    leadId?: string;
+    createdBy?: string;
+    createdByName?: string;
+}
+
+export interface LeadNote {
+    id: string;
+    leadId: string;
+    content: string;
+    createdAt: string;
+    createdBy: string;
+    createdByName?: string;
+}
+
+export interface FollowUp {
+    id: string;
+    leadId: string;
+    type: 'CALL' | 'EMAIL' | 'VISIT' | 'MEETING' | 'WHATSAPP';
+    status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED' | 'OVERDUE';
+    scheduledDate: string;
+    scheduledTime?: string;
+    note?: string;
+    createdAt: string;
+    createdBy: string;
+    createdByName?: string;
+}
+
+export interface LeadAssignee {
+    id: string;
+    name: string;
+    email?: string;
+}
+
+export interface TimelineEvent {
+    id: string;
+    type: 'NOTE_ADDED' | 'FOLLOWUP_SCHEDULED' | 'FOLLOWUP_COMPLETED' | 'STATUS_CHANGED' | 'ASSIGNED' | 'STAGE_CHANGED' | 'CREATED';
+    description: string;
+    metadata?: {
+        from?: string;
+        to?: string;
+        fromLabel?: string;
+        toLabel?: string;
+    };
+    createdAt: string;
+    createdBy?: string;
+    createdByName?: string;
 }

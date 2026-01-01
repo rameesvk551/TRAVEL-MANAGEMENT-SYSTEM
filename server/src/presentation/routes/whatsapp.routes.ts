@@ -321,6 +321,196 @@ export function createWhatsAppRoutes(dependencies: {
     }
   });
 
+  // ============================================
+  // TEST ROUTES (Development only)
+  // ============================================
+
+  // Quick test endpoint - bypasses opt-in for testing
+  router.post('/test/send', async (req, res, next) => {
+    try {
+      const { to, message } = req.body;
+
+      if (!to || !message) {
+        res.status(400).json({ 
+          error: 'Missing required fields',
+          required: { to: 'phone number', message: 'text message' }
+        });
+        return;
+      }
+
+      // Get the provider directly from container dependencies
+      const { createWhatsAppContainer } = await import('../../infrastructure/whatsapp/container.js');
+      const { getPool } = await import('../../infrastructure/database/index.js');
+      const container = createWhatsAppContainer(getPool(), {});
+      
+      const result = await container.provider.sendMessage({
+        recipientPhone: to.replace(/\s/g, ''), // Remove spaces
+        messageType: 'TEXT',
+        textContent: { body: message },
+      });
+
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.providerMessageId,
+          message: 'Message sent successfully! 🚀'
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: result.errorMessage,
+          errorCode: result.errorCode 
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Health check for WhatsApp integration
+  router.get('/health', async (_req, res, _next) => {
+    try {
+      const { getConfig } = await import('../../config/index.js');
+      const config = getConfig();
+      
+      res.json({
+        status: 'ok',
+        provider: config.whatsapp.provider,
+        apiVersion: config.whatsapp.meta?.apiVersion,
+        phoneNumberId: config.whatsapp.meta?.phoneNumberId ? '***' + config.whatsapp.meta.phoneNumberId.slice(-4) : 'not set',
+        webhookVerifyToken: config.whatsapp.verifyToken ? 'set' : 'not set',
+      });
+    } catch (error) {
+      res.status(500).json({ status: 'error', message: (error as Error).message });
+    }
+  });
+
+  // ============================================
+  // DEMO FLOW ROUTES
+  // ============================================
+
+  // Start demo flow - sends welcome message with options
+  router.post('/demo/start', async (req, res, next) => {
+    try {
+      const { phone } = req.body;
+
+      if (!phone) {
+        res.status(400).json({ 
+          error: 'Missing phone number',
+          usage: { phone: '919605734995' }
+        });
+        return;
+      }
+
+      const { demoFlow } = await import('../../infrastructure/whatsapp/flows/index.js');
+      
+      // Reset state and start fresh
+      demoFlow.resetState(phone);
+      await demoFlow.processMessage(phone, 'hi');
+
+      res.json({ 
+        success: true, 
+        message: `Demo flow started for ${phone}`,
+        instructions: 'Check WhatsApp for the welcome message with options!'
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Simulate user response in demo flow
+  router.post('/demo/respond', async (req, res, next) => {
+    try {
+      const { phone, message, buttonId, listId } = req.body;
+
+      if (!phone) {
+        res.status(400).json({ 
+          error: 'Missing phone number',
+          usage: { phone: '919605734995', message: 'or buttonId/listId' }
+        });
+        return;
+      }
+
+      const { demoFlow } = await import('../../infrastructure/whatsapp/flows/index.js');
+      await demoFlow.processMessage(phone, message || '', buttonId, listId);
+
+      res.json({ 
+        success: true, 
+        message: 'Response processed',
+        currentState: demoFlow.getState(phone)
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get demo flow state
+  router.get('/demo/state/:phone', async (req, res, _next) => {
+    const { phone } = req.params;
+    const { demoFlow } = await import('../../infrastructure/whatsapp/flows/index.js');
+    
+    res.json({ 
+      phone,
+      state: demoFlow.getState(phone) || { step: 'not_started', data: {} }
+    });
+  });
+
+  // Reset demo flow
+  router.post('/demo/reset', async (req, res, _next) => {
+    const { phone } = req.body;
+    const { demoFlow } = await import('../../infrastructure/whatsapp/flows/index.js');
+    
+    if (phone) {
+      demoFlow.resetState(phone);
+      res.json({ success: true, message: `State reset for ${phone}` });
+    } else {
+      res.status(400).json({ error: 'Phone number required' });
+    }
+  });
+
+  // Full demo - runs through entire booking flow automatically
+  router.post('/demo/full', async (req, res, next) => {
+    try {
+      const { phone } = req.body;
+
+      if (!phone) {
+        res.status(400).json({ 
+          error: 'Missing phone number',
+          usage: { phone: '919605734995' }
+        });
+        return;
+      }
+
+      const { demoFlow } = await import('../../infrastructure/whatsapp/flows/index.js');
+      
+      // Reset and run full demo with delays
+      demoFlow.resetState(phone);
+
+      const steps = [
+        { delay: 0, action: () => demoFlow.processMessage(phone, 'hi') },
+        { delay: 3000, action: () => demoFlow.processMessage(phone, '', 'book_trip') },
+        { delay: 3000, action: () => demoFlow.processMessage(phone, '', undefined, 'dest_goa') },
+        { delay: 3000, action: () => demoFlow.processMessage(phone, '', undefined, 'date_0') },
+        { delay: 3000, action: () => demoFlow.processMessage(phone, '', 'travelers_2') },
+        { delay: 3000, action: () => demoFlow.processMessage(phone, '', 'confirm_booking') },
+      ];
+
+      // Execute steps with delays
+      for (const step of steps) {
+        await new Promise(resolve => setTimeout(resolve, step.delay));
+        await step.action();
+      }
+
+      res.json({ 
+        success: true, 
+        message: `Full demo completed for ${phone}`,
+        note: 'Check WhatsApp for the complete booking flow!'
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }
 

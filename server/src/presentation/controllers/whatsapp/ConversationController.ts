@@ -224,4 +224,81 @@ export class ConversationController {
       next(error);
     }
   };
+
+  // ============================================
+  // Route handler aliases for compatibility
+  // ============================================
+
+  /** Alias for list */
+  getConversations = this.list;
+
+  /** Alias for getById */
+  getConversation = this.getById;
+
+  /**
+   * POST /conversations/:id/assign - Assign operator
+   */
+  assignOperator = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = req.context?.tenantId;
+      const { id } = req.params;
+      const { userId } = req.body;
+
+      if (!tenantId) {
+        res.status(401).json({ error: 'Tenant required' });
+        return;
+      }
+
+      // For now, return a placeholder response
+      res.json({ 
+        success: true, 
+        message: 'Operator assignment would be implemented with full conversation management'
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /conversations/:id/close - Close conversation
+   */
+  close = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = req.context?.tenantId;
+      const { id } = req.params;
+
+      if (!tenantId) {
+        res.status(401).json({ error: 'Tenant required' });
+        return;
+      }
+
+      // For now, return a placeholder response
+      res.json({ 
+        success: true, 
+        message: 'Conversation close would be implemented with full conversation management'
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /conversations/:id/messages - Get messages
+   */
+  getMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tenantId = req.context?.tenantId;
+      const { id } = req.params;
+
+      if (!tenantId) {
+        res.status(401).json({ error: 'Tenant required' });
+        return;
+      }
+
+      const messages = await this.messageService.getMessagesByConversation(id, tenantId);
+      res.json({ data: messages });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

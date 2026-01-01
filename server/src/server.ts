@@ -13,14 +13,18 @@ async function main(): Promise<void> {
         process.exit(1);
     }
 
-    // Create and start app
-    const app = createApp();
+    // Create and start app (now async)
+    const { app, whatsApp } = await createApp();
     const { port } = config.server;
 
     const server = app.listen(port, () => {
         console.log(`✅ Server running on http://localhost:${port}`);
         console.log(`📊 Health check: http://localhost:${port}/api/health`);
         console.log(`📦 Resources API: http://localhost:${port}/api/resources`);
+        if (whatsApp) {
+            console.log(`📱 WhatsApp API: http://localhost:${port}/api/whatsapp`);
+            console.log(`   Webhook URL: http://localhost:${port}/api/whatsapp/webhook`);
+        }
     });
 
     // Graceful shutdown

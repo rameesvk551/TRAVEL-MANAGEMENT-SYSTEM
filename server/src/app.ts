@@ -31,17 +31,22 @@ import {
     ContactRepository,
     PipelineRepository
 } from './infrastructure/repositories/index.js';
+import { getPool } from './infrastructure/database/index.js';
+import { initializeWhatsApp, WhatsAppContainer } from './infrastructure/whatsapp/integration.js';
 
 /**
  * Create and configure the Express application.
  * Dependency injection happens here.
  */
-export function createApp(): Express {
+export async function createApp(): Promise<{ app: Express; whatsApp?: WhatsAppContainer }> {
     const app = express();
 
     // Core middleware
     app.use(cors({ origin: config.server.corsOrigin, credentials: true }));
     app.use(express.json());
+
+    // Get database pool for WhatsApp
+    const pool = getPool();
 
     // Repositories
     const tenantRepository = new TenantRepository();
@@ -68,6 +73,31 @@ export function createApp(): Express {
     // Initialize Middleware
     const authMiddleware = createAuthMiddleware(authService, userRepository);
 
+    // Tenant middleware placeholder (for WhatsApp)
+    const tenantMiddleware = (req: any, _res: any, next: any) => {
+        req.tenantId = req.tenantId || 'default';
+        next();
+    };
+
+    // ============================================
+    // WhatsApp Integration
+    // ============================================
+    let whatsApp: WhatsAppContainer | undefined;
+    try {
+        whatsApp = await initializeWhatsApp(app, pool, {
+            authMiddleware,
+            tenantMiddleware,
+            services: {
+                leadService,
+                bookingService,
+            },
+        });
+        console.log('✅ WhatsApp integration initialized');
+    } catch (error) {
+        console.warn('⚠️ WhatsApp integration failed to initialize:', (error as Error).message);
+        console.warn('   WhatsApp features will be disabled');
+    }
+
     // API routes
     app.use('/api', createApiRouter({
         resourceController,
@@ -84,11 +114,12 @@ export function createApp(): Express {
             name: 'Travel Operations Platform API',
             version: '1.0.0',
             docs: '/api/health',
+            whatsapp: whatsApp ? 'enabled' : 'disabled',
         });
     });
 
     // Error handling (must be last)
     app.use(errorMiddleware);
 
-    return app;
+    return { app, whatsApp };
 }
