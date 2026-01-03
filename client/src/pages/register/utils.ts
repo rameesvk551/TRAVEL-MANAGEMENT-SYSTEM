@@ -22,7 +22,8 @@ export const generateSlugFromName = (name: string): string => {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replace(/^-|-$/g, '')
+    .slice(0, 100);
 };
 
 export const validateStep = (
@@ -60,8 +61,8 @@ export const validateStep = (
       }
       return true;
     case 3:
-      if (!formData.companyName || !formData.companySlug) {
-        setError('Please fill in the company name');
+      if (!formData.companyName || !formData.companySlug || !formData.companyCity) {
+        setError('Please provide your company name, slug, and city');
         return false;
       }
       if (!/^[a-z0-9-]+$/.test(formData.companySlug)) {

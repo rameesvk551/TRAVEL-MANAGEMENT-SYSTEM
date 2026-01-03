@@ -5,17 +5,19 @@ interface TenantAttributes {
     id: string;
     name: string;
     slug: string;
+    location?: string;
     is_active: boolean;
     created_at?: Date;
     updated_at?: Date;
 }
 
-export interface TenantCreationAttributes extends Optional<TenantAttributes, 'id' | 'is_active'> {}
+export interface TenantCreationAttributes extends Optional<TenantAttributes, 'id' | 'is_active' | 'location'> {}
 
 export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> implements TenantAttributes {
     public id!: string;
     public name!: string;
     public slug!: string;
+    public location?: string;
     public is_active!: boolean;
     public readonly created_at!: Date;
     public readonly updated_at!: Date;
@@ -36,6 +38,10 @@ Tenant.init(
             type: DataTypes.STRING,
             allowNull: false,
             unique: true,
+        },
+        location: {
+            type: DataTypes.STRING,
+            allowNull: true,
         },
         is_active: {
             type: DataTypes.BOOLEAN,

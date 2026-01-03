@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService, RegisterDTO, LoginDTO } from '../../application/services/AuthService.js';
+import { log } from 'console';
 
 /**
  * Auth controller - handles login/register HTTP requests.

@@ -4,7 +4,7 @@ export interface TenantProps {
     id?: string;
     name: string;
     slug: string;
-    settings?: Record<string, unknown>;
+    location?: string | null;
     isActive?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
@@ -18,7 +18,7 @@ export class Tenant {
     public readonly id: string;
     public readonly name: string;
     public readonly slug: string;
-    public readonly settings: Record<string, unknown>;
+    public readonly location: string | null;
     public readonly isActive: boolean;
     public readonly createdAt: Date;
     public readonly updatedAt: Date;
@@ -27,7 +27,7 @@ export class Tenant {
         this.id = props.id;
         this.name = props.name;
         this.slug = props.slug;
-        this.settings = props.settings;
+        this.location = props.location;
         this.isActive = props.isActive;
         this.createdAt = props.createdAt;
         this.updatedAt = props.updatedAt;
@@ -38,7 +38,7 @@ export class Tenant {
             id: props.id ?? generateId(),
             name: props.name,
             slug: props.slug,
-            settings: props.settings ?? {},
+            location: props.location ?? null,
             isActive: props.isActive ?? true,
             createdAt: props.createdAt ?? new Date(),
             updatedAt: props.updatedAt ?? new Date(),

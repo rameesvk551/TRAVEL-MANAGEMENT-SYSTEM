@@ -11,17 +11,9 @@ export interface FormData {
   password: string;
   confirmPassword: string;
   acceptTerms: boolean;
-  // Company info
   companyName: string;
   companySlug: string;
-  companyDescription: string;
-  companyWebsite: string;
-  companyPhone: string;
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  postalCode: string;
+  companyCity: string;
 }
 
 export interface PasswordStrength {
@@ -33,13 +25,12 @@ export interface PasswordStrength {
 export interface StepProps {
   formData: FormData;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
-  onNext: () => void;
+  onNext?: () => void;
   onBack?: () => void;
   error?: string | null;
 }
 
 export interface Step3Props extends StepProps {
-  onSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
 }
 
@@ -53,14 +44,7 @@ export const INITIAL_FORM_DATA: FormData = {
   acceptTerms: false,
   companyName: '',
   companySlug: '',
-  companyDescription: '',
-  companyWebsite: '',
-  companyPhone: '',
-  street: '',
-  city: '',
-  state: '',
-  country: '',
-  postalCode: '',
+  companyCity: '',
 };
 
 export const TOTAL_STEPS = 3;

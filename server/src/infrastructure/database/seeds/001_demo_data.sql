@@ -1,12 +1,11 @@
 -- Seed data for development
 
 -- Default tenant
-INSERT INTO tenants (id, name, slug, settings)
+INSERT INTO tenants (id, name, slug)
 VALUES (
     'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     'Demo Travel Company',
-    'demo',
-    '{"timezone": "Asia/Kolkata", "currency": "INR"}'
+    'demo'
 ) ON CONFLICT (slug) DO NOTHING;
 
 -- Demo admin user (password: admin123)

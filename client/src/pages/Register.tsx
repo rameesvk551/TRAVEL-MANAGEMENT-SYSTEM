@@ -10,12 +10,12 @@ import { Briefcase, AlertCircle } from 'lucide-react';
 import { authApi } from '@/api/authApi';
 
 import type { FormData } from './register/types';
-import { INITIAL_FORM_DATA } from './register/types';
+import { INITIAL_FORM_DATA, TOTAL_STEPS } from './register/types';
 import { validateStep, generateSlugFromName } from './register/utils';
 import { ProgressIndicator } from './register/ProgressIndicator';
 import { StepAdminInfo } from './register/StepAdminInfo';
 import { StepSecurity } from './register/StepSecurity';
-import { StepCompanyInfo } from './register/StepCompanyInfo';
+import { StepCompany } from './register/StepCompany';
 import { BrandingPanel } from './register/BrandingPanel';
 
 const RegisterPage: React.FC = () => {
@@ -32,7 +32,6 @@ const RegisterPage: React.FC = () => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
-    // Auto-generate slug from company name
     if (name === 'companyName') {
       setFormData(prev => ({
         ...prev,
@@ -50,18 +49,23 @@ const RegisterPage: React.FC = () => {
 
   const handleNext = () => {
     if (validateStep(step, formData, setError)) {
-      setStep(prev => prev + 1);
+      setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
     }
   };
 
   const handleBack = () => {
-    setStep(prev => prev - 1);
+    setStep(prev => Math.max(1, prev - 1));
     setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep(step, formData, setError)) return;
+
+    if (step < TOTAL_STEPS) {
+      setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -70,8 +74,11 @@ const RegisterPage: React.FC = () => {
       await authApi.register({
         email: formData.email,
         password: formData.password,
-        name: `${formData.firstName} ${formData.lastName}`,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         tenantSlug: formData.companySlug,
+        companyName: formData.companyName,
+        companyCity: formData.companyCity,
       });
 
       navigate('/login?registered=true');
@@ -103,7 +110,7 @@ const RegisterPage: React.FC = () => {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Register your company</h1>
-            <p className="text-gray-600">Set up your business on our ERP platform</p>
+            <p className="text-gray-600">Create your admin account and company space in minutes</p>
           </div>
 
           {/* Progress indicator */}
@@ -142,12 +149,10 @@ const RegisterPage: React.FC = () => {
               )}
 
               {step === 3 && (
-                <StepCompanyInfo
+                <StepCompany
                   formData={formData}
                   onChange={handleChange}
-                  onNext={handleNext}
                   onBack={handleBack}
-                  onSubmit={handleSubmit}
                   isLoading={isLoading}
                 />
               )}

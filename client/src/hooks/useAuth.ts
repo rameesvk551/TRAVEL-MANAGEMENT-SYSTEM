@@ -25,11 +25,10 @@ export function useLogin() {
  */
 export function useRegister() {
     const navigate = useNavigate();
-    const { setAuth, tenantSlug } = useAuthStore();
+    const { setAuth } = useAuthStore();
 
     return useMutation({
-        mutationFn: (data: Omit<RegisterInput, 'tenantSlug'>) =>
-            authApi.register({ ...data, tenantSlug }),
+        mutationFn: (data: RegisterInput) => authApi.register(data),
         onSuccess: (response) => {
             setAuth(response.user, response.token);
             navigate('/');

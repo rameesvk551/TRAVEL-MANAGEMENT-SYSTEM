@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../../sequelize.js';
+import { Tenant } from './Tenant.js';
 
 interface UserAttributes {
     id: string;
@@ -33,6 +34,9 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     public joining_date?: Date;
     public readonly created_at!: Date;
     public readonly updated_at!: Date;
+
+    // Associations
+    public readonly tenant?: Tenant;
 }
 
 User.init(

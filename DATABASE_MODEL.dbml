@@ -9,7 +9,6 @@ Table tenants {
   id uuid [pk, default: `uuid_generate_v4()`]
   name varchar
   slug varchar [unique]
-  settings jsonb
   is_active boolean
   created_at timestamptz
   updated_at timestamptz

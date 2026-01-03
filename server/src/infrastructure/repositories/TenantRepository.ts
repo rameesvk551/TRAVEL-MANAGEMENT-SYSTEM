@@ -7,7 +7,7 @@ interface TenantRow {
     id: string;
     name: string;
     slug: string;
-    settings: Record<string, unknown>;
+    location: string | null;
     is_active: boolean;
     created_at: Date;
     updated_at: Date;
@@ -18,7 +18,7 @@ function toEntity(row: TenantRow): Tenant {
         id: row.id,
         name: row.name,
         slug: row.slug,
-        settings: row.settings,
+        location: row.location,
         isActive: row.is_active,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -51,19 +51,19 @@ export class TenantRepository implements ITenantRepository {
 
     async save(tenant: Tenant): Promise<Tenant> {
         const result = await query<TenantRow>(
-            `INSERT INTO tenants (id, name, slug, settings, is_active)
+            `INSERT INTO tenants (id, name, slug, location, is_active)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-            [tenant.id, tenant.name, tenant.slug, tenant.settings, tenant.isActive]
+            [tenant.id, tenant.name, tenant.slug, tenant.location, tenant.isActive]
         );
         return toEntity(result.rows[0]);
     }
 
     async update(tenant: Tenant): Promise<Tenant> {
         const result = await query<TenantRow>(
-            `UPDATE tenants SET name = $1, slug = $2, settings = $3, is_active = $4
+            `UPDATE tenants SET name = $1, slug = $2, location = $3, is_active = $4
        WHERE id = $5 RETURNING *`,
-            [tenant.name, tenant.slug, tenant.settings, tenant.isActive, tenant.id]
+            [tenant.name, tenant.slug, tenant.location, tenant.isActive, tenant.id]
         );
         return toEntity(result.rows[0]);
     }

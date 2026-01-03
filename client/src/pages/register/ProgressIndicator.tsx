@@ -11,6 +11,7 @@ interface ProgressIndicatorProps {
 }
 
 export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({ currentStep }) => {
+  const stepLabels = ['Admin Info', 'Security', 'Company'];
   return (
     <div className="mb-8">
       <div className="flex items-center gap-2">
@@ -38,9 +39,9 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({ currentSte
         ))}
       </div>
       <div className="flex justify-between mt-2 text-xs text-gray-500">
-        <span>Admin Info</span>
-        <span>Security</span>
-        <span>Company</span>
+        {stepLabels.map(label => (
+          <span key={label}>{label}</span>
+        ))}
       </div>
     </div>
   );

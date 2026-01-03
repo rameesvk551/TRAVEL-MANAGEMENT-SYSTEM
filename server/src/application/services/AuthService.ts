@@ -3,14 +3,18 @@ import jwt from 'jsonwebtoken';
 import { User } from '../../domain/entities/User.js';
 import { IUserRepository } from '../../domain/interfaces/IUserRepository.js';
 import { ITenantRepository } from '../../domain/interfaces/ITenantRepository.js';
+import { Tenant } from '../../domain/entities/Tenant.js';
 import { config } from '../../config/index.js';
 import { UnauthorizedError, ValidationError, NotFoundError } from '../../shared/errors/index.js';
 
 export interface RegisterDTO {
     email: string;
     password: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     tenantSlug: string;
+    companyName: string;
+    companyCity: string;
 }
 
 export interface LoginDTO {
@@ -46,14 +50,21 @@ export class AuthService {
     ) { }
 
     async register(dto: RegisterDTO): Promise<AuthResponse> {
-        // Find tenant
-        const tenant = await this.tenantRepository.findBySlug(dto.tenantSlug);
-        if (!tenant) {
-            throw new NotFoundError('Tenant', dto.tenantSlug);
+        const existingTenant = await this.tenantRepository.findBySlug(dto.tenantSlug);
+        if (existingTenant) {
+            throw new ValidationError('A company with this URL already exists');
         }
 
+        const tenant = Tenant.create({
+            name: dto.companyName,
+            slug: dto.tenantSlug,
+            location: dto.companyCity,
+        });
+
+        const savedTenant = await this.tenantRepository.save(tenant);
+
         // Check if user exists
-        const existing = await this.userRepository.findByEmail(dto.email, tenant.id);
+        const existing = await this.userRepository.findByEmail(dto.email, savedTenant.id);
         if (existing) {
             throw new ValidationError('User with this email already exists');
         }
@@ -63,11 +74,11 @@ export class AuthService {
 
         // Create user
         const user = User.create({
-            tenantId: tenant.id,
+            tenantId: savedTenant.id,
             email: dto.email,
             passwordHash,
-            name: dto.name,
-            role: 'staff', // Default role
+            name: `${dto.firstName} ${dto.lastName}`.trim(),
+            role: 'owner', // First user becomes owner
         });
 
         const saved = await this.userRepository.save(user);

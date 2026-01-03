@@ -4,3 +4,4 @@ export { validateBody, validateQuery, validate } from './validation.middleware.j
 export { createAuthMiddleware, requireRole } from './auth.middleware.js';
 export { authenticate } from './authenticate.js';
 export { authorize } from './authorize.js';
+export { sanitizeBody, sanitizeQuery, sanitizeParams } from './sanitize.middleware.js';

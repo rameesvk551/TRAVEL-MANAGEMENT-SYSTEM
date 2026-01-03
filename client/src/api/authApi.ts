@@ -9,8 +9,11 @@ export interface LoginInput {
 export interface RegisterInput {
     email: string;
     password: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     tenantSlug: string;
+    companyName: string;
+    companyCity: string;
 }
 
 export interface AuthUser {
