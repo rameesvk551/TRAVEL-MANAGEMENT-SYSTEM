@@ -1,105 +1,106 @@
-import { query } from '../database/index.js';
-import { User, UserRole } from '../../domain/entities/User.js';
+import { User as UserEntity, UserRole } from '../../domain/entities/User.js';
 import { IUserRepository } from '../../domain/interfaces/IUserRepository.js';
+import { User as UserModel } from '../database/sequelize/models/User.js';
 
-interface UserRow {
-    [key: string]: unknown;
-    id: string;
-    tenant_id: string;
-    email: string;
-    password_hash: string;
-    name: string;
-    role: UserRole;
-    profile: Record<string, unknown>;
-    is_active: boolean;
-    created_at: Date;
-    updated_at: Date;
-}
-
-function toEntity(row: UserRow): User {
-    return User.fromPersistence({
-        id: row.id,
-        tenantId: row.tenant_id,
-        email: row.email,
-        passwordHash: row.password_hash,
-        name: row.name,
-        role: row.role,
-        profile: row.profile,
-        isActive: row.is_active,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
+function toEntity(model: UserModel): UserEntity {
+    return UserEntity.fromPersistence({
+        id: model.id,
+        tenantId: model.tenant_id,
+        email: model.email,
+        passwordHash: model.password_hash,
+        name: model.name,
+        role: model.role as UserRole,
+        profile: (model.profile as Record<string, unknown>) || {},
+        isActive: model.is_active,
+        createdAt: model.created_at,
+        updatedAt: model.updated_at,
     });
 }
 
 export class UserRepository implements IUserRepository {
-    async findById(id: string, tenantId: string): Promise<User | null> {
-        const result = await query<UserRow>(
-            'SELECT * FROM users WHERE id = $1 AND tenant_id = $2 AND is_active = true',
-            [id, tenantId]
-        );
-        return result.rows[0] ? toEntity(result.rows[0]) : null;
+    async findById(id: string, tenantId: string): Promise<UserEntity | null> {
+        const user = await UserModel.findOne({
+            where: { id, tenant_id: tenantId, is_active: true },
+        });
+        return user ? toEntity(user) : null;
     }
 
-    async findByEmail(email: string, tenantId: string): Promise<User | null> {
-        const result = await query<UserRow>(
-            'SELECT * FROM users WHERE email = $1 AND tenant_id = $2 AND is_active = true',
-            [email.toLowerCase(), tenantId]
-        );
-        return result.rows[0] ? toEntity(result.rows[0]) : null;
+    async findByEmail(email: string, tenantId: string): Promise<UserEntity | null> {
+        const user = await UserModel.findOne({
+            where: {
+                email: email.toLowerCase(),
+                tenant_id: tenantId,
+                is_active: true,
+            },
+        });
+        return user ? toEntity(user) : null;
     }
 
-    async findAll(tenantId: string, limit = 20, offset = 0): Promise<User[]> {
-        const result = await query<UserRow>(
-            'SELECT * FROM users WHERE tenant_id = $1 AND is_active = true ORDER BY name LIMIT $2 OFFSET $3',
-            [tenantId, limit, offset]
-        );
-        return result.rows.map(toEntity);
+    async findAll(tenantId: string, limit = 20, offset = 0): Promise<UserEntity[]> {
+        const users = await UserModel.findAll({
+            where: { tenant_id: tenantId, is_active: true },
+            order: [['name', 'ASC']],
+            limit,
+            offset,
+        });
+        return users.map(toEntity);
     }
 
     async count(tenantId: string): Promise<number> {
-        const result = await query<{ count: string }>(
-            'SELECT COUNT(*) as count FROM users WHERE tenant_id = $1 AND is_active = true',
-            [tenantId]
+        return await UserModel.count({
+            where: { tenant_id: tenantId, is_active: true },
+        });
+    }
+
+    async save(user: UserEntity): Promise<UserEntity> {
+        const created = await UserModel.create({
+            id: user.id,
+            tenant_id: user.tenantId,
+            email: user.email,
+            password_hash: user.passwordHash,
+            name: user.name,
+            role: user.role,
+            profile: user.profile,
+            is_active: user.isActive,
+        });
+        return toEntity(created);
+    }
+
+    async update(user: UserEntity): Promise<UserEntity> {
+        const [affectedCount] = await UserModel.update(
+            {
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                profile: user.profile,
+                is_active: user.isActive,
+            },
+            {
+                where: { id: user.id, tenant_id: user.tenantId },
+            }
         );
-        return parseInt(result.rows[0].count, 10);
-    }
 
-    async save(user: User): Promise<User> {
-        const sql = `INSERT INTO users (id, tenant_id, email, password_hash, name, role, profile, is_active)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING *`;
-        const result = await query<UserRow>(sql, [
-            user.id,
-            user.tenantId,
-            user.email,
-            user.passwordHash,
-            user.name,
-            user.role,
-            user.profile,
-            user.isActive,
-        ]);
-        return toEntity(result.rows[0]);
-    }
+        if (affectedCount === 0) {
+            throw new Error('User not found or no changes made');
+        }
 
-    async update(user: User): Promise<User> {
-        const sql = `UPDATE users SET email = $1, name = $2, role = $3, profile = $4, is_active = $5
-       WHERE id = $6 AND tenant_id = $7 RETURNING *`;
-        const result = await query<UserRow>(sql, [
-            user.email,
-            user.name,
-            user.role,
-            user.profile,
-            user.isActive,
-            user.id,
-            user.tenantId,
-        ]);
-        return toEntity(result.rows[0]);
+        const updated = await UserModel.findOne({
+            where: { id: user.id, tenant_id: user.tenantId },
+        });
+
+        if (!updated) {
+            throw new Error('User not found after update');
+        }
+
+        return toEntity(updated);
     }
 
     async delete(id: string, tenantId: string): Promise<void> {
-        await query(
-            'UPDATE users SET is_active = false WHERE id = $1 AND tenant_id = $2',
-            [id, tenantId]
+        await UserModel.update(
+            { is_active: false },
+            {
+                where: { id, tenant_id: tenantId },
+            }
         );
     }
 }

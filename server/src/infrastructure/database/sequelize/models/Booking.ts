@@ -30,6 +30,7 @@ interface BookingAttributes {
     amount_due?: number;
     currency?: string;
     notes?: string;
+    metadata?: Record<string, unknown>;
     confirmed_at?: Date;
     cancelled_at?: Date;
     created_at?: Date;
@@ -67,6 +68,7 @@ export class Booking extends Model<BookingAttributes, BookingCreationAttributes>
     public amount_due?: number;
     public currency?: string;
     public notes?: string;
+    public metadata?: Record<string, unknown>;
     public confirmed_at?: Date;
     public cancelled_at?: Date;
     public readonly created_at!: Date;
@@ -120,6 +122,10 @@ Booking.init(
         amount_due: DataTypes.DECIMAL,
         currency: DataTypes.STRING,
         notes: DataTypes.TEXT,
+        metadata: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
         confirmed_at: DataTypes.DATE,
         cancelled_at: DataTypes.DATE,
     },

@@ -10,6 +10,7 @@ interface UserAttributes {
     password_hash: string;
     name: string;
     role: string;
+    profile?: Record<string, unknown>;
     is_active: boolean;
     department_id?: string;
     salary?: number;
@@ -28,6 +29,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     public password_hash!: string;
     public name!: string;
     public role!: string;
+    public profile?: Record<string, unknown>;
     public is_active!: boolean;
     public department_id?: string;
     public salary?: number;
@@ -67,6 +69,10 @@ User.init(
         role: {
             type: DataTypes.STRING,
             allowNull: false,
+        },
+        profile: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
         },
         is_active: {
             type: DataTypes.BOOLEAN,

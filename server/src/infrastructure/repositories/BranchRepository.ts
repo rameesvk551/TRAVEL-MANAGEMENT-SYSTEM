@@ -1,93 +1,17 @@
-import { query } from '../database/index.js';
 import { 
-    Branch, 
+    Branch as BranchEntity, 
     BranchProps, 
     BranchType,
-    BranchPermission,
+    BranchPermission as BranchPermissionEntity,
     BranchPermissionProps,
-    BranchTransfer,
+    BranchTransfer as BranchTransferEntity,
     BranchTransferProps,
     TransferStatus
 } from '../../domain/entities/Branch.js';
-
-// ============================================================================
-// Type Definitions
-// ============================================================================
-
-interface BranchRow {
-    id: string;
-    tenant_id: string;
-    name: string;
-    code: string;
-    type: BranchType;
-    description: string | null;
-    address_line1: string | null;
-    address_line2: string | null;
-    city: string | null;
-    state: string | null;
-    country: string | null;
-    postal_code: string | null;
-    phone: string | null;
-    email: string | null;
-    latitude: number | null;
-    longitude: number | null;
-    timezone: string;
-    parent_branch_id: string | null;
-    manager_id: string | null;
-    currency: string;
-    operating_hours: Record<string, unknown>;
-    settings: Record<string, unknown>;
-    is_active: boolean;
-    created_at: Date;
-    updated_at: Date;
-}
-
-interface BranchPermissionRow {
-    id: string;
-    tenant_id: string;
-    user_id: string;
-    branch_id: string;
-    permission_level: string;
-    can_view_leads: boolean;
-    can_edit_leads: boolean;
-    can_view_bookings: boolean;
-    can_edit_bookings: boolean;
-    can_view_inventory: boolean;
-    can_edit_inventory: boolean;
-    can_view_staff: boolean;
-    can_edit_staff: boolean;
-    can_view_reports: boolean;
-    can_view_financials: boolean;
-    granted_by: string | null;
-    granted_at: Date;
-    expires_at: Date | null;
-    is_active: boolean;
-    created_at: Date;
-    updated_at: Date;
-}
-
-interface BranchTransferRow {
-    id: string;
-    tenant_id: string;
-    transfer_type: string;
-    reference_id: string;
-    reference_code: string | null;
-    from_branch_id: string;
-    to_branch_id: string;
-    status: TransferStatus;
-    reason: string | null;
-    notes: string | null;
-    requested_by: string | null;
-    approved_by: string | null;
-    completed_by: string | null;
-    requested_at: Date;
-    approved_at: Date | null;
-    completed_at: Date | null;
-    effective_date: Date | null;
-    metadata: Record<string, unknown>;
-    created_at: Date;
-    updated_at: Date;
-}
+import { Branch as BranchModel } from '../database/sequelize/models/Branch.js';
+import { BranchPermission as BranchPermissionModel } from '../database/sequelize/models/BranchPermission.js';
+import { BranchTransfer as BranchTransferModel } from '../database/sequelize/models/BranchTransfer.js';
+import { Op, Sequelize } from 'sequelize';
 
 export interface BranchListParams {
     tenantId: string;
@@ -99,419 +23,282 @@ export interface BranchListParams {
     offset?: number;
 }
 
-export interface BranchWithStats extends Branch {
+export interface BranchWithStats extends BranchEntity {
     employeeCount?: number;
     resourceCount?: number;
     activeBookingsCount?: number;
     monthlyRevenue?: number;
 }
 
-// ============================================================================
-// Mapper Functions
-// ============================================================================
-
-function toBranchEntity(row: BranchRow): Branch {
-    return Branch.fromPersistence({
-        id: row.id,
-        tenantId: row.tenant_id,
-        name: row.name,
-        code: row.code,
-        type: row.type,
-        description: row.description ?? undefined,
-        address: {
-            line1: row.address_line1 ?? undefined,
-            line2: row.address_line2 ?? undefined,
-            city: row.city ?? undefined,
-            state: row.state ?? undefined,
-            country: row.country ?? undefined,
-            postalCode: row.postal_code ?? undefined,
-        },
-        phone: row.phone ?? undefined,
-        email: row.email ?? undefined,
-        latitude: row.latitude ?? undefined,
-        longitude: row.longitude ?? undefined,
-        timezone: row.timezone,
-        parentBranchId: row.parent_branch_id ?? undefined,
-        managerId: row.manager_id ?? undefined,
-        currency: row.currency,
-        operatingHours: row.operating_hours as any,
-        settings: row.settings as any,
-        isActive: row.is_active,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-    });
-}
-
-function toBranchPermissionEntity(row: BranchPermissionRow): BranchPermission {
-    return BranchPermission.create({
-        id: row.id,
-        tenantId: row.tenant_id,
-        userId: row.user_id,
-        branchId: row.branch_id,
-        permissionLevel: row.permission_level as any,
-        canViewLeads: row.can_view_leads,
-        canEditLeads: row.can_edit_leads,
-        canViewBookings: row.can_view_bookings,
-        canEditBookings: row.can_edit_bookings,
-        canViewInventory: row.can_view_inventory,
-        canEditInventory: row.can_edit_inventory,
-        canViewStaff: row.can_view_staff,
-        canEditStaff: row.can_edit_staff,
-        canViewReports: row.can_view_reports,
-        canViewFinancials: row.can_view_financials,
-        grantedBy: row.granted_by ?? undefined,
-        grantedAt: row.granted_at,
-        expiresAt: row.expires_at ?? undefined,
-        isActive: row.is_active,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-    });
-}
-
-function toBranchTransferEntity(row: BranchTransferRow): BranchTransfer {
-    return BranchTransfer.create({
-        id: row.id,
-        tenantId: row.tenant_id,
-        transferType: row.transfer_type as any,
-        referenceId: row.reference_id,
-        referenceCode: row.reference_code ?? undefined,
-        fromBranchId: row.from_branch_id,
-        toBranchId: row.to_branch_id,
-        status: row.status,
-        reason: row.reason ?? undefined,
-        notes: row.notes ?? undefined,
-        requestedBy: row.requested_by ?? undefined,
-        approvedBy: row.approved_by ?? undefined,
-        completedBy: row.completed_by ?? undefined,
-        requestedAt: row.requested_at,
-        approvedAt: row.approved_at ?? undefined,
-        completedAt: row.completed_at ?? undefined,
-        effectiveDate: row.effective_date ?? undefined,
-        metadata: row.metadata,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-    });
-}
-
-// ============================================================================
-// Branch Repository
-// ============================================================================
-
 export class BranchRepository {
-    
-    // ========================================================================
-    // Branch CRUD Operations
-    // ========================================================================
-    
-    async findById(id: string, tenantId: string): Promise<Branch | null> {
-        const result = await query<BranchRow>(
-            `SELECT * FROM public.branches WHERE id = $1 AND tenant_id = $2`,
-            [id, tenantId]
-        );
-        return result.rows[0] ? toBranchEntity(result.rows[0]) : null;
+    private toBranchEntity(model: BranchModel): BranchEntity {
+        return BranchEntity.fromPersistence({
+            id: model.id,
+            tenantId: model.tenant_id,
+            name: model.name,
+            code: model.code,
+            type: model.type as BranchType,
+            description: model.description,
+            address: {
+                line1: model.address_line1,
+                line2: model.address_line2,
+                city: model.city,
+                state: model.state,
+                country: model.country,
+                postalCode: model.postal_code,
+            },
+            phone: model.phone,
+            email: model.email,
+            latitude: model.latitude ? Number(model.latitude) : undefined,
+            longitude: model.longitude ? Number(model.longitude) : undefined,
+            timezone: model.timezone || 'UTC',
+            parentBranchId: model.parent_branch_id,
+            managerId: model.manager_id,
+            currency: model.currency || 'USD',
+            operatingHours: model.operating_hours as any,
+            settings: model.settings as any,
+            isActive: model.is_active,
+            createdAt: model.created_at,
+            updatedAt: model.updated_at,
+        });
     }
 
-    async findByCode(code: string, tenantId: string): Promise<Branch | null> {
-        const result = await query<BranchRow>(
-            `SELECT * FROM public.branches WHERE code = $1 AND tenant_id = $2`,
-            [code.toUpperCase(), tenantId]
-        );
-        return result.rows[0] ? toBranchEntity(result.rows[0]) : null;
+    private toBranchPermissionEntity(model: BranchPermissionModel): BranchPermissionEntity {
+        return BranchPermissionEntity.create({
+            id: model.id,
+            tenantId: model.tenant_id,
+            userId: model.user_id,
+            branchId: model.branch_id,
+            permissionLevel: model.permission_level as any,
+            canViewLeads: model.can_view_leads,
+            canEditLeads: model.can_edit_leads,
+            canViewBookings: model.can_view_bookings,
+            canEditBookings: model.can_edit_bookings,
+            canViewInventory: model.can_view_inventory,
+            canEditInventory: model.can_edit_inventory,
+            canViewStaff: model.can_view_staff,
+            canEditStaff: model.can_edit_staff,
+            canViewReports: model.can_view_reports,
+            canViewFinancials: model.can_view_financials,
+            grantedBy: model.granted_by,
+            grantedAt: model.granted_at,
+            expiresAt: model.expires_at,
+            isActive: model.is_active,
+            createdAt: model.created_at,
+            updatedAt: model.updated_at,
+        });
     }
 
-    async findAll(params: BranchListParams): Promise<{ branches: Branch[]; total: number }> {
-        const conditions: string[] = ['tenant_id = $1'];
-        const values: unknown[] = [params.tenantId];
-        let paramIndex = 2;
+    private toBranchTransferEntity(model: BranchTransferModel): BranchTransferEntity {
+        return BranchTransferEntity.create({
+            id: model.id,
+            tenantId: model.tenant_id,
+            transfer_type: model.transfer_type as any,
+            referenceId: model.reference_id,
+            referenceCode: model.reference_code,
+            fromBranchId: model.from_branch_id,
+            toBranchId: model.to_branch_id,
+            status: model.status as TransferStatus,
+            reason: model.reason,
+            notes: model.notes,
+            requestedBy: model.requested_by,
+            approvedBy: model.approved_by,
+            completedBy: model.completed_by,
+            requestedAt: model.requested_at,
+            approvedAt: model.approved_at,
+            completedAt: model.completed_at,
+            effectiveDate: model.effective_date,
+            metadata: model.metadata || {},
+            createdAt: model.created_at,
+            updatedAt: model.updated_at,
+        });
+    }
 
-        if (params.type) {
-            conditions.push(`type = $${paramIndex++}`);
-            values.push(params.type);
-        }
+    async findById(id: string, tenantId: string): Promise<BranchEntity | null> {
+        const model = await BranchModel.findOne({
+            where: { id, tenant_id: tenantId }
+        });
+        return model ? this.toBranchEntity(model) : null;
+    }
 
-        if (params.isActive !== undefined) {
-            conditions.push(`is_active = $${paramIndex++}`);
-            values.push(params.isActive);
-        }
+    async findByCode(code: string, tenantId: string): Promise<BranchEntity | null> {
+        const model = await BranchModel.findOne({
+            where: { code: code.toUpperCase(), tenant_id: tenantId }
+        });
+        return model ? this.toBranchEntity(model) : null;
+    }
 
-        if (params.parentBranchId) {
-            conditions.push(`parent_branch_id = $${paramIndex++}`);
-            values.push(params.parentBranchId);
-        }
+    async findAll(params: BranchListParams): Promise<{ branches: BranchEntity[]; total: number }> {
+        const where: any = { tenant_id: params.tenantId };
 
+        if (params.type) where.type = params.type;
+        if (params.isActive !== undefined) where.is_active = params.isActive;
+        if (params.parentBranchId) where.parent_branch_id = params.parentBranchId;
         if (params.search) {
-            conditions.push(`(name ILIKE $${paramIndex} OR code ILIKE $${paramIndex} OR city ILIKE $${paramIndex})`);
-            values.push(`%${params.search}%`);
-            paramIndex++;
+            where[Op.or] = [
+                { name: { [Op.iLike]: '%'+params.search+'%' } },
+                { code: { [Op.iLike]: '%'+params.search+'%' } },
+                { city: { [Op.iLike]: '%'+params.search+'%' } }
+            ];
         }
 
-        const whereClause = conditions.join(' AND ');
-        
-        // Get total count
-        const countResult = await query<{ count: string }>(
-            `SELECT COUNT(*) as count FROM public.branches WHERE ${whereClause}`,
-            values
-        );
-        const total = parseInt(countResult.rows[0].count, 10);
-
-        // Get paginated results
-        let queryStr = `SELECT * FROM public.branches WHERE ${whereClause} ORDER BY 
-            CASE WHEN type = 'HEAD_OFFICE' THEN 0 
-                 WHEN type = 'REGIONAL_OFFICE' THEN 1 
-                 ELSE 2 
-            END, name ASC`;
-
-        if (params.limit) {
-            queryStr += ` LIMIT $${paramIndex++}`;
-            values.push(params.limit);
-        }
-        if (params.offset) {
-            queryStr += ` OFFSET $${paramIndex++}`;
-            values.push(params.offset);
-        }
-
-        const result = await query<BranchRow>(queryStr, values);
-        return {
-            branches: result.rows.map(toBranchEntity),
-            total,
-        };
-    }
-
-    async create(branch: Branch): Promise<Branch> {
-        const result = await query<BranchRow>(
-            `INSERT INTO public.branches (
-                id, tenant_id, name, code, type, description,
-                address_line1, address_line2, city, state, country, postal_code,
-                phone, email, latitude, longitude, timezone,
-                parent_branch_id, manager_id, currency, operating_hours, settings,
-                is_active, created_at, updated_at
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6,
-                $7, $8, $9, $10, $11, $12,
-                $13, $14, $15, $16, $17,
-                $18, $19, $20, $21, $22,
-                $23, $24, $25
-            ) RETURNING *`,
-            [
-                branch.id,
-                branch.tenantId,
-                branch.name,
-                branch.code,
-                branch.type,
-                branch.description,
-                branch.address.line1,
-                branch.address.line2,
-                branch.address.city,
-                branch.address.state,
-                branch.address.country,
-                branch.address.postalCode,
-                branch.phone,
-                branch.email,
-                branch.latitude,
-                branch.longitude,
-                branch.timezone,
-                branch.parentBranchId,
-                branch.managerId,
-                branch.currency,
-                JSON.stringify(branch.operatingHours),
-                JSON.stringify(branch.settings),
-                branch.isActive,
-                branch.createdAt,
-                branch.updatedAt,
+        const { count, rows } = await BranchModel.findAndCountAll({
+            where,
+            limit: params.limit,
+            offset: params.offset,
+            order: [
+                [Sequelize.literal("CASE WHEN type = 'HEAD_OFFICE' THEN 0 WHEN type = 'REGIONAL_OFFICE' THEN 1 ELSE 2 END"), 'ASC'],
+                ['name', 'ASC']
             ]
-        );
-        return toBranchEntity(result.rows[0]);
+        });
+
+        return {
+            branches: rows.map(r => this.toBranchEntity(r)),
+            total: count,
+        };
     }
 
-    async update(id: string, tenantId: string, updates: Partial<BranchProps>): Promise<Branch | null> {
-        const setClauses: string[] = [];
-        const values: unknown[] = [];
-        let paramIndex = 1;
+    async create(branch: BranchEntity): Promise<BranchEntity> {
+        const model = await BranchModel.create({
+            id: branch.id,
+            tenant_id: branch.tenantId,
+            name: branch.name,
+            code: branch.code,
+            type: branch.type,
+            description: branch.description,
+            address_line1: branch.address.line1,
+            address_line2: branch.address.line2,
+            city: branch.address.city,
+            state: branch.address.state,
+            country: branch.address.country,
+            postal_code: branch.address.postalCode,
+            phone: branch.phone,
+            email: branch.email,
+            latitude: branch.latitude,
+            longitude: branch.longitude,
+            timezone: branch.timezone,
+            parent_branch_id: branch.parentBranchId,
+            manager_id: branch.managerId,
+            currency: branch.currency,
+            operating_hours: branch.operatingHours as any,
+            settings: branch.settings as any,
+            is_active: branch.isActive,
+        });
+        return this.toBranchEntity(model);
+    }
 
-        const fieldMap: Record<string, string> = {
-            name: 'name',
-            code: 'code',
-            type: 'type',
-            description: 'description',
-            phone: 'phone',
-            email: 'email',
-            latitude: 'latitude',
-            longitude: 'longitude',
-            timezone: 'timezone',
-            parentBranchId: 'parent_branch_id',
-            managerId: 'manager_id',
-            currency: 'currency',
-            isActive: 'is_active',
-        };
+    async update(id: string, tenantId: string, updates: Partial<BranchProps>): Promise<BranchEntity | null> {
+        const updateData: any = {};
 
-        for (const [key, column] of Object.entries(fieldMap)) {
-            if (key in updates && updates[key as keyof BranchProps] !== undefined) {
-                setClauses.push(`${column} = $${paramIndex++}`);
-                values.push(updates[key as keyof BranchProps]);
-            }
-        }
+        if (updates.name !== undefined) updateData.name = updates.name;
+        if (updates.code !== undefined) updateData.code = updates.code;
+        if (updates.type !== undefined) updateData.type = updates.type;
+        if (updates.description !== undefined) updateData.description = updates.description;
+        if (updates.phone !== undefined) updateData.phone = updates.phone;
+        if (updates.email !== undefined) updateData.email = updates.email;
+        if (updates.latitude !== undefined) updateData.latitude = updates.latitude;
+        if (updates.longitude !== undefined) updateData.longitude = updates.longitude;
+        if (updates.timezone !== undefined) updateData.timezone = updates.timezone;
+        if (updates.parentBranchId !== undefined) updateData.parent_branch_id = updates.parentBranchId;
+        if (updates.managerId !== undefined) updateData.manager_id = updates.managerId;
+        if (updates.currency !== undefined) updateData.currency = updates.currency;
+        if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
 
-        // Handle address fields
         if (updates.address) {
-            if (updates.address.line1 !== undefined) {
-                setClauses.push(`address_line1 = $${paramIndex++}`);
-                values.push(updates.address.line1);
-            }
-            if (updates.address.line2 !== undefined) {
-                setClauses.push(`address_line2 = $${paramIndex++}`);
-                values.push(updates.address.line2);
-            }
-            if (updates.address.city !== undefined) {
-                setClauses.push(`city = $${paramIndex++}`);
-                values.push(updates.address.city);
-            }
-            if (updates.address.state !== undefined) {
-                setClauses.push(`state = $${paramIndex++}`);
-                values.push(updates.address.state);
-            }
-            if (updates.address.country !== undefined) {
-                setClauses.push(`country = $${paramIndex++}`);
-                values.push(updates.address.country);
-            }
-            if (updates.address.postalCode !== undefined) {
-                setClauses.push(`postal_code = $${paramIndex++}`);
-                values.push(updates.address.postalCode);
-            }
+            if (updates.address.line1 !== undefined) updateData.address_line1 = updates.address.line1;
+            if (updates.address.line2 !== undefined) updateData.address_line2 = updates.address.line2;
+            if (updates.address.city !== undefined) updateData.city = updates.address.city;
+            if (updates.address.state !== undefined) updateData.state = updates.address.state;
+            if (updates.address.country !== undefined) updateData.country = updates.address.country;
+            if (updates.address.postalCode !== undefined) updateData.postal_code = updates.address.postalCode;
         }
 
-        // Handle JSON fields
-        if (updates.operatingHours !== undefined) {
-            setClauses.push(`operating_hours = $${paramIndex++}`);
-            values.push(JSON.stringify(updates.operatingHours));
-        }
-        if (updates.settings !== undefined) {
-            setClauses.push(`settings = $${paramIndex++}`);
-            values.push(JSON.stringify(updates.settings));
-        }
+        if (updates.operatingHours !== undefined) updateData.operating_hours = updates.operatingHours;
+        if (updates.settings !== undefined) updateData.settings = updates.settings;
 
-        if (setClauses.length === 0) {
-            return this.findById(id, tenantId);
-        }
+        const [affectedCount] = await BranchModel.update(updateData, {
+            where: { id, tenant_id: tenantId }
+        });
 
-        setClauses.push('updated_at = NOW()');
-        values.push(id, tenantId);
-
-        const result = await query<BranchRow>(
-            `UPDATE public.branches SET ${setClauses.join(', ')} 
-             WHERE id = $${paramIndex++} AND tenant_id = $${paramIndex} 
-             RETURNING *`,
-            values
-        );
-
-        return result.rows[0] ? toBranchEntity(result.rows[0]) : null;
+        if (affectedCount === 0) return null;
+        return this.findById(id, tenantId);
     }
 
     async delete(id: string, tenantId: string): Promise<boolean> {
-        const result = await query(
-            `DELETE FROM public.branches WHERE id = $1 AND tenant_id = $2`,
-            [id, tenantId]
-        );
-        return (result.rowCount ?? 0) > 0;
+        const affectedCount = await BranchModel.destroy({
+            where: { id, tenant_id: tenantId }
+        });
+        return affectedCount > 0;
     }
 
     async softDelete(id: string, tenantId: string): Promise<boolean> {
-        const result = await query(
-            `UPDATE public.branches SET is_active = false, updated_at = NOW() 
-             WHERE id = $1 AND tenant_id = $2`,
-            [id, tenantId]
+        const [affectedCount] = await BranchModel.update(
+            { is_active: false },
+            { where: { id, tenant_id: tenantId } }
         );
-        return (result.rowCount ?? 0) > 0;
+        return affectedCount > 0;
     }
-
-    // ========================================================================
-    // Branch Statistics
-    // ========================================================================
 
     async getBranchWithStats(id: string, tenantId: string): Promise<BranchWithStats | null> {
         const branch = await this.findById(id, tenantId);
         if (!branch) return null;
 
-        const stats = await query<{
-            employee_count: string;
-            resource_count: string;
-            active_bookings: string;
-            monthly_revenue: string;
-        }>(
-            `SELECT 
-                (SELECT COUNT(*) FROM hrms.employees WHERE branch_id = $1 AND is_active = true) as employee_count,
-                (SELECT COUNT(*) FROM public.resources WHERE branch_id = $1 AND is_active = true) as resource_count,
-                (SELECT COUNT(*) FROM public.bookings WHERE branch_id = $1 AND status IN ('confirmed', 'pending')) as active_bookings,
-                (SELECT COALESCE(SUM(total_amount), 0) FROM public.bookings 
-                 WHERE branch_id = $1 AND status = 'confirmed' 
-                 AND created_at >= date_trunc('month', CURRENT_DATE)) as monthly_revenue`,
-            [id]
+        const stats: any = await BranchModel.sequelize!.query(
+            "SELECT (SELECT COUNT(*) FROM hrms.employees WHERE branch_id = :id AND is_active = true) as employee_count, (SELECT COUNT(*) FROM public.resources WHERE branch_id = :id AND is_active = true) as resource_count, (SELECT COUNT(*) FROM public.bookings WHERE branch_id = :id AND status IN ('confirmed', 'pending')) as active_bookings, (SELECT COALESCE(SUM(total_amount), 0) FROM public.bookings WHERE branch_id = :id AND status = 'confirmed' AND created_at >= date_trunc('month', CURRENT_DATE)) as monthly_revenue",
+            {
+                replacements: { id },
+                type: 'SELECT'
+            }
         );
 
         return {
             ...branch,
-            employeeCount: parseInt(stats.rows[0]?.employee_count ?? '0', 10),
-            resourceCount: parseInt(stats.rows[0]?.resource_count ?? '0', 10),
-            activeBookingsCount: parseInt(stats.rows[0]?.active_bookings ?? '0', 10),
-            monthlyRevenue: parseFloat(stats.rows[0]?.monthly_revenue ?? '0'),
+            employeeCount: parseInt(stats[0]?.employee_count ?? '0', 10),
+            resourceCount: parseInt(stats[0]?.resource_count ?? '0', 10),
+            activeBookingsCount: parseInt(stats[0]?.active_bookings ?? '0', 10),
+            monthlyRevenue: parseFloat(stats[0]?.monthly_revenue ?? '0'),
         } as BranchWithStats;
     }
 
     async getAllBranchesWithStats(tenantId: string): Promise<BranchWithStats[]> {
-        const result = await query<BranchRow & {
-            employee_count: string;
-            resource_count: string;
-            active_bookings: string;
-        }>(
-            `SELECT b.*,
-                (SELECT COUNT(*) FROM hrms.employees e WHERE e.branch_id = b.id AND e.is_active = true) as employee_count,
-                (SELECT COUNT(*) FROM public.resources r WHERE r.branch_id = b.id AND r.is_active = true) as resource_count,
-                (SELECT COUNT(*) FROM public.bookings bk WHERE bk.branch_id = b.id AND bk.status IN ('confirmed', 'pending')) as active_bookings
-             FROM public.branches b
-             WHERE b.tenant_id = $1 AND b.is_active = true
-             ORDER BY b.type, b.name`,
-            [tenantId]
-        );
+        const branches = await BranchModel.findAll({
+            where: { tenant_id: tenantId, is_active: true },
+            order: [['type', 'ASC'], ['name', 'ASC']]
+        });
 
-        return result.rows.map(row => ({
-            ...toBranchEntity(row),
-            employeeCount: parseInt(row.employee_count, 10),
-            resourceCount: parseInt(row.resource_count, 10),
-            activeBookingsCount: parseInt(row.active_bookings, 10),
-        })) as BranchWithStats[];
+        const results: BranchWithStats[] = [];
+        for (const branch of branches) {
+            const stats = await this.getBranchWithStats(branch.id, tenantId);
+            if (stats) results.push(stats);
+        }
+        return results;
     }
 
-    // ========================================================================
-    // Branch Hierarchy
-    // ========================================================================
-
-    async getChildBranches(parentId: string, tenantId: string): Promise<Branch[]> {
-        const result = await query<BranchRow>(
-            `SELECT * FROM public.branches 
-             WHERE parent_branch_id = $1 AND tenant_id = $2 AND is_active = true
-             ORDER BY name`,
-            [parentId, tenantId]
-        );
-        return result.rows.map(toBranchEntity);
+    async getChildBranches(parentId: string, tenantId: string): Promise<BranchEntity[]> {
+        const models = await BranchModel.findAll({
+            where: { parent_branch_id: parentId, tenant_id: tenantId, is_active: true },
+            order: [['name', 'ASC']]
+        });
+        return models.map(m => this.toBranchEntity(m));
     }
 
-    async getBranchHierarchy(tenantId: string): Promise<Array<Branch & { children?: Branch[] }>> {
-        const result = await query<BranchRow>(
-            `SELECT * FROM public.branches 
-             WHERE tenant_id = $1 AND is_active = true
-             ORDER BY CASE WHEN parent_branch_id IS NULL THEN 0 ELSE 1 END, name`,
-            [tenantId]
-        );
+    async getBranchHierarchy(tenantId: string): Promise<Array<BranchEntity & { children?: BranchEntity[] }>> {
+        const models = await BranchModel.findAll({
+            where: { tenant_id: tenantId, is_active: true },
+            order: [
+                [Sequelize.literal("CASE WHEN parent_branch_id IS NULL THEN 0 ELSE 1 END"), 'ASC'],
+                ['name', 'ASC']
+            ]
+        });
 
-        const branches = result.rows.map(toBranchEntity);
-        const branchMap = new Map<string, Branch & { children: Branch[] }>();
-        const rootBranches: Array<Branch & { children: Branch[] }> = [];
+        const branches = models.map(m => this.toBranchEntity(m));
+        const branchMap = new Map<string, BranchEntity & { children: BranchEntity[] }>();
+        const rootBranches: Array<BranchEntity & { children: BranchEntity[] }> = [];
 
-        // Create map and initialize children arrays
         for (const branch of branches) {
             branchMap.set(branch.id, { ...branch, children: [] });
         }
 
-        // Build hierarchy
         for (const branch of branches) {
             const branchWithChildren = branchMap.get(branch.id)!;
             if (branch.parentBranchId && branchMap.has(branch.parentBranchId)) {
@@ -524,143 +311,108 @@ export class BranchRepository {
         return rootBranches;
     }
 
-    // ========================================================================
-    // Branch Permissions
-    // ========================================================================
-
-    async getUserBranchPermissions(userId: string, tenantId: string): Promise<BranchPermission[]> {
-        const result = await query<BranchPermissionRow>(
-            `SELECT * FROM public.branch_permissions 
-             WHERE user_id = $1 AND tenant_id = $2 AND is_active = true
-             AND (expires_at IS NULL OR expires_at > NOW())`,
-            [userId, tenantId]
-        );
-        return result.rows.map(toBranchPermissionEntity);
+    async getUserBranchPermissions(userId: string, tenantId: string): Promise<BranchPermissionEntity[]> {
+        const models = await BranchPermissionModel.findAll({
+            where: {
+                user_id: userId,
+                tenant_id: tenantId,
+                is_active: true,
+                [Op.or]: [
+                    { expires_at: null },
+                    { expires_at: { [Op.gt]: new Date() } }
+                ]
+            }
+        });
+        return models.map(m => this.toBranchPermissionEntity(m));
     }
 
-    async getBranchPermissionsForBranch(branchId: string, tenantId: string): Promise<BranchPermission[]> {
-        const result = await query<BranchPermissionRow>(
-            `SELECT * FROM public.branch_permissions 
-             WHERE branch_id = $1 AND tenant_id = $2 AND is_active = true`,
-            [branchId, tenantId]
-        );
-        return result.rows.map(toBranchPermissionEntity);
+    async getBranchPermissionsForBranch(branchId: string, tenantId: string): Promise<BranchPermissionEntity[]> {
+        const models = await BranchPermissionModel.findAll({
+            where: { branch_id: branchId, tenant_id: tenantId, is_active: true }
+        });
+        return models.map(m => this.toBranchPermissionEntity(m));
     }
 
-    async grantBranchPermission(permission: BranchPermission): Promise<BranchPermission> {
-        const result = await query<BranchPermissionRow>(
-            `INSERT INTO public.branch_permissions (
-                id, tenant_id, user_id, branch_id, permission_level,
-                can_view_leads, can_edit_leads, can_view_bookings, can_edit_bookings,
-                can_view_inventory, can_edit_inventory, can_view_staff, can_edit_staff,
-                can_view_reports, can_view_financials,
-                granted_by, granted_at, expires_at, is_active
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-            ON CONFLICT (user_id, branch_id) DO UPDATE SET
-                permission_level = EXCLUDED.permission_level,
-                can_view_leads = EXCLUDED.can_view_leads,
-                can_edit_leads = EXCLUDED.can_edit_leads,
-                can_view_bookings = EXCLUDED.can_view_bookings,
-                can_edit_bookings = EXCLUDED.can_edit_bookings,
-                can_view_inventory = EXCLUDED.can_view_inventory,
-                can_edit_inventory = EXCLUDED.can_edit_inventory,
-                can_view_staff = EXCLUDED.can_view_staff,
-                can_edit_staff = EXCLUDED.can_edit_staff,
-                can_view_reports = EXCLUDED.can_view_reports,
-                can_view_financials = EXCLUDED.can_view_financials,
-                granted_by = EXCLUDED.granted_by,
-                expires_at = EXCLUDED.expires_at,
-                is_active = EXCLUDED.is_active,
-                updated_at = NOW()
-            RETURNING *`,
-            [
-                permission.id,
-                permission.tenantId,
-                permission.userId,
-                permission.branchId,
-                permission.permissionLevel,
-                permission.canViewLeads,
-                permission.canEditLeads,
-                permission.canViewBookings,
-                permission.canEditBookings,
-                permission.canViewInventory,
-                permission.canEditInventory,
-                permission.canViewStaff,
-                permission.canEditStaff,
-                permission.canViewReports,
-                permission.canViewFinancials,
-                permission.grantedBy,
-                permission.grantedAt,
-                permission.expiresAt,
-                permission.isActive,
-            ]
-        );
-        return toBranchPermissionEntity(result.rows[0]);
+    async grantBranchPermission(permission: BranchPermissionEntity): Promise<BranchPermissionEntity> {
+        const [model, created] = await BranchPermissionModel.upsert({
+            id: permission.id,
+            tenant_id: permission.tenantId,
+            user_id: permission.userId,
+            branch_id: permission.branchId,
+            permission_level: permission.permissionLevel,
+            can_view_leads: permission.canViewLeads,
+            can_edit_leads: permission.canEditLeads,
+            can_view_bookings: permission.canViewBookings,
+            can_edit_bookings: permission.canEditBookings,
+            can_view_inventory: permission.canViewInventory,
+            can_edit_inventory: permission.canEditInventory,
+            can_view_staff: permission.canViewStaff,
+            can_edit_staff: permission.canEditStaff,
+            can_view_reports: permission.canViewReports,
+            can_view_financials: permission.canViewFinancials,
+            granted_by: permission.grantedBy,
+            granted_at: permission.grantedAt,
+            expires_at: permission.expiresAt,
+            is_active: permission.isActive,
+        });
+        return this.toBranchPermissionEntity(model);
     }
 
     async revokeBranchPermission(userId: string, branchId: string, tenantId: string): Promise<boolean> {
-        const result = await query(
-            `UPDATE public.branch_permissions SET is_active = false, updated_at = NOW()
-             WHERE user_id = $1 AND branch_id = $2 AND tenant_id = $3`,
-            [userId, branchId, tenantId]
+        const [affectedCount] = await BranchPermissionModel.update(
+            { is_active: false },
+            { where: { user_id: userId, branch_id: branchId, tenant_id: tenantId } }
         );
-        return (result.rowCount ?? 0) > 0;
+        return affectedCount > 0;
     }
 
     async getUserAccessibleBranches(userId: string, tenantId: string): Promise<string[]> {
-        const result = await query<{ branch_ids: string[] }>(
-            `SELECT get_user_accessible_branches($1) as branch_ids`,
-            [userId]
+        const result: any = await BranchModel.sequelize!.query(
+            "SELECT get_user_accessible_branches(:userId) as branch_ids",
+            {
+                replacements: { userId },
+                type: 'SELECT'
+            }
         );
-        return result.rows[0]?.branch_ids ?? [];
+        return result[0]?.branch_ids ?? [];
     }
 
     async userHasBranchAccess(userId: string, branchId: string, permissionLevel: string = 'VIEW'): Promise<boolean> {
-        const result = await query<{ has_access: boolean }>(
-            `SELECT user_has_branch_access($1, $2, $3) as has_access`,
-            [userId, branchId, permissionLevel]
+        const result: any = await BranchModel.sequelize!.query(
+            "SELECT user_has_branch_access(:userId, :branchId, :permissionLevel) as has_access",
+            {
+                replacements: { userId, branchId, permissionLevel },
+                type: 'SELECT'
+            }
         );
-        return result.rows[0]?.has_access ?? false;
+        return result[0]?.has_access ?? false;
     }
 
-    // ========================================================================
-    // Branch Transfers
-    // ========================================================================
-
-    async createTransfer(transfer: BranchTransfer): Promise<BranchTransfer> {
-        const result = await query<BranchTransferRow>(
-            `INSERT INTO public.branch_transfers (
-                id, tenant_id, transfer_type, reference_id, reference_code,
-                from_branch_id, to_branch_id, status, reason, notes,
-                requested_by, requested_at, effective_date, metadata
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-            RETURNING *`,
-            [
-                transfer.id,
-                transfer.tenantId,
-                transfer.transferType,
-                transfer.referenceId,
-                transfer.referenceCode,
-                transfer.fromBranchId,
-                transfer.toBranchId,
-                transfer.status,
-                transfer.reason,
-                transfer.notes,
-                transfer.requestedBy,
-                transfer.requestedAt,
-                transfer.effectiveDate,
-                JSON.stringify(transfer.metadata),
-            ]
-        );
-        return toBranchTransferEntity(result.rows[0]);
+    async createTransfer(transfer: BranchTransferEntity): Promise<BranchTransferEntity> {
+        const model = await BranchTransferModel.create({
+            id: transfer.id,
+            tenant_id: transfer.tenantId,
+            transfer_type: transfer.transferType,
+            reference_id: transfer.referenceId,
+            reference_code: transfer.referenceCode,
+            from_branch_id: transfer.fromBranchId,
+            to_branch_id: transfer.toBranchId,
+            status: transfer.status,
+            reason: transfer.reason,
+            notes: transfer.notes,
+            requested_by: transfer.requestedBy,
+            requested_at: transfer.requestedAt,
+            effective_date: transfer.effectiveDate,
+            metadata: transfer.metadata,
+        });
+        return this.toBranchTransferEntity(model);
     }
 
-    async getTransfer(id: string, tenantId: string): Promise<BranchTransfer | null> {
-        const result = await query<BranchTransferRow>(
-            `SELECT * FROM public.branch_transfers WHERE id = $1 AND tenant_id = $2`,
-            [id, tenantId]
-        );
-        return result.rows[0] ? toBranchTransferEntity(result.rows[0]) : null;
+    async getTransfer(id: string, tenantId: string): Promise<BranchTransferEntity | null> {
+        const model = await BranchTransferModel.findOne({
+            where: { id, tenant_id: tenantId }
+        });
+        return model ? this.toBranchTransferEntity(model) : null;
     }
 
     async updateTransferStatus(
@@ -668,51 +420,46 @@ export class BranchRepository {
         tenantId: string, 
         status: TransferStatus, 
         userId: string
-    ): Promise<BranchTransfer | null> {
-        const updates: string[] = [`status = $1`];
-        const values: unknown[] = [status];
-        let paramIndex = 2;
+    ): Promise<BranchTransferEntity | null> {
+        const updateData: any = { status };
 
         if (status === 'APPROVED') {
-            updates.push(`approved_by = $${paramIndex++}`, `approved_at = NOW()`);
-            values.push(userId);
+            updateData.approved_by = userId;
+            updateData.approved_at = new Date();
         } else if (status === 'COMPLETED') {
-            updates.push(`completed_by = $${paramIndex++}`, `completed_at = NOW()`);
-            values.push(userId);
+            updateData.completed_by = userId;
+            updateData.completed_at = new Date();
         }
 
-        updates.push('updated_at = NOW()');
-        values.push(id, tenantId);
+        const [affectedCount] = await BranchTransferModel.update(updateData, {
+            where: { id, tenant_id: tenantId }
+        });
 
-        const result = await query<BranchTransferRow>(
-            `UPDATE public.branch_transfers SET ${updates.join(', ')} 
-             WHERE id = $${paramIndex++} AND tenant_id = $${paramIndex}
-             RETURNING *`,
-            values
-        );
-
-        return result.rows[0] ? toBranchTransferEntity(result.rows[0]) : null;
+        if (affectedCount === 0) return null;
+        return this.getTransfer(id, tenantId);
     }
 
-    async getPendingTransfers(branchId: string, tenantId: string, direction: 'from' | 'to' | 'both' = 'both'): Promise<BranchTransfer[]> {
-        let whereClause = 'tenant_id = $1 AND status IN ($2, $3)';
-        const values: unknown[] = [tenantId, 'PENDING', 'APPROVED'];
-        
+    async getPendingTransfers(branchId: string, tenantId: string, direction: 'from' | 'to' | 'both' = 'both'): Promise<BranchTransferEntity[]> {
+        const where: any = {
+            tenant_id: tenantId,
+            status: { [Op.in]: ['PENDING', 'APPROVED'] }
+        };
+
         if (direction === 'from') {
-            whereClause += ' AND from_branch_id = $4';
-            values.push(branchId);
+            where.from_branch_id = branchId;
         } else if (direction === 'to') {
-            whereClause += ' AND to_branch_id = $4';
-            values.push(branchId);
+            where.to_branch_id = branchId;
         } else {
-            whereClause += ' AND (from_branch_id = $4 OR to_branch_id = $4)';
-            values.push(branchId);
+            where[Op.or] = [
+                { from_branch_id: branchId },
+                { to_branch_id: branchId }
+            ];
         }
 
-        const result = await query<BranchTransferRow>(
-            `SELECT * FROM public.branch_transfers WHERE ${whereClause} ORDER BY requested_at DESC`,
-            values
-        );
-        return result.rows.map(toBranchTransferEntity);
+        const models = await BranchTransferModel.findAll({
+            where,
+            order: [['requested_at', 'DESC']]
+        });
+        return models.map(m => this.toBranchTransferEntity(m));
     }
 }

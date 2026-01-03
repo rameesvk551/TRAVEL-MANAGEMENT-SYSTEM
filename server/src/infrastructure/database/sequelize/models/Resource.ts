@@ -11,6 +11,7 @@ interface ResourceAttributes {
     capacity?: number;
     base_price?: number;
     currency?: string;
+    attributes?: Record<string, unknown>;
     is_active: boolean;
     created_at?: Date;
     updated_at?: Date;
@@ -28,6 +29,7 @@ export class Resource extends Model<ResourceAttributes, ResourceCreationAttribut
     public capacity?: number;
     public base_price?: number;
     public currency?: string;
+    public attributes?: Record<string, unknown>;
     public is_active!: boolean;
     public readonly created_at!: Date;
     public readonly updated_at!: Date;
@@ -57,6 +59,10 @@ Resource.init(
         capacity: DataTypes.INTEGER,
         base_price: DataTypes.DECIMAL,
         currency: DataTypes.STRING,
+        attributes: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
         is_active: {
             type: DataTypes.BOOLEAN,
             defaultValue: true,

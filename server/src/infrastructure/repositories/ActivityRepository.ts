@@ -1,153 +1,100 @@
-import { query } from '../database/index.js';
-import { Activity, ActivityType, ActivityStatus, ActivityOutcome } from '../../domain/entities/Activity.js';
+import { Activity as ActivityEntity, ActivityType, ActivityStatus, ActivityOutcome } from '../../domain/entities/Activity.js';
 import { IActivityRepository, ActivityFilters } from '../../domain/interfaces/IActivityRepository.js';
-
-interface ActivityRow {
-    id: string;
-    tenant_id: string;
-    lead_id?: string;
-    contact_id?: string;
-    booking_id?: string;
-    assigned_to_id?: string;
-    created_by_id: string;
-    type: ActivityType;
-    status: ActivityStatus;
-    outcome?: ActivityOutcome;
-    subject: string;
-    description?: string;
-    scheduled_at?: Date;
-    completed_at?: Date;
-    metadata: Record<string, unknown>;
-    created_at: Date;
-    updated_at: Date;
-}
-
-function toEntity(row: ActivityRow): Activity {
-    return Activity.fromPersistence({
-        id: row.id,
-        tenantId: row.tenant_id,
-        leadId: row.lead_id,
-        contactId: row.contact_id,
-        bookingId: row.booking_id,
-        assignedToId: row.assigned_to_id,
-        createdById: row.created_by_id,
-        type: row.type,
-        status: row.status,
-        outcome: row.outcome,
-        subject: row.subject,
-        description: row.description,
-        scheduledAt: row.scheduled_at,
-        completedAt: row.completed_at,
-        metadata: row.metadata,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-    });
-}
+import { Activity as ActivityModel } from '../database/sequelize/models/Activity.js';
+import { Op } from 'sequelize';
 
 export class ActivityRepository implements IActivityRepository {
-    async save(activity: Activity): Promise<Activity> {
-        const sql = `
-            INSERT INTO activities (
-                id, tenant_id, lead_id, contact_id, booking_id, assigned_to_id, created_by_id,
-                type, status, outcome, subject, description, scheduled_at, completed_at,
-                metadata, created_at, updated_at
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7,
-                $8, $9, $10, $11, $12, $13, $14,
-                $15, $16, $17
-            )
-            ON CONFLICT (id) DO UPDATE SET
-                status = EXCLUDED.status,
-                outcome = EXCLUDED.outcome,
-                description = EXCLUDED.description,
-                scheduled_at = EXCLUDED.scheduled_at,
-                completed_at = EXCLUDED.completed_at,
-                updated_at = NOW()
-            RETURNING *
-        `;
-
-        const params = [
-            activity.id, activity.tenantId, activity.leadId, activity.contactId, activity.bookingId,
-            activity.assignedToId, activity.createdById,
-            activity.type, activity.status, activity.outcome, activity.subject, activity.description,
-            activity.scheduledAt, activity.completedAt,
-            activity.metadata, activity.createdAt, new Date()
-        ];
-
-        const result = await query<ActivityRow>(sql, params);
-        return toEntity(result.rows[0]);
+    private toEntity(model: ActivityModel): ActivityEntity {
+        return ActivityEntity.fromPersistence({
+            id: model.id,
+            tenantId: model.tenant_id,
+            leadId: model.lead_id,
+            contactId: model.contact_id,
+            bookingId: model.booking_id,
+            assignedToId: model.assigned_to_id,
+            createdById: model.created_by_id || '',
+            type: model.type as ActivityType,
+            status: model.status as ActivityStatus,
+            outcome: model.outcome as ActivityOutcome,
+            subject: model.subject || '',
+            description: model.description,
+            scheduledAt: model.scheduled_at,
+            completedAt: model.completed_at,
+            metadata: model.metadata || {},
+            createdAt: model.created_at,
+            updatedAt: model.updated_at,
+        });
     }
 
-    async findById(id: string, tenantId: string): Promise<Activity | null> {
-        const result = await query<ActivityRow>(
-            'SELECT * FROM activities WHERE id = $1 AND tenant_id = $2',
-            [id, tenantId]
-        );
-        return result.rows[0] ? toEntity(result.rows[0]) : null;
+    async save(activity: ActivityEntity): Promise<ActivityEntity> {
+        const [model, created] = await ActivityModel.upsert({
+            id: activity.id,
+            tenant_id: activity.tenantId,
+            lead_id: activity.leadId,
+            contact_id: activity.contactId,
+            booking_id: activity.bookingId,
+            assigned_to_id: activity.assignedToId,
+            created_by_id: activity.createdById,
+            type: activity.type,
+            status: activity.status,
+            outcome: activity.outcome,
+            subject: activity.subject,
+            description: activity.description,
+            scheduled_at: activity.scheduledAt,
+            completed_at: activity.completedAt,
+            metadata: activity.metadata,
+        });
+
+        return this.toEntity(model);
     }
 
-    async findAll(tenantId: string, filters: ActivityFilters): Promise<{ activities: Activity[]; total: number }> {
-        let sql = 'SELECT * FROM activities WHERE tenant_id = $1';
-        const params: unknown[] = [tenantId];
-        let paramIndex = 2;
+    async findById(id: string, tenantId: string): Promise<ActivityEntity | null> {
+        const model = await ActivityModel.findOne({
+            where: { id, tenant_id: tenantId }
+        });
+        return model ? this.toEntity(model) : null;
+    }
 
-        if (filters.leadId) {
-            sql += ` AND lead_id = $${paramIndex++}`;
-            params.push(filters.leadId);
-        }
-        if (filters.contactId) {
-            sql += ` AND contact_id = $${paramIndex++}`;
-            params.push(filters.contactId);
-        }
-        if (filters.assignedToId) {
-            sql += ` AND assigned_to_id = $${paramIndex++}`;
-            params.push(filters.assignedToId);
-        }
-        if (filters.status) {
-            sql += ` AND status = $${paramIndex++}`;
-            params.push(filters.status);
-        }
+    async findAll(tenantId: string, filters: ActivityFilters): Promise<{ activities: ActivityEntity[]; total: number }> {
+        const where: any = { tenant_id: tenantId };
 
-        const countResult = await query<{ count: string }>(
-            `SELECT COUNT(*) as count FROM (${sql}) as filtered_activities`,
-            params
-        );
-        const total = parseInt(countResult.rows[0].count, 10);
+        if (filters.leadId) where.lead_id = filters.leadId;
+        if (filters.contactId) where.contact_id = filters.contactId;
+        if (filters.assignedToId) where.assigned_to_id = filters.assignedToId;
+        if (filters.status) where.status = filters.status;
 
         const limit = filters.limit || 50;
         const offset = filters.offset || 0;
-        sql += ` ORDER BY created_at DESC LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
-        params.push(limit, offset);
 
-        const result = await query<ActivityRow>(sql, params);
+        const { count, rows } = await ActivityModel.findAndCountAll({
+            where,
+            limit,
+            offset,
+            order: [['created_at', 'DESC']]
+        });
+
         return {
-            activities: result.rows.map(toEntity),
-            total
+            activities: rows.map(r => this.toEntity(r)),
+            total: count
         };
     }
 
-    async findOverdue(tenantId: string, assignedToId?: string): Promise<Activity[]> {
-        let sql = `
-            SELECT * FROM activities 
-            WHERE tenant_id = $1 
-            AND status = 'PENDING' 
-            AND scheduled_at < NOW()
-        `;
-        const params: unknown[] = [tenantId];
+    async findOverdue(tenantId: string, assignedToId?: string): Promise<ActivityEntity[]> {
+        const where: any = {
+            tenant_id: tenantId,
+            status: 'PENDING',
+            scheduled_at: { [Op.lt]: new Date() }
+        };
 
-        if (assignedToId) {
-            sql += ` AND assigned_to_id = $2`;
-            params.push(assignedToId);
-        }
+        if (assignedToId) where.assigned_to_id = assignedToId;
 
-        const result = await query<ActivityRow>(sql, params);
-        return result.rows.map(toEntity);
+        const rows = await ActivityModel.findAll({ where });
+        return rows.map(r => this.toEntity(r));
     }
 
     async delete(id: string, tenantId: string): Promise<void> {
-        await query(
-            'DELETE FROM activities WHERE id = $1 AND tenant_id = $2',
-            [id, tenantId]
-        );
+        await ActivityModel.destroy({
+            where: { id, tenant_id: tenantId }
+        });
     }
 }

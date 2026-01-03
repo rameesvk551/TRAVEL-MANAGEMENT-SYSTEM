@@ -16,6 +16,7 @@ interface ActivityAttributes {
     description?: string;
     scheduled_at?: Date;
     completed_at?: Date;
+    metadata?: Record<string, unknown>;
     created_at?: Date;
     updated_at?: Date;
 }
@@ -37,6 +38,7 @@ export class Activity extends Model<ActivityAttributes, ActivityCreationAttribut
     public description?: string;
     public scheduled_at?: Date;
     public completed_at?: Date;
+    public metadata?: Record<string, unknown>;
     public readonly created_at!: Date;
     public readonly updated_at!: Date;
 }
@@ -70,6 +72,10 @@ Activity.init(
         description: DataTypes.TEXT,
         scheduled_at: DataTypes.DATE,
         completed_at: DataTypes.DATE,
+        metadata: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
     },
     {
         sequelize,

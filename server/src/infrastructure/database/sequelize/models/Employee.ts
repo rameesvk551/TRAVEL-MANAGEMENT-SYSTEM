@@ -20,6 +20,10 @@ interface EmployeeAttributes {
     confirmation_date?: Date;
     lifecycle_stage?: string;
     is_active: boolean;
+    contact?: Record<string, unknown>;
+    emergency_contacts?: any[];
+    attributes?: Record<string, unknown>;
+    created_by?: string;
     created_at?: Date;
     updated_at?: Date;
 }
@@ -45,6 +49,10 @@ export class Employee extends Model<EmployeeAttributes, EmployeeCreationAttribut
     public confirmation_date?: Date;
     public lifecycle_stage?: string;
     public is_active!: boolean;
+    public contact?: Record<string, unknown>;
+    public emergency_contacts?: any[];
+    public attributes?: Record<string, unknown>;
+    public created_by?: string;
     public readonly created_at!: Date;
     public readonly updated_at!: Date;
 }
@@ -85,6 +93,19 @@ Employee.init(
             type: DataTypes.BOOLEAN,
             defaultValue: true,
         },
+        contact: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
+        emergency_contacts: {
+            type: DataTypes.JSONB,
+            defaultValue: [],
+        },
+        attributes: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
+        created_by: DataTypes.UUID,
     },
     {
         sequelize,

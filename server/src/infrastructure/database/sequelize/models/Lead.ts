@@ -17,8 +17,11 @@ interface LeadAttributes {
     status?: string;
     priority?: string;
     score?: number;
+    travel_preferences?: Record<string, unknown>;
+    tags?: string[];
     notes?: string;
     lost_reason?: string;
+    metadata?: Record<string, unknown>;
     created_at?: Date;
     updated_at?: Date;
 }
@@ -41,8 +44,11 @@ export class Lead extends Model<LeadAttributes, LeadCreationAttributes> implemen
     public status?: string;
     public priority?: string;
     public score?: number;
+    public travel_preferences?: Record<string, unknown>;
+    public tags?: string[];
     public notes?: string;
     public lost_reason?: string;
+    public metadata?: Record<string, unknown>;
     public readonly created_at!: Date;
     public readonly updated_at!: Date;
 }
@@ -74,8 +80,20 @@ Lead.init(
         status: DataTypes.STRING,
         priority: DataTypes.STRING,
         score: DataTypes.INTEGER,
+        travel_preferences: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
+        tags: {
+            type: DataTypes.ARRAY(DataTypes.STRING),
+            defaultValue: [],
+        },
         notes: DataTypes.TEXT,
         lost_reason: DataTypes.TEXT,
+        metadata: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
     },
     {
         sequelize,

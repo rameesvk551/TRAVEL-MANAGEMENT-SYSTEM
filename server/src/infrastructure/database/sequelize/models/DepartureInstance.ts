@@ -18,6 +18,7 @@ interface DepartureInstanceAttributes {
     is_guaranteed: boolean;
     price_override?: number;
     currency?: string;
+    attributes?: any;
     version?: number;
     created_at?: Date;
     updated_at?: Date;
@@ -42,6 +43,7 @@ export class DepartureInstance extends Model<DepartureInstanceAttributes, Depart
     public is_guaranteed!: boolean;
     public price_override?: number;
     public currency?: string;
+    public attributes?: any;
     public version?: number;
     public readonly created_at!: Date;
     public readonly updated_at!: Date;
@@ -84,6 +86,10 @@ DepartureInstance.init(
         },
         price_override: DataTypes.DECIMAL,
         currency: DataTypes.STRING,
+        attributes: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
         version: {
             type: DataTypes.INTEGER,
             defaultValue: 1,

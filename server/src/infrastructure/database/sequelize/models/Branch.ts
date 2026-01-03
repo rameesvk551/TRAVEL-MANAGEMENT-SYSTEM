@@ -22,6 +22,8 @@ interface BranchAttributes {
     manager_id?: string;
     currency?: string;
     description?: string;
+    operating_hours?: Record<string, unknown>;
+    settings?: Record<string, unknown>;
     is_active: boolean;
     created_at?: Date;
     updated_at?: Date;
@@ -50,6 +52,8 @@ export class Branch extends Model<BranchAttributes, BranchCreationAttributes> im
     public manager_id?: string;
     public currency?: string;
     public description?: string;
+    public operating_hours?: Record<string, unknown>;
+    public settings?: Record<string, unknown>;
     public is_active!: boolean;
     public readonly created_at!: Date;
     public readonly updated_at!: Date;
@@ -93,6 +97,14 @@ Branch.init(
         manager_id: DataTypes.UUID,
         currency: DataTypes.STRING,
         description: DataTypes.TEXT,
+        operating_hours: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
+        settings: {
+            type: DataTypes.JSONB,
+            defaultValue: {},
+        },
         is_active: {
             type: DataTypes.BOOLEAN,
             defaultValue: true,
