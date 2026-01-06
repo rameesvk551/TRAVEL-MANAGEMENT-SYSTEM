@@ -40,39 +40,39 @@ interface BookingAttributes {
 export interface BookingCreationAttributes extends Optional<BookingAttributes, 'id' | 'status'> {}
 
 export class Booking extends Model<BookingAttributes, BookingCreationAttributes> implements BookingAttributes {
-    public id!: string;
-    public tenant_id!: string;
-    public branch_id?: string;
-    public resource_id?: string;
-    public departure_id?: string;
-    public lead_id?: string;
-    public created_by_id?: string;
-    public hold_id?: string;
-    public booking_number!: string;
-    public source?: string;
-    public source_platform?: string;
-    public external_ref?: string;
-    public start_date?: Date;
-    public end_date?: Date;
-    public status!: string;
-    public lifecycle_status?: string;
-    public status_reason?: string;
-    public guest_name!: string;
-    public guest_email?: string;
-    public guest_phone?: string;
-    public guest_count?: number;
-    public base_amount?: number;
-    public tax_amount?: number;
-    public total_amount?: number;
-    public amount_paid?: number;
-    public amount_due?: number;
-    public currency?: string;
-    public notes?: string;
-    public metadata?: Record<string, unknown>;
-    public confirmed_at?: Date;
-    public cancelled_at?: Date;
-    public readonly created_at!: Date;
-    public readonly updated_at!: Date;
+    declare id: string;
+    declare tenant_id: string;
+    declare branch_id?: string;
+    declare resource_id?: string;
+    declare departure_id?: string;
+    declare lead_id?: string;
+    declare created_by_id?: string;
+    declare hold_id?: string;
+    declare booking_number: string;
+    declare source?: string;
+    declare source_platform?: string;
+    declare external_ref?: string;
+    declare start_date?: Date;
+    declare end_date?: Date;
+    declare status: string;
+    declare lifecycle_status?: string;
+    declare status_reason?: string;
+    declare guest_name: string;
+    declare guest_email?: string;
+    declare guest_phone?: string;
+    declare guest_count?: number;
+    declare base_amount?: number;
+    declare tax_amount?: number;
+    declare total_amount?: number;
+    declare amount_paid?: number;
+    declare amount_due?: number;
+    declare currency?: string;
+    declare notes?: string;
+    declare metadata?: Record<string, unknown>;
+    declare confirmed_at?: Date;
+    declare cancelled_at?: Date;
+    declare readonly created_at: Date;
+    declare readonly updated_at: Date;
 }
 
 Booking.init(

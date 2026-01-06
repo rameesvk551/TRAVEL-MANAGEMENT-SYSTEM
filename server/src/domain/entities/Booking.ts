@@ -17,6 +17,8 @@ export interface BookingProps {
     id?: string;
     tenantId: string;
     resourceId: string;
+    departureId?: string;
+    holdId?: string;
     leadId?: string;
     createdById?: string;
     source: BookingSource;
@@ -47,6 +49,8 @@ export class Booking {
     public readonly id: string;
     public readonly tenantId: string;
     public readonly resourceId: string;
+    public readonly departureId?: string;
+    public readonly holdId?: string;
     public readonly leadId?: string;
     public readonly createdById?: string;
     public readonly source: BookingSource;
@@ -68,10 +72,12 @@ export class Booking {
     public readonly createdAt: Date;
     public readonly updatedAt: Date;
 
-    private constructor(props: Required<Omit<BookingProps, 'leadId' | 'createdById' | 'sourcePlatform' | 'externalRef' | 'guestEmail' | 'guestPhone' | 'notes'>> & Pick<BookingProps, 'leadId' | 'createdById' | 'sourcePlatform' | 'externalRef' | 'guestEmail' | 'guestPhone' | 'notes'>) {
+    private constructor(props: Required<Omit<BookingProps, 'departureId' | 'holdId' | 'leadId' | 'createdById' | 'sourcePlatform' | 'externalRef' | 'guestEmail' | 'guestPhone' | 'notes'>> & Pick<BookingProps, 'departureId' | 'holdId' | 'leadId' | 'createdById' | 'sourcePlatform' | 'externalRef' | 'guestEmail' | 'guestPhone' | 'notes'>) {
         this.id = props.id;
         this.tenantId = props.tenantId;
         this.resourceId = props.resourceId;
+        this.departureId = props.departureId;
+        this.holdId = props.holdId;
         this.leadId = props.leadId;
         this.createdById = props.createdById;
         this.source = props.source;
@@ -100,6 +106,8 @@ export class Booking {
             id: props.id ?? generateId(),
             tenantId: props.tenantId,
             resourceId: props.resourceId,
+            departureId: props.departureId,
+            holdId: props.holdId,
             leadId: props.leadId,
             createdById: props.createdById,
             source: props.source,
@@ -107,7 +115,7 @@ export class Booking {
             externalRef: props.externalRef,
             startDate: props.startDate,
             endDate: props.endDate,
-            status: props.status ?? 'confirmed',
+            status: props.status ?? 'pending',
             guestName: props.guestName,
             guestEmail: props.guestEmail,
             guestPhone: props.guestPhone,
@@ -123,7 +131,7 @@ export class Booking {
         });
     }
 
-    static fromPersistence(data: BookingProps): Booking {
-        return Booking.create(data);
+    static fromPersistence(data: Required<BookingProps>): Booking {
+        return new Booking(data);
     }
 }

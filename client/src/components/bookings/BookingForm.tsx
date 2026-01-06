@@ -86,7 +86,7 @@ export function BookingForm({ onSubmit, isLoading, onCancel, initialResourceId }
 
                         {/* Dates */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Check-in Date</label>
+                            <label className="text-sm font-medium">Start Date</label>
                             <Input type="datetime-local" {...register('startDate')} />
                             {errors.startDate && (
                                 <p className="text-sm text-destructive">{errors.startDate.message}</p>
@@ -94,7 +94,7 @@ export function BookingForm({ onSubmit, isLoading, onCancel, initialResourceId }
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Check-out Date</label>
+                            <label className="text-sm font-medium">End Date</label>
                             <Input type="datetime-local" {...register('endDate')} />
                             {errors.endDate && (
                                 <p className="text-sm text-destructive">{errors.endDate.message}</p>

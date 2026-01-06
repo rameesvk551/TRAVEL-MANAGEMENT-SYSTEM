@@ -8,6 +8,8 @@ function toEntity(model: BookingModel): BookingEntity {
         id: model.id,
         tenantId: model.tenant_id,
         resourceId: model.resource_id || '',
+        departureId: model.departure_id,
+        holdId: model.hold_id,
         leadId: model.lead_id,
         createdById: model.created_by_id,
         source: model.source as BookingSource,
@@ -39,6 +41,8 @@ export class BookingRepository implements IBookingRepository {
                 id: booking.id,
                 tenant_id: booking.tenantId,
                 resource_id: booking.resourceId,
+                departure_id: booking.departureId,
+                hold_id: booking.holdId,
                 lead_id: booking.leadId,
                 created_by_id: booking.createdById,
                 booking_number: `BK-${Date.now()}`,
@@ -63,6 +67,8 @@ export class BookingRepository implements IBookingRepository {
 
         if (!created) {
             await instance.update({
+                departure_id: booking.departureId,
+                hold_id: booking.holdId,
                 start_date: booking.startDate,
                 end_date: booking.endDate,
                 status: booking.status,

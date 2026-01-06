@@ -158,6 +158,8 @@ export class BookingOrchestrator {
         const booking = Booking.create({
             tenantId: dto.tenantId,
             resourceId: dto.resourceId,
+            departureId: dto.departureId,
+            holdId: holdResult.holdId,
             source: dto.source,
             sourcePlatform: dto.sourcePlatform,
             externalRef: dto.externalRef,

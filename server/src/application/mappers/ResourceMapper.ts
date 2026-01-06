@@ -17,8 +17,8 @@ export class ResourceMapper {
             currency: resource.currency,
             attributes: resource.attributes,
             isActive: resource.isActive,
-            createdAt: resource.createdAt.toISOString(),
-            updatedAt: resource.updatedAt.toISOString(),
+            createdAt: resource.createdAt ? resource.createdAt.toISOString() : new Date().toISOString(),
+            updatedAt: resource.updatedAt ? resource.updatedAt.toISOString() : new Date().toISOString(),
         };
     }
 

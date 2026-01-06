@@ -29,28 +29,28 @@ interface LeadAttributes {
 export interface LeadCreationAttributes extends Optional<LeadAttributes, 'id'> {}
 
 export class Lead extends Model<LeadAttributes, LeadCreationAttributes> implements LeadAttributes {
-    public id!: string;
-    public tenant_id!: string;
-    public branch_id?: string;
-    public assigned_to_id?: string;
-    public contact_id?: string;
-    public pipeline_id?: string;
-    public stage_id?: string;
-    public name!: string;
-    public email?: string;
-    public phone?: string;
-    public source?: string;
-    public source_platform?: string;
-    public status?: string;
-    public priority?: string;
-    public score?: number;
-    public travel_preferences?: Record<string, unknown>;
-    public tags?: string[];
-    public notes?: string;
-    public lost_reason?: string;
-    public metadata?: Record<string, unknown>;
-    public readonly created_at!: Date;
-    public readonly updated_at!: Date;
+    declare id: string;
+    declare tenant_id: string;
+    declare branch_id?: string;
+    declare assigned_to_id?: string;
+    declare contact_id?: string;
+    declare pipeline_id?: string;
+    declare stage_id?: string;
+    declare name: string;
+    declare email?: string;
+    declare phone?: string;
+    declare source?: string;
+    declare source_platform?: string;
+    declare status?: string;
+    declare priority?: string;
+    declare score?: number;
+    declare travel_preferences?: Record<string, unknown>;
+    declare tags?: string[];
+    declare notes?: string;
+    declare lost_reason?: string;
+    declare metadata?: Record<string, unknown>;
+    declare readonly created_at: Date;
+    declare readonly updated_at: Date;
 }
 
 Lead.init(

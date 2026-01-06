@@ -20,19 +20,19 @@ interface ResourceAttributes {
 export interface ResourceCreationAttributes extends Optional<ResourceAttributes, 'id' | 'is_active'> {}
 
 export class Resource extends Model<ResourceAttributes, ResourceCreationAttributes> implements ResourceAttributes {
-    public id!: string;
-    public tenant_id!: string;
-    public branch_id?: string;
-    public type!: string;
-    public name!: string;
-    public description?: string;
-    public capacity?: number;
-    public base_price?: number;
-    public currency?: string;
-    public attributes?: Record<string, unknown>;
-    public is_active!: boolean;
-    public readonly created_at!: Date;
-    public readonly updated_at!: Date;
+    declare id: string;
+    declare tenant_id: string;
+    declare branch_id?: string;
+    declare type: string;
+    declare name: string;
+    declare description?: string;
+    declare capacity?: number;
+    declare base_price?: number;
+    declare currency?: string;
+    declare attributes?: Record<string, unknown>;
+    declare is_active: boolean;
+    declare readonly created_at: Date;
+    declare readonly updated_at: Date;
 }
 
 Resource.init(

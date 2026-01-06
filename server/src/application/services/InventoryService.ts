@@ -81,7 +81,13 @@ export class InventoryService {
         }
 
         // Validate dates
-        if (dto.departureDate < new Date()) {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        
+        const depDate = new Date(dto.departureDate);
+        depDate.setHours(0, 0, 0, 0);
+
+        if (depDate < now) {
             throw new ValidationError('Departure date cannot be in the past');
         }
 
