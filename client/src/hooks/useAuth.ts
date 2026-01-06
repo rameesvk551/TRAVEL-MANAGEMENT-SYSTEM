@@ -8,11 +8,10 @@ import { useAuthStore } from '@/store';
  */
 export function useLogin() {
     const navigate = useNavigate();
-    const { setAuth, tenantSlug } = useAuthStore();
+    const { setAuth } = useAuthStore();
 
     return useMutation({
-        mutationFn: (data: Omit<LoginInput, 'tenantSlug'>) =>
-            authApi.login({ ...data, tenantSlug }),
+        mutationFn: (data: LoginInput) => authApi.login(data),
         onSuccess: (response) => {
             setAuth(response.user, response.token);
             navigate('/');

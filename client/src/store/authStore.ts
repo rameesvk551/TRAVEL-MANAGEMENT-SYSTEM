@@ -29,6 +29,7 @@ export const useAuthStore = create<AuthState>()(
             setAuth: (user, token) => set({
                 user,
                 token,
+                tenantSlug: user.tenantSlug,
                 isAuthenticated: true,
             }),
 

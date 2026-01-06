@@ -3,7 +3,6 @@ import { apiClient } from './client';
 export interface LoginInput {
     email: string;
     password: string;
-    tenantSlug: string;
 }
 
 export interface RegisterInput {
@@ -21,6 +20,8 @@ export interface AuthUser {
     email: string;
     name: string;
     role: string;
+    tenantId: string;
+    tenantSlug: string;
 }
 
 export interface AuthResponse {

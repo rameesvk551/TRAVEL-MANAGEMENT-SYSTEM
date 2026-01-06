@@ -14,13 +14,13 @@ interface TenantAttributes {
 export interface TenantCreationAttributes extends Optional<TenantAttributes, 'id' | 'is_active' | 'location'> {}
 
 export class Tenant extends Model<TenantAttributes, TenantCreationAttributes> implements TenantAttributes {
-    public id!: string;
-    public name!: string;
-    public slug!: string;
-    public location?: string;
-    public is_active!: boolean;
-    public readonly created_at!: Date;
-    public readonly updated_at!: Date;
+    declare public id: string;
+    declare public name: string;
+    declare public slug: string;
+    declare public location?: string;
+    declare public is_active: boolean;
+    declare public readonly created_at: Date;
+    declare public readonly updated_at: Date;
 }
 
 Tenant.init(

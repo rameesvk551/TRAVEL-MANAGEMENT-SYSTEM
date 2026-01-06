@@ -20,7 +20,6 @@ export interface RegisterDTO {
 export interface LoginDTO {
     email: string;
     password: string;
-    tenantSlug: string;
 }
 
 export interface AuthResponse {
@@ -29,6 +28,8 @@ export interface AuthResponse {
         email: string;
         name: string;
         role: string;
+        tenantId: string;
+        tenantSlug: string;
     };
     token: string;
     expiresIn: string;
@@ -84,18 +85,12 @@ export class AuthService {
         const saved = await this.userRepository.save(user);
         const token = this.generateToken(saved);
 
-        return this.buildAuthResponse(saved, token);
+        return this.buildAuthResponse(saved, savedTenant.slug, token);
     }
 
     async login(dto: LoginDTO): Promise<AuthResponse> {
-        // Find tenant
-        const tenant = await this.tenantRepository.findBySlug(dto.tenantSlug);
-        if (!tenant) {
-            throw new UnauthorizedError('Invalid credentials');
-        }
-
         // Find user
-        const user = await this.userRepository.findByEmail(dto.email, tenant.id);
+        const user = await this.userRepository.findByEmail(dto.email);
         if (!user) {
             throw new UnauthorizedError('Invalid credentials');
         }
@@ -106,8 +101,14 @@ export class AuthService {
             throw new UnauthorizedError('Invalid credentials');
         }
 
+        // Find tenant to get slug
+        const tenant = await this.tenantRepository.findById(user.tenantId);
+        if (!tenant) {
+            throw new NotFoundError('Tenant', user.tenantId);
+        }
+
         const token = this.generateToken(user);
-        return this.buildAuthResponse(user, token);
+        return this.buildAuthResponse(user, tenant.slug, token);
     }
 
     async verifyToken(token: string): Promise<JwtPayload> {
@@ -131,13 +132,15 @@ export class AuthService {
         });
     }
 
-    private buildAuthResponse(user: User, token: string): AuthResponse {
+    private buildAuthResponse(user: User, tenantSlug: string, token: string): AuthResponse {
         return {
             user: {
                 id: user.id,
                 email: user.email,
                 name: user.name,
                 role: user.role,
+                tenantId: user.tenantId,
+                tenantSlug: tenantSlug,
             },
             token,
             expiresIn: config.jwt.expiresIn,

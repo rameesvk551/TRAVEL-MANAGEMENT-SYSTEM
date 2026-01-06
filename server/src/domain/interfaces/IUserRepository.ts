@@ -5,7 +5,7 @@ import { User } from '../entities/User.js';
  */
 export interface IUserRepository {
     findById(id: string, tenantId: string): Promise<User | null>;
-    findByEmail(email: string, tenantId: string): Promise<User | null>;
+    findByEmail(email: string, tenantId?: string): Promise<User | null>;
     findAll(tenantId: string, limit?: number, offset?: number): Promise<User[]>;
     count(tenantId: string): Promise<number>;
     save(user: User): Promise<User>;

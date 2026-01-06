@@ -25,14 +25,17 @@ export class UserRepository implements IUserRepository {
         return user ? toEntity(user) : null;
     }
 
-    async findByEmail(email: string, tenantId: string): Promise<UserEntity | null> {
-        const user = await UserModel.findOne({
-            where: {
-                email: email.toLowerCase(),
-                tenant_id: tenantId,
-                is_active: true,
-            },
-        });
+    async findByEmail(email: string, tenantId?: string): Promise<UserEntity | null> {
+        const where: any = {
+            email: email.toLowerCase(),
+            is_active: true,
+        };
+
+        if (tenantId) {
+            where.tenant_id = tenantId;
+        }
+
+        const user = await UserModel.findOne({ where });
         return user ? toEntity(user) : null;
     }
 

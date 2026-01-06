@@ -22,20 +22,20 @@ interface UserAttributes {
 export interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'is_active'> {}
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
-    public id!: string;
-    public tenant_id!: string;
-    public branch_id?: string;
-    public email!: string;
-    public password_hash!: string;
-    public name!: string;
-    public role!: string;
-    public profile?: Record<string, unknown>;
-    public is_active!: boolean;
-    public department_id?: string;
-    public salary?: number;
-    public joining_date?: Date;
-    public readonly created_at!: Date;
-    public readonly updated_at!: Date;
+    public declare id: string;
+    public declare tenant_id: string;
+    public declare branch_id?: string;
+    public declare email: string;
+    public declare password_hash: string;
+    public declare name: string;
+    public declare role: string;
+    public declare profile?: Record<string, unknown>;
+    public declare is_active: boolean;
+    public declare department_id?: string;
+    public declare salary?: number;
+    public declare joining_date?: Date;
+    public declare readonly created_at: Date;
+    public declare readonly updated_at: Date;
 
     // Associations
     public readonly tenant?: Tenant;

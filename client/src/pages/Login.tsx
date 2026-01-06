@@ -2,12 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLogin } from '@/hooks';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui';
-import { useAuthStore } from '@/store';
 
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const { tenantSlug, setTenant } = useAuthStore();
 
     const login = useLogin();
 
@@ -26,15 +24,6 @@ export default function Login() {
 
                 <form onSubmit={handleSubmit}>
                     <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Tenant</label>
-                            <Input
-                                value={tenantSlug}
-                                onChange={(e) => setTenant(e.target.value)}
-                                placeholder="tenant-slug"
-                            />
-                        </div>
-
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Email</label>
                             <Input

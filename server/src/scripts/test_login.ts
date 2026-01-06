@@ -6,8 +6,7 @@ async function testLogin() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             email: 'admin@demo.com',
-            password: 'password123',
-            tenantSlug: 'demo-travel'
+            password: 'password123'
         })
     });
 
