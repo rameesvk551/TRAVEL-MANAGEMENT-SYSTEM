@@ -6,18 +6,19 @@ import { validateBody } from '../middleware/validation.middleware.js';
 const createBookingSchema = z.object({
     body: z.object({
         resourceId: z.string().uuid(),
-        startDate: z.string().datetime(),
-        endDate: z.string().datetime(),
-        guestName: z.string().min(1),
-        guestEmail: z.string().email().optional(),
-        guestPhone: z.string().optional(),
-        guestCount: z.number().int().positive(),
-        baseAmount: z.number().positive(),
-        totalAmount: z.number().positive(),
+        startDate: z.coerce.date(),
+        endDate: z.coerce.date(),
+        guestName: z.string().min(1, 'Guest name is required'),
+        guestEmail: z.string().email().optional().or(z.literal('')).or(z.null()),
+        guestPhone: z.string().optional().or(z.literal('')).or(z.null()),
+        guestCount: z.coerce.number().int().min(1),
+        baseAmount: z.coerce.number().min(0).default(0),
+        taxAmount: z.coerce.number().min(0).default(0),
+        totalAmount: z.coerce.number().min(0).default(0),
         currency: z.string().default('INR'),
-        notes: z.string().optional(),
+        notes: z.string().optional().or(z.literal('')).or(z.null()),
         source: z.enum(['DIRECT', 'OTA', 'MANUAL', 'CSV', 'EMAIL']).default('MANUAL'),
-    }),
+    }).passthrough(),
 });
 
 interface BookingRoutesDeps {
@@ -34,17 +35,11 @@ export const createBookingRoutes = ({ bookingController, authMiddleware }: Booki
         '/',
         validateBody(createBookingSchema.shape.body),
         (async (req, res, next) => {
-            // Convert string dates to Date objects
-            if (req.body.startDate && typeof req.body.startDate === 'string') {
-                req.body.startDate = new Date(req.body.startDate);
-            }
-            if (req.body.endDate && typeof req.body.endDate === 'string') {
-                req.body.endDate = new Date(req.body.endDate);
-            }
             await bookingController.create(req, res, next);
         }) as RequestHandler
     );
 
+    router.get('/', bookingController.getAll as RequestHandler);
     router.get('/:id', bookingController.get as RequestHandler);
 
     return router;

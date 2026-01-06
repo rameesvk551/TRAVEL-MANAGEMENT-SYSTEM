@@ -96,8 +96,19 @@ export function BookingDrawer({
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        setIsSubmitting(true);
 
+        // Basic frontend validation
+        if (!primaryGuest.name.trim()) {
+            setError('Guest name is required');
+            return;
+        }
+
+        if (participantCount < 1) {
+            setError('Participant count must be at least 1');
+            return;
+        }
+
+        setIsSubmitting(true);
         try {
             const result = await onSubmit({
                 departureId: dep.id,

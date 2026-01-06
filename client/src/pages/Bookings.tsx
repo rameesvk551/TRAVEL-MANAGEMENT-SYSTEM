@@ -20,8 +20,13 @@ interface BookingCardProps {
 }
 
 function BookingCard({ booking }: BookingCardProps) {
+    const navigate = useNavigate();
+
     return (
-        <Card>
+        <Card 
+            className="cursor-pointer hover:border-primary/50 transition-colors" 
+            onClick={() => navigate(`/bookings/${booking.id}`)}
+        >
             <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                     <CardTitle className="text-base font-semibold truncate">{booking.guestName}</CardTitle>
@@ -54,7 +59,8 @@ export default function Bookings() {
         search: search || undefined
     });
 
-    const bookings = data?.data?.bookings || [];
+    // API returns { success, data: Booking[], meta } directly
+    const bookings = data?.data || [];
 
     return (
         <div className="space-y-6">

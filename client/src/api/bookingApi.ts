@@ -1,6 +1,6 @@
 import { apiClient } from './client';
 import { ApiResponse } from '@/types/api.types';
-import { Booking, CreateBookingInput, BookingFilters } from '@/types/booking.types';
+import { Booking, CreateBookingInput, UpdateBookingInput, BookingFilters } from '@/types/booking.types';
 
 export const bookingApi = {
     getAll: async (filters: BookingFilters = {}) => {
@@ -14,7 +14,8 @@ export const bookingApi = {
         // Default pagination for now
         params.append('limit', '50');
 
-        const response = await apiClient.get<ApiResponse<{ bookings: Booking[]; total: number }>>('/bookings', { params });
+        // API returns { success, data: Booking[], meta }
+        const response = await apiClient.get<ApiResponse<Booking[]>>('/bookings', { params });
         return response.data;
     },
 
@@ -26,5 +27,14 @@ export const bookingApi = {
     create: async (data: CreateBookingInput) => {
         const response = await apiClient.post<ApiResponse<Booking>>('/bookings', data);
         return response.data;
+    },
+
+    update: async (id: string, data: UpdateBookingInput) => {
+        const response = await apiClient.patch<ApiResponse<Booking>>(`/bookings/${id}`, data);
+        return response.data;
+    },
+
+    delete: async (id: string) => {
+        await apiClient.delete(`/bookings/${id}`);
     },
 };

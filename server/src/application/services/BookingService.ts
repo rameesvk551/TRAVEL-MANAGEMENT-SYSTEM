@@ -40,5 +40,19 @@ export class BookingService {
         return this.bookingRepository.findById(id, tenantId);
     }
 
-    // TODO: Add search/filter methods
+    async getAll(
+        tenantId: string,
+        filters: {
+            resourceId?: string;
+            status?: string;
+            limit?: number;
+            offset?: number;
+        }
+    ): Promise<{ bookings: Booking[]; total: number }> {
+        return this.bookingRepository.findAll(tenantId, {
+            ...filters,
+            limit: filters.limit ?? 20,
+            offset: filters.offset ?? 0,
+        });
+    }
 }

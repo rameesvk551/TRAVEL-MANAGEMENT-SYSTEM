@@ -24,13 +24,14 @@ const bookingSchema = z.object({
 type BookingFormData = z.infer<typeof bookingSchema>;
 
 interface BookingFormProps {
-    onSubmit: (data: CreateBookingInput) => void;
+    onSubmit: (data: any) => void;
     isLoading?: boolean;
     onCancel: () => void;
     initialResourceId?: string;
+    initialData?: Partial<BookingFormData>;
 }
 
-export function BookingForm({ onSubmit, isLoading, onCancel, initialResourceId }: BookingFormProps) {
+export function BookingForm({ onSubmit, isLoading, onCancel, initialResourceId, initialData }: BookingFormProps) {
     const { data: resourcesResponse } = useResources();
     const resources = resourcesResponse?.data || [];
 
@@ -38,12 +39,19 @@ export function BookingForm({ onSubmit, isLoading, onCancel, initialResourceId }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resolver: zodResolver(bookingSchema) as any,
         defaultValues: {
-            resourceId: initialResourceId || '',
-            guestCount: 1,
-            source: 'MANUAL',
-            currency: 'INR',
-            baseAmount: 0,
-            totalAmount: 0,
+            resourceId: initialResourceId || initialData?.resourceId || '',
+            guestName: initialData?.guestName || '',
+            guestEmail: initialData?.guestEmail || '',
+            guestPhone: initialData?.guestPhone || '',
+            guestCount: initialData?.guestCount || 1,
+            startDate: initialData?.startDate ? new Date(initialData.startDate).toISOString().slice(0, 16) : '',
+            endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().slice(0, 16) : '',
+            source: initialData?.source || 'MANUAL',
+            currency: initialData?.currency || 'INR',
+            baseAmount: initialData?.baseAmount || 0,
+            taxAmount: initialData?.taxAmount || 0,
+            totalAmount: initialData?.totalAmount || 0,
+            notes: initialData?.notes || '',
         },
     });
 

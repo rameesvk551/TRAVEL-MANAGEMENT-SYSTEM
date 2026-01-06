@@ -34,4 +34,30 @@ export class BookingController {
             next(error);
         }
     };
+
+    getAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        try {
+            const { tenantId } = req.context;
+            const { resourceId, status, limit, offset } = req.query;
+
+            const result = await this.bookingService.getAll(tenantId, {
+                resourceId: resourceId as string,
+                status: status as string,
+                limit: limit ? parseInt(limit as string) : undefined,
+                offset: offset ? parseInt(offset as string) : undefined,
+            });
+
+            res.json({
+                success: true,
+                data: result.bookings,
+                meta: {
+                    total: result.total,
+                    limit: limit ? parseInt(limit as string) : 20,
+                    offset: offset ? parseInt(offset as string) : 0,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
+    };
 }

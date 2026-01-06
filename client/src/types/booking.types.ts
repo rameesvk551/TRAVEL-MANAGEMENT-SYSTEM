@@ -49,6 +49,10 @@ export interface CreateBookingInput {
     source?: BookingSource;
 }
 
+export interface UpdateBookingInput extends Partial<CreateBookingInput> {
+    status?: BookingStatus;
+}
+
 export interface BookingFilters {
     resourceId?: string;
     startDate?: string;

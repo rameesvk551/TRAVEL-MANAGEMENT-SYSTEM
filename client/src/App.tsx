@@ -6,7 +6,9 @@ import Resources from '@/pages/Resources';
 import CreateResource from '@/pages/CreateResource';
 import EditResource from '@/pages/EditResource';
 import Bookings from '@/pages/Bookings';
+import BookingDetail from '@/pages/BookingDetail';
 import CreateBooking from '@/pages/CreateBooking';
+import EditBooking from '@/pages/EditBooking';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Settings from '@/pages/Settings';
@@ -88,6 +90,8 @@ function App() {
                     <Route path="resources/:id/edit" element={<EditResource />} />
                     <Route path="bookings" element={<Bookings />} />
                     <Route path="bookings/new" element={<CreateBooking />} />
+                    <Route path="bookings/:id" element={<BookingDetail />} />
+                    <Route path="bookings/:id/edit" element={<EditBooking />} />
                     <Route path="leads" element={<Leads />} />
                     <Route path="crm" element={<PipelineBoard />} />
                     <Route path="crm/leads/new" element={<LeadForm />} />

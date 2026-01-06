@@ -6,7 +6,9 @@ export { default as Settings } from './Settings';
 export { default as CreateResource } from './CreateResource';
 export { default as EditResource } from './EditResource';
 export { default as Bookings } from './Bookings';
+export { default as BookingDetail } from './BookingDetail';
 export { default as CreateBooking } from './CreateBooking';
+export { default as EditBooking } from './EditBooking';
 
 // Inventory pages
 export { default as InventoryDashboard } from './inventory/InventoryDashboard';
