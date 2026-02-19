@@ -11,7 +11,9 @@ import {
     Building2,
     Backpack,
     GitBranch,
+    GitBranch,
     Calculator,
+    Megaphone,
 } from 'lucide-react';
 import { cn } from '@/utils';
 import { Button } from '@/components/ui';
@@ -34,6 +36,7 @@ const navItems: NavItem[] = [
     { href: '/accounting', label: 'Accounting', icon: Calculator },
     { href: '/branches', label: 'Branches', icon: GitBranch },
     { href: '/dashboards', label: 'Custom Dashboards', icon: LayoutDashboard },
+    { href: '/marketing', label: 'Marketing', icon: Megaphone },
     { href: '/settings', label: 'Settings', icon: Settings },
 ];
 

@@ -14,8 +14,11 @@ async function main(): Promise<void> {
     }
 
     // Create and start app (now async)
-    const { app, whatsApp } = await createApp();
+    const { app, whatsApp, campaignDispatcher } = await createApp();
     const { port } = config.server;
+
+    // Start Campaign Worker
+    campaignDispatcher.startWorker();
 
     const server = app.listen(port, () => {
         console.log(`✅ Server running on http://localhost:${port}`);
@@ -25,6 +28,7 @@ async function main(): Promise<void> {
             console.log(`📱 WhatsApp API: http://localhost:${port}/api/whatsapp`);
             console.log(`   Webhook URL: http://localhost:${port}/api/whatsapp/webhook`);
         }
+        console.log(`📣 Campaign Worker: Started`);
     });
 
     // Graceful shutdown

@@ -1,0 +1,22 @@
+import axios from 'axios';
+
+// Create Axios client
+const client = axios.create({
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Add Interceptors for Auth
+client.interceptors.request.use((config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    // Tenant ID
+    config.headers['x-tenant-id'] = localStorage.getItem('tenantId') || 'default-tenant-id';
+    return config;
+});
+
+export default client;

@@ -71,3 +71,7 @@ export * from './DashboardLayout.js';
 
 // Associations
 export { setupAssociations } from './associations.js';
+
+// Marketing Module
+export * from '../../../marketing/models/CampaignModel.js';
+export * from '../../../marketing/models/SegmentModel.js';

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Box, Calendar, Users, TrendingUp, Loader2, Building2 } from 'lucide-react';
 import { useDashboardStats } from '@/hooks';
+import { useAuthStore } from '@/store';
 import { BranchSelector } from '@/components/common';
 import {
     BarChart,
@@ -49,6 +50,7 @@ function StatCard({ title, value, change, icon: Icon }: StatCardProps) {
 }
 
 export default function Dashboard() {
+    const { user } = useAuthStore();
     const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
     const { data: stats, isLoading, error } = useDashboardStats({ branchId: selectedBranchId });
 
@@ -73,7 +75,23 @@ export default function Dashboard() {
             {/* Dashboard Header with Branch Selector */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">
+                        {user ? `Welcome back, ${user.name}` : 'Dashboard'}
+                    </h1>
+                    {user && (
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mt-1 mb-2">
+                            <div className="flex items-center gap-1">
+                                <span className="font-medium text-foreground">Role:</span>
+                                <span className="capitalize bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-semibold">
+                                    {user.role}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <span className="font-medium text-foreground">Email:</span>
+                                <span>{user.email}</span>
+                            </div>
+                        </div>
+                    )}
                     <p className="text-muted-foreground">
                         {selectedBranchId ? 'Branch-specific overview' : 'Overview of all branches combined'}
                     </p>

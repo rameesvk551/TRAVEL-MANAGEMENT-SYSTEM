@@ -70,7 +70,13 @@ import {
     HRAnalyticsPage,
     CostCentersPage,
     PayrollExportPage,
+    CostCentersPage,
+    PayrollExportPage,
 } from '@/pages/hrms';
+import MarketingDashboard from '@/modules/marketing/pages/MarketingDashboard';
+import Campaigns from '@/modules/marketing/pages/Campaigns';
+import CampaignBuilder from '@/modules/marketing/pages/CampaignBuilder';
+import { MarketingLayout } from '@/modules/marketing/components/layout/MarketingLayout';
 
 function App() {
     return (
@@ -125,7 +131,7 @@ function App() {
                     <Route path="hrms/availability" element={<AvailabilityPage />} />
                     <Route path="hrms/expenses" element={<ExpensesPage />} />
                     <Route path="hrms/schedule" element={<SchedulePage />} />
-                    
+
                     {/* Enterprise Phase 3 - HRMS */}
                     <Route path="hrms/approvals" element={<ApprovalChainsPage />} />
                     <Route path="hrms/performance" element={<PerformancePage />} />
@@ -166,6 +172,15 @@ function App() {
                     <Route path="accounting/ledger" element={<GeneralLedger />} />
                     <Route path="accounting/reports" element={<FinancialReports />} />
                     <Route path="accounting/trial-balance" element={<FinancialReports />} />
+
+                    {/* Marketing Routes */}
+                    <Route path="marketing" element={<MarketingLayout />}>
+                        <Route index element={<MarketingDashboard />} />
+                        <Route path="campaigns" element={<Campaigns />} />
+                        <Route path="campaigns/new" element={<CampaignBuilder />} />
+                        <Route path="campaigns/:id" element={<Campaigns />} /> {/* Placeholder for Detail */}
+                        <Route path="campaigns/:id/edit" element={<Campaigns />} /> {/* Placeholder for Edit */}
+                    </Route>
 
                     {/* Settings Route */}
                     <Route path="settings" element={<Settings />} />

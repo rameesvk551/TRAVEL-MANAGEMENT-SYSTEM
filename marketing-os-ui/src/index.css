@@ -1,0 +1,260 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   Marketing OS - Global Design System
+   ======================================== */
+
+:root {
+  /* Brand palette */
+  --color-primary: #4F46E5;
+  --color-primary-hover: #4338CA;
+  --color-primary-light: #EEF2FF;
+  --color-accent: #06B6D4;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+
+  /* Neutral palette */
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #64748B;
+  --color-text-muted: #94A3B8;
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --sidebar-bg: #0F172A;
+  --sidebar-text: #CBD5E1;
+  --sidebar-active-bg: #1E293B;
+  --sidebar-active-text: #FFFFFF;
+
+  /* Responsive spacing */
+  --page-padding: 16px;
+  --page-gap: 16px;
+  --header-height: 56px;
+
+  /* Typography */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tablet and up */
+@media (min-width: 768px) {
+  :root {
+    --page-padding: 24px;
+    --page-gap: 20px;
+    --header-height: 64px;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  :root {
+    --page-padding: 32px;
+    --page-gap: 24px;
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* ========================================
+   Responsive Utility Classes
+   ======================================== */
+
+/* Page header — stacks on mobile, row on desktop */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .page-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+}
+
+/* Table scroll wrapper */
+.responsive-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -1px;
+}
+
+.responsive-table-wrapper .ant-table {
+  min-width: 600px;
+}
+
+/* Visibility helpers */
+.mobile-hidden {
+  display: none !important;
+}
+
+.desktop-hidden {
+  display: block !important;
+}
+
+@media (min-width: 768px) {
+  .mobile-hidden {
+    display: flex !important;
+  }
+
+  .desktop-hidden {
+    display: none !important;
+  }
+}
+
+/* Responsive stat value sizing */
+.responsive-stat .ant-statistic-content-value {
+  font-size: 22px !important;
+}
+
+@media (min-width: 768px) {
+  .responsive-stat .ant-statistic-content-value {
+    font-size: 28px !important;
+  }
+}
+
+/* Touch-friendly targets */
+@media (max-width: 767px) {
+  .ant-btn {
+    min-height: 40px;
+  }
+
+  .ant-tabs-tab {
+    padding: 10px 12px !important;
+  }
+
+  .ant-card-body {
+    padding: 16px !important;
+  }
+
+  .ant-modal {
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px auto !important;
+  }
+
+  .ant-modal .ant-modal-content {
+    padding: 16px !important;
+  }
+}
+
+/* ========================================
+   Scrollbar Styling
+   ======================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* ========================================
+   Utility Animations
+   ======================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-soft {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+/* ========================================
+   Mobile Drawer Override
+   ======================================== */
+.mobile-sidebar-drawer .ant-drawer-body {
+  padding: 0 !important;
+  background: #0F172A !important;
+}
+
+.mobile-sidebar-drawer .ant-drawer-header {
+  display: none !important;
+}
+
+.mobile-sidebar-drawer .ant-drawer-content {
+  background: #0F172A !important;
+}

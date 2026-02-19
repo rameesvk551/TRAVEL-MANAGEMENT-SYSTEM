@@ -12,12 +12,7 @@ import { TenantService } from '../../application/services/TenantService.js';
 
 import { createCrmRoutes } from './crmRoutes.js';
 import { createDashboardRoutes } from './dashboard.routes.js';
-import { DashboardController } from '../controllers/DashboardController.js';
-import { createHRMSRoutes } from './hrms/index.js';
-import { createVendorRoutes } from './vendor.routes.js';
-import { createGearRoutes } from './gear.routes.js';
-import { createBranchRoutes } from './branch.routes.js';
-import accountingRoutes from './accountingRoutes.js';
+import { CampaignController } from '../marketing/controllers/CampaignController.js';
 
 interface RoutesDependencies {
     resourceController: ResourceController;
@@ -26,6 +21,7 @@ interface RoutesDependencies {
     dashboardController: DashboardController;
     tenantService: TenantService;
     authMiddleware: RequestHandler;
+    campaignController: CampaignController;
 }
 
 export function createApiRouter(deps: RoutesDependencies): Router {
@@ -67,6 +63,9 @@ export function createApiRouter(deps: RoutesDependencies): Router {
 
     // Accounting Routes
     router.use('/accounting', tenantMiddleware, accountingRoutes);
+
+    // Marketing Routes
+    router.use('/marketing', tenantMiddleware, createMarketingRoutes(deps.authMiddleware, deps.campaignController));
 
     return router;
 }

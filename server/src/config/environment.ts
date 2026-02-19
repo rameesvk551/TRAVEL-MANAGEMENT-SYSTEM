@@ -35,13 +35,21 @@ interface WhatsAppConfig {
     verifyToken?: string;
 }
 
+interface RedisConfig {
+    host: string;
+    port: number;
+}
+
 interface Config {
     server: ServerConfig;
     database: DatabaseConfig;
     jwt: JwtConfig;
+    redis: RedisConfig;
     defaultTenantSlug: string;
     whatsapp: WhatsAppConfig;
 }
+
+// ... existing helper functions
 
 function getEnvOrThrow(key: string): string {
     const value = process.env[key];
@@ -70,6 +78,10 @@ export const config: Config = {
     jwt: {
         secret: getEnvOrThrow('JWT_SECRET'),
         expiresIn: getEnvOrDefault('JWT_EXPIRES_IN', '7d'),
+    },
+    redis: {
+        host: getEnvOrDefault('REDIS_HOST', 'localhost'),
+        port: parseInt(getEnvOrDefault('REDIS_PORT', '6379'), 10),
     },
     defaultTenantSlug: getEnvOrDefault('DEFAULT_TENANT_SLUG', 'default'),
     whatsapp: {
