@@ -5,13 +5,21 @@ import { Router, Request, Response } from 'express';
 import { createEmbeddedSignupService } from '../services/WhatsAppEmbeddedSignupService.js';
 import { WhatsAppBusinessConfig } from '../models/whatsapp/index.js';
 import { config as envConfig } from '../../../config/env.js';
+import { getPool } from '../../../config/database.js';
+import { WhatsAppConfigRepository } from '../repositories/WhatsAppConfigRepository.js';
 
 const router = Router();
 const signupService = createEmbeddedSignupService();
 
-// Graph API URL for testing connections
-const GRAPH_API_URL = 'https://graph.facebook.com';
-const API_VERSION = envConfig.whatsapp.meta?.apiVersion || 'v18.0';
+// Graph API URL for connection testing
+const GRAPH_API_BASE = 'https://graph.facebook.com';
+const API_VERSION = envConfig.whatsapp.meta?.apiVersion || 'v21.0';
+
+// Lazy initialization of repo
+const getRepo = () => {
+    const pool = getPool();
+    return new WhatsAppConfigRepository(pool);
+};
 
 /**
  * GET /api/whatsapp/onboard/config
@@ -27,9 +35,9 @@ router.get('/config', async (req: Request, res: Response) => {
                 message: 'Please configure META_APP_ID, META_APP_SECRET, and META_EMBEDDED_SIGNUP_CONFIG_ID',
             });
         }
-        
+
         const config = signupService.getEmbeddedSignupConfig();
-        
+
         res.json({
             success: true,
             data: config,
@@ -50,19 +58,20 @@ router.get('/config', async (req: Request, res: Response) => {
 router.post('/test', async (req: Request, res: Response) => {
     try {
         const { accessToken, phoneNumberId, wabaId } = req.body;
-        
+
         if (!accessToken || !phoneNumberId || !wabaId) {
             return res.status(400).json({
                 success: false,
                 error: 'All credentials are required: accessToken, phoneNumberId, wabaId',
             });
         }
-        
+
+        const graphUrl = `${GRAPH_API_BASE}/${API_VERSION}`;
+
         // Test 1: Verify access token by getting WABA info
-        const wabaUrl = `${GRAPH_API_URL}/${API_VERSION}/${wabaId}?access_token=${accessToken}&fields=id,name,currency`;
-        const wabaResponse = await fetch(wabaUrl);
+        const wabaResponse = await fetch(`${graphUrl}/${wabaId}?access_token=${accessToken}&fields=id,name,currency`);
         const wabaData = await wabaResponse.json() as any;
-        
+
         if (wabaData.error) {
             return res.status(400).json({
                 success: false,
@@ -70,12 +79,11 @@ router.post('/test', async (req: Request, res: Response) => {
                 errorCode: 'INVALID_WABA',
             });
         }
-        
+
         // Test 2: Verify phone number
-        const phoneUrl = `${GRAPH_API_URL}/${API_VERSION}/${phoneNumberId}?access_token=${accessToken}&fields=id,display_phone_number,verified_name,quality_rating`;
-        const phoneResponse = await fetch(phoneUrl);
+        const phoneResponse = await fetch(`${graphUrl}/${phoneNumberId}?access_token=${accessToken}&fields=id,display_phone_number,verified_name,quality_rating`);
         const phoneData = await phoneResponse.json() as any;
-        
+
         if (phoneData.error) {
             return res.status(400).json({
                 success: false,
@@ -83,7 +91,7 @@ router.post('/test', async (req: Request, res: Response) => {
                 errorCode: 'INVALID_PHONE',
             });
         }
-        
+
         res.json({
             success: true,
             message: 'Connection test successful!',
@@ -94,7 +102,7 @@ router.post('/test', async (req: Request, res: Response) => {
                 qualityRating: phoneData.quality_rating,
             },
         });
-        
+
     } catch (error) {
         console.error('Error testing connection:', error);
         res.status(500).json({
@@ -106,76 +114,135 @@ router.post('/test', async (req: Request, res: Response) => {
 
 /**
  * POST /api/whatsapp/onboard/manual
- * Connect using manual credentials (for tenants with existing API access)
+ * Connect using manual credentials (BYO Scenario)
  */
 router.post('/manual', async (req: Request, res: Response) => {
     try {
         const { accessToken, phoneNumberId, wabaId, businessName } = req.body;
         const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-        
-        if (!accessToken || !phoneNumberId || !wabaId) {
-            return res.status(400).json({
-                success: false,
-                error: 'All credentials are required: accessToken, phoneNumberId, wabaId',
-            });
-        }
-        
+
         if (!tenantId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Tenant ID is required',
-            });
+            return res.status(401).json({ error: 'Tenant authentication required' });
         }
-        
-        // Verify credentials first
-        const phoneUrl = `${GRAPH_API_URL}/${API_VERSION}/${phoneNumberId}?access_token=${accessToken}&fields=id,display_phone_number,verified_name,quality_rating`;
-        const phoneResponse = await fetch(phoneUrl);
+
+        if (!accessToken || !phoneNumberId || !wabaId) {
+            return res.status(400).json({ error: 'All credentials are required' });
+        }
+
+        // Verify credentials
+        const graphUrl = `${GRAPH_API_BASE}/${API_VERSION}`;
+        const phoneResponse = await fetch(`${graphUrl}/${phoneNumberId}?access_token=${accessToken}&fields=id,display_phone_number,verified_name,quality_rating`);
         const phoneData = await phoneResponse.json() as any;
-        
+
         if (phoneData.error) {
             return res.status(400).json({
                 success: false,
                 error: `Invalid credentials: ${phoneData.error.message}`,
             });
         }
-        
-        // Create config entity
-        const waConfig = WhatsAppBusinessConfig.create({
+
+        // Save to DB
+        const repo = getRepo();
+        const saved = await repo.save({
             tenantId,
+            credentialSource: 'own',
             status: 'connected',
             onboardingMethod: 'manual',
-            businessName: businessName || phoneData.verified_name,
-        });
-        
-        waConfig.connect(
-            {
-                accessToken,
-                phoneNumberId,
-                wabaId,
-            },
-            {
-                id: phoneNumberId,
-                displayPhoneNumber: phoneData.display_phone_number,
-                verifiedName: phoneData.verified_name,
-                qualityRating: phoneData.quality_rating,
+            accessToken,
+            phoneNumberId,
+            wabaId,
+            businessName: businessName || phoneData.verified_name || 'WhatsApp Business',
+            phoneDisplay: phoneData.display_phone_number,
+            verifiedName: phoneData.verified_name,
+            qualityRating: phoneData.quality_rating,
+            features: {
+                catalogEnabled: false,
+                cartEnabled: true,
+                paymentsEnabled: false,
+                flowsEnabled: false,
             }
-        );
-        
-        // TODO: Save to database via repository
-        // await waConfigRepository.save(waConfig);
-        
+        });
+
         res.json({
             success: true,
-            data: waConfig.toPublicJSON(),
+            data: saved,
             message: 'WhatsApp Business Account connected successfully!',
         });
-        
+
     } catch (error) {
         console.error('Error in manual connection:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to connect WhatsApp Business Account',
+        res.status(500).json({ error: 'Failed to connect WhatsApp Business Account' });
+    }
+});
+
+/**
+ * POST /api/whatsapp/onboard/managed
+ * Connect using Managed Key (System User Token) + Phone Number (Managed Scenario)
+ */
+router.post('/managed', async (req: Request, res: Response) => {
+    try {
+        const { phoneNumberId, businessName } = req.body;
+        const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
+
+        if (!tenantId) {
+            return res.status(401).json({ error: 'Tenant authentication required' });
+        }
+
+        if (!phoneNumberId) {
+            return res.status(400).json({ error: 'Phone Number ID is required' });
+        }
+
+        // Use system token from env
+        const systemToken = process.env.META_SYSTEM_USER_TOKEN;
+        const appWabaId = process.env.META_APP_WABA_ID;
+
+        if (!systemToken || !appWabaId) {
+            return res.status(503).json({ error: 'Managed onboarding not configured on server' });
+        }
+
+        // Verify phone number using system token
+        const graphUrl = `${GRAPH_API_BASE}/${API_VERSION}`;
+        const phoneResponse = await fetch(`${graphUrl}/${phoneNumberId}?access_token=${systemToken}&fields=id,display_phone_number,verified_name,quality_rating`);
+        const phoneData = await phoneResponse.json() as any;
+
+        if (phoneData.error) {
+            return res.status(400).json({
+                success: false,
+                error: `Invalid Phone ID or permissions: ${phoneData.error.message}`,
+            });
+        }
+
+        // Save to DB
+        const repo = getRepo();
+        const saved = await repo.save({
+            tenantId,
+            credentialSource: 'managed',
+            status: 'connected',
+            onboardingMethod: 'manual',
+            accessToken: null, // Managed = no stored token
+            phoneNumberId,
+            wabaId: appWabaId,
+            businessName: businessName || phoneData.verified_name || 'Managed Business',
+            phoneDisplay: phoneData.display_phone_number,
+            verifiedName: phoneData.verified_name,
+            qualityRating: phoneData.quality_rating,
+            features: {
+                catalogEnabled: false,
+                cartEnabled: true,
+                paymentsEnabled: false,
+                flowsEnabled: false,
+            }
         });
+
+        res.json({
+            success: true,
+            data: saved,
+            message: 'Managed WhatsApp Business Account connected successfully!',
+        });
+
+    } catch (error) {
+        console.error('Error in managed connection:', error);
+        res.status(500).json({ error: 'Failed to connect Managed Account' });
     }
 });
 
@@ -188,121 +255,55 @@ router.post('/complete', async (req: Request, res: Response) => {
     try {
         const { code } = req.body;
         const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-        
-        if (!code) {
-            return res.status(400).json({
-                success: false,
-                error: 'Authorization code is required',
-                errorCode: 'MISSING_CODE',
-            });
+
+        if (!code || !tenantId) {
+            return res.status(400).json({ error: 'Code and Tenant ID required' });
         }
-        
-        if (!tenantId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Tenant ID is required',
-                errorCode: 'MISSING_TENANT',
-            });
-        }
-        
+
         if (!signupService) {
-            return res.status(503).json({
-                success: false,
-                error: 'WhatsApp Embedded Signup not configured',
-                errorCode: 'NOT_CONFIGURED',
-            });
+            return res.status(503).json({ error: 'Embedded Signup not configured' });
         }
-        
+
+        // Exchange code for token and get details
         const result = await signupService.completeOnboarding(tenantId, code);
-        
-        if (!result.success) {
+
+        if (!result.success || !result.config) {
             return res.status(400).json({
                 success: false,
                 error: result.error,
                 errorCode: result.errorCode,
             });
         }
-        
-        // TODO: Save config to database via repository
-        // For now, return the public config
+
+        const config = result.config;
+
+        // Save to DB via Repository
+        const repo = getRepo();
+        const saved = await repo.save({
+            tenantId,
+            credentialSource: 'own', // Embedded signup usually results in owning the token
+            status: 'connected',
+            onboardingMethod: 'embedded_signup',
+            accessToken: config.credentials?.accessToken,
+            phoneNumberId: config.phoneNumber?.id,
+            wabaId: config.credentials?.wabaId,
+            businessId: config.credentials?.businessId,
+            businessName: config.businessName || 'WhatsApp Business', // Setup profile logic needed
+            phoneDisplay: config.phoneNumber?.displayPhoneNumber,
+            verifiedName: config.phoneNumber?.verifiedName,
+            qualityRating: config.phoneNumber?.qualityRating,
+            webhookVerifyToken: process.env.WHATSAPP_VERIFY_TOKEN,
+        });
+
         res.json({
             success: true,
-            data: result.config?.toPublicJSON(),
+            data: saved,
             message: 'WhatsApp Business Account connected successfully!',
         });
-        
+
     } catch (error) {
         console.error('Error completing onboarding:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to complete onboarding',
-        });
-    }
-});
-
-/**
- * GET /api/whatsapp/onboard/callback
- * OAuth callback endpoint (for redirect flow)
- */
-router.get('/callback', async (req: Request, res: Response) => {
-    try {
-        const { code, state, error, error_description } = req.query;
-        
-        // Handle OAuth errors
-        if (error) {
-            const redirectUrl = new URL(process.env.FRONTEND_URL || 'http://localhost:5173');
-            redirectUrl.pathname = '/wa-store';
-            redirectUrl.searchParams.set('onboard_error', error as string);
-            redirectUrl.searchParams.set('error_description', error_description as string || '');
-            return res.redirect(redirectUrl.toString());
-        }
-        
-        if (!code) {
-            return res.status(400).json({
-                success: false,
-                error: 'Authorization code missing',
-            });
-        }
-        
-        // State should contain tenantId (passed during initial redirect)
-        const tenantId = state as string;
-        
-        if (!tenantId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid state parameter',
-            });
-        }
-        
-        if (!signupService) {
-            return res.status(503).json({
-                success: false,
-                error: 'WhatsApp Embedded Signup not configured',
-            });
-        }
-        
-        const result = await signupService.completeOnboarding(tenantId, code as string);
-        
-        // Redirect to frontend with result
-        const redirectUrl = new URL(process.env.FRONTEND_URL || 'http://localhost:5173');
-        redirectUrl.pathname = '/wa-store';
-        
-        if (result.success) {
-            redirectUrl.searchParams.set('onboard_success', 'true');
-            redirectUrl.searchParams.set('phone', result.config?.phoneNumber?.displayPhoneNumber || '');
-        } else {
-            redirectUrl.searchParams.set('onboard_error', result.errorCode || 'UNKNOWN');
-            redirectUrl.searchParams.set('error_message', result.error || '');
-        }
-        
-        res.redirect(redirectUrl.toString());
-        
-    } catch (error) {
-        console.error('Error in OAuth callback:', error);
-        const redirectUrl = new URL(process.env.FRONTEND_URL || 'http://localhost:5173');
-        redirectUrl.pathname = '/wa-store';
-        redirectUrl.searchParams.set('onboard_error', 'CALLBACK_ERROR');
-        res.redirect(redirectUrl.toString());
+        res.status(500).json({ error: 'Failed to complete onboarding' });
     }
 });
 
@@ -313,44 +314,41 @@ router.get('/callback', async (req: Request, res: Response) => {
 router.get('/status', async (req: Request, res: Response) => {
     try {
         const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-        
-        if (!tenantId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Tenant ID is required',
+        if (!tenantId) return res.status(401).json({ error: 'Tenant required' });
+
+        const repo = getRepo();
+        const config = await repo.findByTenantId(tenantId);
+
+        if (config) {
+            res.json({
+                success: true,
+                data: {
+                    isConnected: config.status === 'connected',
+                    onboardingMethod: config.onboarding_method,
+                    credentialSource: config.credential_source,
+                    phoneNumber: config.phone_display || (config.phone_number_id ? '****' + config.phone_number_id.slice(-4) : null),
+                    businessName: config.business_name || config.verified_name,
+                    qualityRating: config.quality_rating,
+                    features: config.features,
+                },
+            });
+        } else {
+            // Fallback to env check for backward compatibility / single tenant dev mode
+            const envConnected = !!(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
+            res.json({
+                success: true,
+                data: {
+                    isConnected: envConnected,
+                    onboardingMethod: envConnected ? 'manual' : null,
+                    credentialSource: envConnected ? 'env' : null,
+                    phoneNumber: process.env.WHATSAPP_PHONE_NUMBER_ID ? '****' + process.env.WHATSAPP_PHONE_NUMBER_ID.slice(-4) : null,
+                    features: {},
+                }
             });
         }
-        
-        // TODO: Fetch from database
-        // For now, return based on env config
-        const isConfigured = !!(
-            process.env.WHATSAPP_ACCESS_TOKEN && 
-            process.env.WHATSAPP_PHONE_NUMBER_ID
-        );
-        
-        res.json({
-            success: true,
-            data: {
-                isConnected: isConfigured,
-                onboardingMethod: isConfigured ? 'manual' : null,
-                phoneNumber: process.env.WHATSAPP_PHONE_NUMBER_ID 
-                    ? '****' + process.env.WHATSAPP_PHONE_NUMBER_ID.slice(-4) 
-                    : null,
-                features: {
-                    catalogEnabled: false,
-                    cartEnabled: true,
-                    paymentsEnabled: false,
-                    flowsEnabled: false,
-                },
-            },
-        });
-        
     } catch (error) {
         console.error('Error getting onboard status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to get status',
-        });
+        res.status(500).json({ error: 'Failed to get status' });
     }
 });
 
@@ -361,59 +359,20 @@ router.get('/status', async (req: Request, res: Response) => {
 router.post('/disconnect', async (req: Request, res: Response) => {
     try {
         const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-        
-        if (!tenantId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Tenant ID is required',
-            });
-        }
-        
-        // TODO: Load config from database and call disconnect()
-        // For now, just acknowledge
-        
+        if (!tenantId) return res.status(401).json({ error: 'Tenant required' });
+
+        const repo = getRepo();
+        await repo.updateStatus(tenantId, 'disconnected');
+        // Optionally delete: await repo.delete(tenantId);
+
         res.json({
             success: true,
             message: 'WhatsApp Business Account disconnected',
         });
-        
+
     } catch (error) {
         console.error('Error disconnecting:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to disconnect',
-        });
-    }
-});
-
-/**
- * POST /api/whatsapp/onboard/refresh
- * Refresh connection status and phone quality rating
- */
-router.post('/refresh', async (req: Request, res: Response) => {
-    try {
-        const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-        
-        if (!tenantId) {
-            return res.status(400).json({
-                success: false,
-                error: 'Tenant ID is required',
-            });
-        }
-        
-        // TODO: Load config from database, call refreshStatus(), save
-        
-        res.json({
-            success: true,
-            message: 'Status refreshed',
-        });
-        
-    } catch (error) {
-        console.error('Error refreshing status:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Failed to refresh status',
-        });
+        res.status(500).json({ error: 'Failed to disconnect' });
     }
 });
 

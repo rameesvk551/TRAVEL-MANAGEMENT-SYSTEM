@@ -6,12 +6,12 @@ import {
   WhatsAppMessage,
   WhatsAppMessageProps,
   DeliveryStatus,
-} from '../modules/whatsapp/models/index';
+} from '../models/whatsapp/index.js';
 import {
   IMessageRepository,
   MessageFilters,
   MessageStats,
-} from '../modules/whatsapp/interfaces/index';
+} from '../interfaces/whatsapp/index.js';
 
 /**
  * MessageRepository - Postgres implementation

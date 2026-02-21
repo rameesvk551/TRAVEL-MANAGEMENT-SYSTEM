@@ -17,7 +17,7 @@ export const PrivateRoute: FC<{ children: ReactNode }> = ({ children }) => {
     if (isLoading) {
         return (
             <div style={fullScreenCenterStyle}>
-                <Spin size="large" tip="Loading..." />
+                <Spin size="large" description="Loading..." />
             </div>
         );
     }

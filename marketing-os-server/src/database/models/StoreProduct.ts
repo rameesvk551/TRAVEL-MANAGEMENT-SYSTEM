@@ -20,19 +20,19 @@ interface StoreProductAttributes {
 export interface StoreProductCreationAttributes extends Optional<StoreProductAttributes, 'id' | 'currency' | 'is_enabled' | 'is_featured' | 'sort_order'> { }
 
 export class StoreProduct extends Model<StoreProductAttributes, StoreProductCreationAttributes> implements StoreProductAttributes {
-    public id!: string;
-    public tenant_id!: string;
-    public name!: string;
-    public description?: string;
-    public price!: number;
-    public currency!: string;
-    public image_url?: string;
-    public category?: string;
-    public is_enabled!: boolean;
-    public is_featured!: boolean;
-    public sort_order!: number;
-    public created_at?: Date;
-    public updated_at?: Date;
+    declare id: string;
+    declare tenant_id: string;
+    declare name: string;
+    declare description?: string;
+    declare price: number;
+    declare currency: string;
+    declare image_url?: string;
+    declare category?: string;
+    declare is_enabled: boolean;
+    declare is_featured: boolean;
+    declare sort_order: number;
+    declare created_at?: Date;
+    declare updated_at?: Date;
 }
 
 StoreProduct.init(

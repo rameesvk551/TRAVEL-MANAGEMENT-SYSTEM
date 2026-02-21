@@ -188,7 +188,7 @@ const WhatsAppAutomation: React.FC = () => {
         queryKey: ['automation-flows'],
         queryFn: automationApi.getFlows,
     });
-    const flows = flowsData || [];
+    const flows = flowsData?.data || [];
 
     const handleEditFlow = (flowId: string) => {
         setSelectedFlowId(flowId);

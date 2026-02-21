@@ -276,7 +276,7 @@ const StoreOrders: React.FC = () => {
                     <Col xs={24} sm={8} key={i}>
                         <Card
                             style={{ borderRadius: 14, background: stat.bg, border: 'none' }}
-                            bodyStyle={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}
+                            styles={{ body: { padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 } }}
                         >
                             <div
                                 style={{
@@ -304,7 +304,7 @@ const StoreOrders: React.FC = () => {
             </Row>
 
             {/* Orders Table */}
-            <Card style={cardStyle} bodyStyle={{ padding: 0 }}>
+            <Card style={cardStyle} styles={{ body: { padding: 0 } }}>
                 {/* Filter Tabs */}
                 <div
                     style={{

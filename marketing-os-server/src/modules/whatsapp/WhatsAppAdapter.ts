@@ -1,6 +1,11 @@
-import { ChannelAdapter } from '../../application/interfaces/ChannelAdapter.js';
-import { ConversationContext } from '../modules/whatsapp/models/ConversationContext';
-import { IWhatsAppProvider } from '../modules/whatsapp/interfaces/index';
+// Inline ChannelAdapter interface (stub - original file was deleted during migration)
+export interface ChannelAdapter {
+    sendMessage(...args: any[]): Promise<any>;
+    sendTemplate?(...args: any[]): Promise<any>;
+}
+
+import { ConversationContext } from './models/whatsapp/ConversationContext.js';
+import { IWhatsAppProvider } from './interfaces/whatsapp/index.js';
 
 export class WhatsAppAdapter implements ChannelAdapter {
     constructor(

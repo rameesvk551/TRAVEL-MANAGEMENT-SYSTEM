@@ -52,6 +52,10 @@ export interface WhatsAppMetaConfig {
     phoneNumberId?: string;
     businessAccountId?: string;
     apiVersion?: string;
+    appId?: string;
+    appSecret?: string;
+    systemUserToken?: string;
+    appWabaId?: string;
 }
 
 export interface WhatsAppConfig {
@@ -123,7 +127,7 @@ export const config: Config = {
     },
     redis: {
         host: getEnvOrDefault('REDIS_HOST', 'localhost'),
-        port: parseInt(getEnvOrDefault('REDIS_PORT', '6379'), 10),
+        port: parseInt(getEnvOrDefault('REDIS_PORT', '6378'), 10),
     },
     billing: {
         razorpayKeyId: getEnvOrDefault('RAZORPAY_KEY_ID', ''),
@@ -140,12 +144,15 @@ export const config: Config = {
     whatsapp: {
         provider: getEnvOrDefault('WHATSAPP_PROVIDER', 'mock') as WhatsAppConfig['provider'],
         meta: {
+            apiVersion: 'v21.0',
             accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
             phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
             businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,
-            apiVersion: getEnvOrDefault('WHATSAPP_API_VERSION', 'v24.0'),
+            appId: process.env.META_APP_ID,
+            appSecret: process.env.META_APP_SECRET,
+            systemUserToken: process.env.META_SYSTEM_USER_TOKEN,
+            appWabaId: process.env.META_APP_WABA_ID,
         },
-        appSecret: process.env.WHATSAPP_APP_SECRET,
         verifyToken: process.env.WHATSAPP_VERIFY_TOKEN,
     },
     instagram: {
@@ -153,7 +160,7 @@ export const config: Config = {
         pageId: getEnvOrDefault('INSTAGRAM_PAGE_ID', ''),
     },
     mongo: {
-        uri: getEnvOrDefault('MONGO_URI', 'mongodb://localhost:27017/marketing-os'),
+        uri: getEnvOrDefault('MONGO_URI', 'mongodb://localhost:27018/marketing-os?directConnection=true'),
     },
     socket: {
         corsOrigin: getEnvOrDefault('CORS_ORIGIN', 'http://localhost:3000'),

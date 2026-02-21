@@ -9,11 +9,11 @@ import {
   LinkedEntityType,
   LinkedEntity,
   CommunicationChannel,
-} from '../modules/whatsapp/models/index';
+} from '../models/whatsapp/index.js';
 import {
   IConversationRepository,
   ConversationFilters,
-} from '../modules/whatsapp/interfaces/index';
+} from '../interfaces/whatsapp/index.js';
 
 /**
  * ConversationRepository - Postgres implementation

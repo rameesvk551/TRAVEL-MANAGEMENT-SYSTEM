@@ -5,8 +5,8 @@ import { Pool } from 'pg';
 import {
   ITimelineRepository,
   TimelineQuery,
-} from '../modules/whatsapp/interfaces/index';
-import { UnifiedTimelineEntry } from '../modules/whatsapp/models/index';
+} from '../interfaces/whatsapp/index.js';
+import { UnifiedTimelineEntry } from '../models/whatsapp/index.js';
 
 export class TimelineRepository implements ITimelineRepository {
   constructor(private pool: Pool) { }

@@ -6,7 +6,7 @@ import { generateId } from '../../../../shared/utils/index.js';
 /**
  * Template category per WhatsApp Business requirements
  */
-export type TemplateCategory = 
+export type TemplateCategory =
   | 'UTILITY'         // Order updates, booking confirmations
   | 'AUTHENTICATION'  // OTP, verification
   | 'MARKETING';      // Promotional (requires opt-in)
@@ -14,7 +14,7 @@ export type TemplateCategory =
 /**
  * Template status in approval workflow
  */
-export type TemplateStatus = 
+export type TemplateStatus =
   | 'DRAFT'
   | 'PENDING_APPROVAL'  // Submitted to WhatsApp
   | 'APPROVED'
@@ -25,7 +25,7 @@ export type TemplateStatus =
 /**
  * Business operations this template is used for
  */
-export type TemplateUseCase = 
+export type TemplateUseCase =
   | 'BOOKING_CONFIRMATION'
   | 'PAYMENT_REMINDER'
   | 'PAYMENT_RECEIVED'
@@ -60,40 +60,41 @@ export interface TemplateButton {
 export interface MessageTemplateProps {
   id?: string;
   tenantId: string;
-  
+
   // WhatsApp template identifiers
   templateName: string;           // Unique name (snake_case)
   providerTemplateId?: string;    // ID from WhatsApp after approval
   language: string;               // BCP 47 format (en, hi, ne)
-  
+
   // Categorization
   category: TemplateCategory;
-  useCase: TemplateUseCase;
-  
+  useCase?: TemplateUseCase;
+
   // Content
   headerType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT';
   headerContent?: string;
-  bodyContent: string;  // Template body with {{1}}, {{2}} placeholders
+  bodyContent?: string;  // Template body with {{1}}, {{2}} placeholders
   footerContent?: string;
-  
+  components?: any[];    // Raw Meta components structure
+
   // Dynamic parts
-  variables: TemplateVariable[];
-  buttons: TemplateButton[];
-  
+  variables?: TemplateVariable[];
+  buttons?: TemplateButton[];
+
   // Status
   status: TemplateStatus;
   rejectionReason?: string;
   submittedAt?: Date;
   approvedAt?: Date;
-  
+
   // Usage tracking
   usageCount: number;
   lastUsedAt?: Date;
-  
+
   // Governance
   requiresOptIn: boolean;
   minIntervalMinutes: number;  // Prevent spam
-  
+
   createdAt?: Date;
   updatedAt?: Date;
   createdBy: string;
@@ -117,6 +118,7 @@ export class MessageTemplate {
   public readonly headerContent?: string;
   public readonly bodyContent: string;
   public readonly footerContent?: string;
+  public components?: any[];
   public readonly variables: TemplateVariable[];
   public readonly buttons: TemplateButton[];
   public readonly status: TemplateStatus;
@@ -138,13 +140,14 @@ export class MessageTemplate {
     this.providerTemplateId = props.providerTemplateId;
     this.language = props.language;
     this.category = props.category;
-    this.useCase = props.useCase;
+    this.useCase = props.useCase || 'CUSTOM';
     this.headerType = props.headerType;
     this.headerContent = props.headerContent;
-    this.bodyContent = props.bodyContent;
+    this.bodyContent = props.bodyContent || '';
     this.footerContent = props.footerContent;
-    this.variables = props.variables;
-    this.buttons = props.buttons;
+    this.components = props.components;
+    this.variables = props.variables || [];
+    this.buttons = props.buttons || [];
     this.status = props.status;
     this.rejectionReason = props.rejectionReason;
     this.submittedAt = props.submittedAt;
@@ -158,7 +161,7 @@ export class MessageTemplate {
     this.createdBy = props.createdBy;
   }
 
-  static create(props: MessageTemplateProps): MessageTemplate {
+  static create(props: Partial<MessageTemplateProps> & { tenantId: string; templateName: string; category: TemplateCategory; language: string; createdBy: string }): MessageTemplate {
     const now = new Date();
     return new MessageTemplate({
       id: props.id ?? generateId(),
@@ -171,7 +174,7 @@ export class MessageTemplate {
       minIntervalMinutes: props.minIntervalMinutes ?? 60,
       createdAt: props.createdAt ?? now,
       updatedAt: props.updatedAt ?? now,
-    });
+    } as MessageTemplateProps);
   }
 
   static fromPersistence(data: MessageTemplateProps): MessageTemplate {

@@ -25,21 +25,21 @@ interface StoreOrderAttributes {
 export interface StoreOrderCreationAttributes extends Optional<StoreOrderAttributes, 'id' | 'currency' | 'status' | 'payment_status'> { }
 
 export class StoreOrder extends Model<StoreOrderAttributes, StoreOrderCreationAttributes> implements StoreOrderAttributes {
-    public id!: string;
-    public tenant_id!: string;
-    public customer_phone!: string;
-    public customer_name?: string;
-    public delivery_address?: string;
-    public items!: any[];
-    public total_amount!: number;
-    public currency!: string;
-    public status!: OrderStatus;
-    public payment_status!: PaymentStatus;
-    public payment_link?: string;
-    public notes?: string;
-    public conversation_id?: string;
-    public created_at?: Date;
-    public updated_at?: Date;
+    declare id: string;
+    declare tenant_id: string;
+    declare customer_phone: string;
+    declare customer_name?: string;
+    declare delivery_address?: string;
+    declare items: any[];
+    declare total_amount: number;
+    declare currency: string;
+    declare status: OrderStatus;
+    declare payment_status: PaymentStatus;
+    declare payment_link?: string;
+    declare notes?: string;
+    declare conversation_id?: string;
+    declare created_at?: Date;
+    declare updated_at?: Date;
 }
 
 StoreOrder.init(

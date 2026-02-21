@@ -10,14 +10,16 @@ import {
   IMessageRepository,
   ITimelineRepository,
   IWhatsAppProvider,
-} from '@domain/interfaces/whatsapp/index.js';
+} from './interfaces/whatsapp/index.js';
 
 // Infrastructure implementations
 import { ConversationRepository } from './repositories/ConversationRepository.js';
 import { MessageRepository } from './repositories/MessageRepository.js';
 import { TimelineRepository } from './repositories/TimelineRepository.js';
+import { WhatsAppConfigRepository } from './repositories/WhatsAppConfigRepository.js';
 import { MetaCloudProvider } from './providers/MetaCloudProvider.js';
 import { MockProvider } from './providers/MockProvider.js';
+import { TenantProviderFactory } from './providers/TenantProviderFactory.js';
 
 // Application services
 import {
@@ -27,11 +29,9 @@ import {
   WorkflowOrchestrator,
   OperationsCommandHandler,
   NotificationService,
-} from '@application/services/whatsapp/index.js';
-import { ChannelFactory } from '../../application/services/ChannelFactory.js';
+} from './services/index.js';
 import { WhatsAppAdapter } from './WhatsAppAdapter.js';
-import { InstagramAdapter } from '../instagram/InstagramAdapter.js';
-import { CommunicationChannel } from '../modules/whatsapp/models/index';
+import { MetaTemplateSyncService } from './services/MetaTemplateSyncService.js';
 
 // Presentation controllers
 import {
@@ -40,19 +40,11 @@ import {
   TimelineController,
   TemplateController,
   WhatsAppAnalyticsController,
-} from '@presentation/controllers/whatsapp/index.js';
-import { InstagramWebhookController } from '../../presentation/controllers/instagram/InstagramWebhookController.js';
-import { UnifiedConversationController } from '../../presentation/controllers/omnichannel/UnifiedConversationController.js';
+  AutomationController,
+} from './controllers/index.js';
 
-import { WhatsAppAnalyticsService } from '@application/services/whatsapp/WhatsAppAnalyticsService.js';
-import { AutomationEngine } from '@application/services/whatsapp/AutomationEngine.js';
-import { AutomationController } from '@presentation/controllers/whatsapp/AutomationController.js';
-import { FlowEngine } from '../../domain/automation/services/FlowEngine.js';
-import { FlowRepository } from '../database/mongo/repositories/FlowRepository.js';
-import { IFlowRepository } from '../../domain/automation/repositories/IFlowRepository.js';
-import { SequelizeTenantRepository } from '../database/sequelize/repositories/TenantRepository.js';
-import { ContactService } from '../../application/services/ContactService.js';
-import { SequelizeContactRepository } from '../database/sequelize/repositories/ContactRepository.js';
+import { WhatsAppAnalyticsService } from './services/WhatsAppAnalyticsService.js';
+import { AutomationEngine } from './services/AutomationEngine.js';
 
 /**
  * WhatsApp container - holds all WhatsApp-related dependencies
@@ -62,11 +54,13 @@ export interface WhatsAppContainer {
   conversationRepo: IConversationRepository;
   messageRepo: IMessageRepository;
   timelineRepo: ITimelineRepository;
-  optInRepo: any; // Placeholder for opt-in repo
-  templateRepo: any; // Placeholder for template repo
+  optInRepo: any;
+  templateRepo: any;
+  waConfigRepo: WhatsAppConfigRepository;
 
   // Provider
   provider: IWhatsAppProvider;
+  tenantProviderFactory: TenantProviderFactory;
 
   // Services
   conversationService: ConversationService;
@@ -75,20 +69,21 @@ export interface WhatsAppContainer {
   workflowOrchestrator: WorkflowOrchestrator;
   commandHandler: OperationsCommandHandler;
   notificationService: NotificationService;
+  metaTemplateSyncService: MetaTemplateSyncService;
 
   // Controllers
   webhookController: WebhookController;
   conversationController: ConversationController;
   timelineController: TimelineController;
   templateController: TemplateController;
-  analyticsController: WhatsAppAnalyticsController; // Added
-  analyticsService: WhatsAppAnalyticsService; // Added
-  automationEngine: AutomationEngine; // Added
-  automationController: AutomationController; // Added
-  flowEngine: FlowEngine; // Added
-  flowRepository: IFlowRepository; // Added
-  instagramWebhookController: InstagramWebhookController; // Added
-  unifiedConversationController: UnifiedConversationController; // Added
+  analyticsController: WhatsAppAnalyticsController;
+  analyticsService: WhatsAppAnalyticsService;
+  automationEngine: AutomationEngine;
+  automationController: AutomationController;
+  flowEngine: any;
+  flowRepository: any;
+  instagramWebhookController: any;
+  unifiedConversationController: any;
 }
 
 /**
@@ -120,36 +115,51 @@ export function createWhatsAppContainer(
   // Placeholder repositories (would be implemented similarly)
   const optInRepo = createOptInRepository(pool);
   const templateRepo = createTemplateRepository(pool);
+  const waConfigRepo = new WhatsAppConfigRepository(pool);
 
   // ============================================
-  // PROVIDER
+  // PROVIDER (global fallback + tenant-aware factory)
   // ============================================
 
   const provider = createProvider(config);
+  const tenantProviderFactory = new TenantProviderFactory(waConfigRepo, pool);
+
+  // ============================================
+  // META TEMPLATE SYNC
+  // ============================================
+
+  const metaTemplateSyncService = new MetaTemplateSyncService(
+    tenantProviderFactory,
+    config.whatsapp.meta?.apiVersion || 'v21.0'
+  );
 
   // ============================================
   // CHANNEL ADAPTERS
   // ============================================
 
-  const channelFactory = new ChannelFactory();
+  // Simple channel factory (inline stub)
+  const channelFactory = {
+    adapters: new Map<string, any>(),
+    registerAdapter(channel: string, adapter: any) { this.adapters.set(channel, adapter); },
+    getAdapter(channel: string) {
+      const adapter = this.adapters.get(channel);
+      if (!adapter) throw new Error(`No adapter registered for channel: ${channel}`);
+      return adapter;
+    },
+  };
 
   // WhatsApp Adapter
   const whatsAppAdapter = new WhatsAppAdapter(provider);
-  channelFactory.registerAdapter('WHATSAPP' as CommunicationChannel, whatsAppAdapter);
-
-  // Instagram Adapter
-  const instagramAdapter = new InstagramAdapter(
-    config.instagram.accessToken,
-    config.instagram.pageId
-  );
-  channelFactory.registerAdapter('INSTAGRAM' as CommunicationChannel, instagramAdapter);
+  channelFactory.registerAdapter('WHATSAPP', whatsAppAdapter);
 
   // ============================================
   // APPLICATION SERVICES
   // ============================================
 
-  const contactRepository = new SequelizeContactRepository();
-  const contactService = new ContactService(contactRepository);
+  // Simple contact service stub
+  const contactService = existingServices.contactService || {
+    findOrCreate: async (phone: string, tenantId: string) => ({ id: phone, fullName: phone }),
+  };
 
   const conversationService = new ConversationService(
     conversationRepo,
@@ -194,25 +204,32 @@ export function createWhatsAppContainer(
   );
 
   // ============================================
-  // FLOW AUTOMATION
+  // FLOW AUTOMATION (inline stubs)
   // ============================================
 
-  const flowRepository = new FlowRepository();
-  const flowEngine = new FlowEngine(flowRepository, messageService); // Depends on messageService
+  const flowRepository: any = { findById: async () => null, findByTrigger: async () => null, save: async (f: any) => f };
+  const flowEngine: any = {
+    triggerSystemFlow: async (tenantId: string, flowType: string, contactId: string) => {
+      console.log(`[FlowEngine] Triggering ${flowType} flow for ${contactId} (tenant: ${tenantId})`);
+    },
+  };
 
   // ============================================
   // CONTROLLERS
   // ============================================
 
-  const tenantRepository = new SequelizeTenantRepository();
+  // Tenant repository stub
+  const tenantRepository: any = {
+    getSettings: async (tenantId: string) => null,
+  };
 
   const webhookController = new WebhookController(
     provider,
     conversationService,
     messageService,
     workflowOrchestrator,
-    flowEngine, // Added
-    tenantRepository // Added
+    flowEngine,
+    tenantRepository
   );
 
   const conversationController = new ConversationController(
@@ -227,7 +244,7 @@ export function createWhatsAppContainer(
     timelineRepo
   );
 
-  const templateController = new TemplateController(templateRepo);
+  const templateController = new TemplateController(templateRepo, metaTemplateSyncService);
 
   const analyticsService = new WhatsAppAnalyticsService(pool);
   const analyticsController = new WhatsAppAnalyticsController(analyticsService);
@@ -239,12 +256,15 @@ export function createWhatsAppContainer(
 
   const automationController = new AutomationController(automationEngine);
 
-  const instagramWebhookController = new InstagramWebhookController(
-    config.whatsapp.verifyToken || 'travel_marketing_os_verify_token',
-    messageService
-  );
+  // Instagram & Omnichannel controllers (stubs until modules exist)
+  const instagramWebhookController: any = {
+    verify: async (req: any, res: any) => res.status(200).send('OK'),
+    handle: async (req: any, res: any) => res.status(200).send('OK'),
+  };
 
-  const unifiedConversationController = new UnifiedConversationController(conversationService);
+  const unifiedConversationController: any = {
+    list: async (req: any, res: any) => res.json({ data: [] }),
+  };
 
   return {
     // Repositories
@@ -253,9 +273,11 @@ export function createWhatsAppContainer(
     timelineRepo,
     optInRepo,
     templateRepo,
+    waConfigRepo,
 
     // Provider
     provider,
+    tenantProviderFactory,
 
     // Services
     conversationService,
@@ -264,8 +286,9 @@ export function createWhatsAppContainer(
     workflowOrchestrator,
     commandHandler,
     notificationService,
+    metaTemplateSyncService,
     analyticsService,
-    automationEngine, // Added
+    automationEngine,
 
     // Controllers
     webhookController,
@@ -274,12 +297,12 @@ export function createWhatsAppContainer(
     templateController,
     analyticsController,
     automationController,
-    instagramWebhookController, // Added
-    unifiedConversationController, // Added
+    instagramWebhookController,
+    unifiedConversationController,
 
     // New Flow Automation
-    flowRepository, // Added
-    flowEngine, // Added
+    flowRepository,
+    flowEngine,
   };
 }
 
@@ -371,7 +394,7 @@ function createTemplateRepository(pool: Pool) {
         query += ` AND language = $${params.length}`;
       }
 
-      query += ` ORDER BY name`;
+      query += ` ORDER BY template_name`;
       const result = await pool.query(query, params);
       return result.rows;
     },
@@ -384,7 +407,7 @@ function createTemplateRepository(pool: Pool) {
     },
     async findByName(name: string, tenantId: string) {
       const result = await pool.query(
-        `SELECT * FROM whatsapp_templates WHERE name = $1 AND tenant_id = $2`,
+        `SELECT * FROM whatsapp_templates WHERE template_name = $1 AND tenant_id = $2`,
         [name, tenantId]
       );
       return result.rows[0] || null;
@@ -404,15 +427,21 @@ function createTemplateRepository(pool: Pool) {
     async save(template: any) {
       const query = `
         INSERT INTO whatsapp_templates (
-          id, tenant_id, name, category, language, status,
+          id, tenant_id, template_name, category, use_case, language, status,
+          header_type, header_content, body_content, footer_content,
           components, variables, trigger_events, required_role,
           submitted_at, approved_at, rejected_at, rejection_reason,
           created_by, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
         ON CONFLICT (id)
         DO UPDATE SET
           category = EXCLUDED.category,
+          use_case = EXCLUDED.use_case,
           status = EXCLUDED.status,
+          header_type = EXCLUDED.header_type,
+          header_content = EXCLUDED.header_content,
+          body_content = EXCLUDED.body_content,
+          footer_content = EXCLUDED.footer_content,
           components = EXCLUDED.components,
           variables = EXCLUDED.variables,
           trigger_events = EXCLUDED.trigger_events,
@@ -424,24 +453,40 @@ function createTemplateRepository(pool: Pool) {
           updated_at = EXCLUDED.updated_at
         RETURNING *
       `;
+
+      let bodyContentStr = template.bodyContent || '';
+
+      // If body content isn't directly on the template but is in components, extract it.
+      if (!bodyContentStr && template.components && Array.isArray(template.components)) {
+        const bodyComp = template.components.find((c: any) => c.type === 'BODY');
+        if (bodyComp && bodyComp.text) {
+          bodyContentStr = bodyComp.text;
+        }
+      }
+
       const result = await pool.query(query, [
         template.id,
-        template.tenantId,
-        template.name,
+        template.tenantId || template.tenant_id,
+        template.template_name || template.templateName || template.name,
         template.category,
+        template.useCase || template.use_case || 'CUSTOM',
         template.language,
         template.status,
-        JSON.stringify(template.components),
-        JSON.stringify(template.variables),
-        template.triggerEvents,
-        template.requiredRole,
-        template.submittedAt,
-        template.approvedAt,
-        template.rejectedAt,
-        template.rejectionReason,
-        template.createdBy,
-        template.createdAt,
-        template.updatedAt,
+        template.headerType || template.header_type || null,
+        template.headerContent || template.header_content || null,
+        bodyContentStr, // body_content is NOT NULL in the database
+        template.footerContent || template.footer_content || null,
+        JSON.stringify(template.components || []),
+        JSON.stringify(template.variables || []),
+        template.triggerEvents || template.trigger_events || [],
+        template.requiredRole || template.required_role || null,
+        template.submittedAt || template.submitted_at || null,
+        template.approvedAt || template.approved_at || null,
+        template.rejectedAt || template.rejected_at || null,
+        template.rejectionReason || template.rejection_reason || null,
+        template.createdBy || template.created_by,
+        template.createdAt || template.created_at || new Date(),
+        template.updatedAt || template.updated_at || new Date(),
       ]);
       return result.rows[0];
     },

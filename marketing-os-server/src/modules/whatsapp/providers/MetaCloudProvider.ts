@@ -12,8 +12,8 @@ import {
   TemplateSubmission,
   TemplateApprovalStatus,
   MediaUploadResult,
-} from '../modules/whatsapp/interfaces/index';
-import { TemplateContent } from '../modules/whatsapp/models/index';
+} from '../interfaces/whatsapp/index.js';
+import { TemplateContent } from '../models/whatsapp/index.js';
 
 interface MetaConfig {
   phoneNumberId: string;

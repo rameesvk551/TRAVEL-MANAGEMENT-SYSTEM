@@ -10,7 +10,7 @@ export const AdminPrivateRoute: FC<{ children: ReactNode }> = ({ children }) => 
   if (isLoading) {
     return (
       <div style={{ display: 'grid', placeItems: 'center', minHeight: '100vh' }}>
-        <Spin size="large" tip="Loading admin session..." />
+        <Spin size="large" description="Loading admin session..." />
       </div>
     );
   }

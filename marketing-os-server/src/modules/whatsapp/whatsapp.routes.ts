@@ -9,7 +9,7 @@ import {
   TemplateController,
   WhatsAppAnalyticsController,
   AutomationController, // Added
-} from '../controllers/whatsapp/index.js';
+} from './controllers/index.js';
 import {
   verifyWebhookChallenge,
   validateWebhookSignature,
@@ -239,6 +239,11 @@ export function createWhatsAppRoutes(dependencies: {
     templateController.submit
   );
 
+  // Sync templates from Meta
+  router.post('/templates/sync',
+    templateController.syncFromMeta
+  );
+
   // Test template
   router.post('/templates/:id/test',
     templateController.test
@@ -319,7 +324,7 @@ export function createWhatsAppRoutes(dependencies: {
         return;
       }
 
-      const { WhatsAppOptIn } = await import('../modules/whatsapp/models/index');
+      const { WhatsAppOptIn } = await import('./models/index.js');
 
       const optIn = WhatsAppOptIn.create({
         tenantId,
@@ -566,7 +571,7 @@ export function createWhatsAppRoutes(dependencies: {
   // Onboarding Routes (Embedded Signup / QR Code)
   // ============================================
   // Import and mount onboarding routes
-  import('../routes/onboarding.routes.js').then(({ default: onboardingRoutes }) => {
+  import('./routes/onboarding.routes.js').then(({ default: onboardingRoutes }) => {
     router.use('/onboard', onboardingRoutes);
   }).catch(err => {
     console.warn('Failed to load onboarding routes:', err.message);

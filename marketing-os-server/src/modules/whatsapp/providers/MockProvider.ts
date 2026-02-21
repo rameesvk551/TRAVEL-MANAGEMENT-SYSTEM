@@ -12,8 +12,8 @@ import {
   TemplateSubmission,
   TemplateApprovalStatus,
   MediaUploadResult,
-} from '../modules/whatsapp/interfaces/index';
-import { TemplateContent } from '../modules/whatsapp/models/index';
+} from '../interfaces/whatsapp/index.js';
+import { TemplateContent } from '../models/whatsapp/index.js';
 import { generateId } from '../../../shared/utils/index.js';
 
 /**
@@ -35,7 +35,7 @@ export class MockProvider implements IWhatsAppProvider {
     try {
       const body = JSON.parse(payload.rawBody);
       console.log('[MockProvider] Parsing incoming message:', body);
-      
+
       return {
         providerMessageId: body.messageId || generateId(),
         providerTimestamp: new Date(),
@@ -116,7 +116,7 @@ export class MockProvider implements IWhatsAppProvider {
     fileName: string
   ): Promise<MediaUploadResult> {
     console.log('[MockProvider] Uploading media:', { fileName, mimeType, size: fileBuffer.length });
-    
+
     return {
       mediaId: `mock_media_${generateId()}`,
       url: `https://mock.whatsapp.com/media/${generateId()}`,

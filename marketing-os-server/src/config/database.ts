@@ -82,10 +82,9 @@ export async function testConnection(): Promise<boolean> {
 
 export async function connectToMongoDB(): Promise<void> {
     try {
-        await mongoose.connect(config.mongo.uri);
+        await mongoose.connect(config.mongo.uri, { serverSelectionTimeoutMS: 5000 });
         console.log('✅ MongoDB connected.');
     } catch (error) {
-        console.error('❌ MongoDB connection failed:', error);
-        process.exit(1);
+        console.warn('⚠️ MongoDB connection failed (non-fatal, continuing without MongoDB):', (error as Error).message);
     }
 }

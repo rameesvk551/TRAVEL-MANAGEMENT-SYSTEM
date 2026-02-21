@@ -17,16 +17,16 @@ interface StoreSettingsAttributes {
 export interface StoreSettingsCreationAttributes extends Optional<StoreSettingsAttributes, 'id' | 'is_active' | 'welcome_message' | 'payment_link_template' | 'checkout_reminder_minutes' | 'payment_reminder_minutes' | 'auto_keywords'> { }
 
 export class StoreSettings extends Model<StoreSettingsAttributes, StoreSettingsCreationAttributes> implements StoreSettingsAttributes {
-    public id!: string;
-    public tenant_id!: string;
-    public is_active!: boolean;
-    public welcome_message!: string;
-    public payment_link_template!: string;
-    public checkout_reminder_minutes!: number;
-    public payment_reminder_minutes!: number;
-    public auto_keywords!: Record<string, string[]>;
-    public created_at?: Date;
-    public updated_at?: Date;
+    declare id: string;
+    declare tenant_id: string;
+    declare is_active: boolean;
+    declare welcome_message: string;
+    declare payment_link_template: string;
+    declare checkout_reminder_minutes: number;
+    declare payment_reminder_minutes: number;
+    declare auto_keywords: Record<string, string[]>;
+    declare created_at?: Date;
+    declare updated_at?: Date;
 }
 
 StoreSettings.init(

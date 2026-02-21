@@ -151,6 +151,10 @@ export const whatsappApi = {
         const { data } = await client.post(`/whatsapp/templates/${id}/test`, { phone, variables });
         return data;
     },
+    syncTemplates: async () => {
+        const { data } = await client.post('/whatsapp/templates/sync');
+        return data;
+    },
     getCategories: async () => {
         const { data } = await client.get('/whatsapp/templates/categories');
         return data;
@@ -472,7 +476,7 @@ export const leadApi = {
 // ============================================
 
 export type FlowTrigger = 'keyword' | 'first_message' | 'manual' | 'webhook' | 'schedule' | 'event';
-export type FlowNodeType = 
+export type FlowNodeType =
     | 'message' | 'question' | 'buttons' | 'list' | 'input_capture'
     | 'condition' | 'delay' | 'product_catalog' | 'product_list'
     | 'product_detail' | 'add_to_cart' | 'show_cart' | 'checkout'
@@ -583,12 +587,12 @@ export const flowApi = {
 // AUTOMATION MODULE API (Smart Rules)
 // ============================================
 
-export type AutomationTriggerType = 
+export type AutomationTriggerType =
     | 'no_reply' | 'cart_abandoned' | 'payment_pending' | 'order_completed'
     | 'scheduled' | 'lead_score_changed' | 'status_changed' | 'tag_added'
     | 'flow_completed' | 'custom';
 
-export type AutomationActionType = 
+export type AutomationActionType =
     | 'send_message' | 'send_template' | 'trigger_flow' | 'assign_agent'
     | 'update_lead_status' | 'update_lead_score' | 'add_tag' | 'remove_tag'
     | 'webhook' | 'create_task';
@@ -694,7 +698,7 @@ export const smartAutomationApi = {
 // RECOMMENDATION MODULE API
 // ============================================
 
-export type RecommendationStrategy = 
+export type RecommendationStrategy =
     | 'interest_based' | 'budget_based' | 'popularity' | 'similar_products'
     | 'past_purchases' | 'cart_based' | 'trending' | 'new_arrivals'
     | 'complementary' | 'upsell' | 'cross_sell';

@@ -139,7 +139,7 @@ const StoreAnalytics: React.FC = () => {
                                 transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                                 cursor: 'default',
                             }}
-                            bodyStyle={{ padding: '20px 24px' }}
+                            styles={{ body: { padding: '20px 24px' } }}
                             loading={isLoading}
                             hoverable
                         >

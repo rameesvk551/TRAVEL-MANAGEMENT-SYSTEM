@@ -118,7 +118,7 @@ const WhatsAppBroadcast: React.FC = () => {
 
     return (
         <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 24px' }}>
-            <Card bordered={false} bodyStyle={{ padding: '0 0 24px 0' }}>
+            <Card bordered={false} styles={{ body: { padding: '0 0 24px 0' } }}>
                 <div style={{ textAlign: 'center', marginBottom: 40 }}>
                     <Title level={3} style={{ marginBottom: 8 }}>New Broadcast Campaign</Title>
                     <Text type="secondary">Send personalized messages to thousands of customers in minutes</Text>

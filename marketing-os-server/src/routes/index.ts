@@ -11,6 +11,13 @@ import { StoreController } from '../modules/store/store.controller.js';
 import { createStoreRoutes } from '../modules/store/store.routes.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { tenantMiddleware } from '../middlewares/tenant.middleware.js';
+import { createFlowRoutes } from '../modules/automation/flow.routes.js';
+import { FlowController } from '../modules/automation/flow.controller.js';
+import { FlowService } from '../modules/automation/flow.service.js';
+import { MongoFlowRepository } from '../infrastructure/repositories/mongo/MongoFlowRepository.js';
+import { createWhatsAppContainer } from '../modules/whatsapp/container.js';
+import { createWhatsAppRoutes } from '../modules/whatsapp/whatsapp.routes.js';
+import { getPool } from '../config/database.js';
 
 interface CampaignDispatcherLike {
     startWorker(): void;
@@ -64,11 +71,33 @@ export function registerRoutes(app: Express): AppDependencies {
         tenantMiddleware
     });
 
+    // 3. Automation Module (Flows)
+    const flowRepository = new MongoFlowRepository();
+    const flowService = new FlowService(flowRepository);
+    const flowController = new FlowController(); // Dependencies handled inside for now
+
+    const flowRouter = createFlowRoutes({
+        flowController,
+        authMiddleware: protect,
+        tenantMiddleware
+    });
+
+    // 4. WhatsApp Module
+    const pool = getPool();
+    const whatsAppContainer = createWhatsAppContainer(pool);
+    const whatsAppRoutes = createWhatsAppRoutes({
+        ...whatsAppContainer,
+        authMiddleware: protect,
+        tenantMiddleware
+    });
+
     app.use('/api/v1/auth', authRouter);
     app.use('/api/v1/whatsapp/onboard', onboardingRouter);
+    app.use('/api/v1/whatsapp', whatsAppRoutes);
     app.use('/api/v1/store', storeRouter);
+    app.use('/api/v1/automation/flows', flowRouter);
 
-    logger.info('Registered routes: /api/v1/auth, /api/v1/whatsapp/onboard, /api/v1/store');
+    logger.info('Registered routes: /api/v1/auth, /api/v1/whatsapp, /api/v1/store, /api/v1/automation/flows');
 
     return {
         campaignDispatcher: noopCampaignDispatcher,

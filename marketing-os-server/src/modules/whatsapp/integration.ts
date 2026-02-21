@@ -4,8 +4,8 @@
 import { Express, json } from 'express';
 import { Pool } from 'pg';
 import { createWhatsAppContainer, WhatsAppContainer } from './container.js';
-import { createWhatsAppRoutes } from '../modules/whatsapp/whatsapp.routes.js';
-import { captureRawBody } from '../../presentation/middleware/whatsapp/index.js';
+import { createWhatsAppRoutes } from './whatsapp.routes.js';
+import { captureRawBody } from '../middleware/whatsapp/index.js';
 
 // Re-export WhatsAppContainer for external use
 export { WhatsAppContainer } from './container.js';

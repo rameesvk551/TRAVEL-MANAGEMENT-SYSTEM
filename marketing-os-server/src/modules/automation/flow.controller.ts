@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { FlowService } from '../modules/automation';
-import { MongoFlowRepository } from '../../../infrastructure/repositories/mongo/MongoFlowRepository.js';
+import { FlowService } from './flow.service.js';
+import { MongoFlowRepository } from '../../infrastructure/repositories/mongo/MongoFlowRepository.js';
 
 // Basic dependency injection manually for now, or use container if available
 const flowRepository = new MongoFlowRepository();
