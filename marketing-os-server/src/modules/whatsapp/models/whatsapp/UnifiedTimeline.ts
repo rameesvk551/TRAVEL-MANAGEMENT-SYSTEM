@@ -139,91 +139,54 @@ export interface UnifiedTimelineEntryProps {
  * CRITICAL: This is the source of truth for "what happened".
  * All WhatsApp messages, payments, status changes flow here.
  */
-export class UnifiedTimelineEntry {
-  public readonly id: string;
-  public readonly tenantId: string;
-  public readonly leadId?: string;
-  public readonly bookingId?: string;
-  public readonly departureId?: string;
-  public readonly tripAssignmentId?: string;
-  public readonly source: TimelineEntrySource;
-  public readonly entryType: TimelineEntryType;
-  public readonly visibility: TimelineVisibility;
-  public readonly actorId: string;
-  public readonly actorType: 'USER' | 'EMPLOYEE' | 'CONTACT' | 'SYSTEM';
-  public readonly actorName: string;
-  public readonly actorPhone?: string;
-  public readonly title: string;
-  public readonly description?: string;
-  public readonly media?: TimelineMedia[];
-  public readonly location?: TimelineLocation;
-  public readonly whatsappMessageId?: string;
-  public readonly externalRef?: string;
-  public readonly metadata: Record<string, unknown>;
-  public readonly previousValue?: string;
-  public readonly newValue?: string;
-  public readonly occurredAt: Date;
-  public readonly createdAt: Date;
-
-  private constructor(props: UnifiedTimelineEntryProps) {
-    this.id = props.id!;
-    this.tenantId = props.tenantId;
-    this.leadId = props.leadId;
-    this.bookingId = props.bookingId;
-    this.departureId = props.departureId;
-    this.tripAssignmentId = props.tripAssignmentId;
-    this.source = props.source;
-    this.entryType = props.entryType;
-    this.visibility = props.visibility;
-    this.actorId = props.actorId;
-    this.actorType = props.actorType;
-    this.actorName = props.actorName;
-    this.actorPhone = props.actorPhone;
-    this.title = props.title;
-    this.description = props.description;
-    this.media = props.media;
-    this.location = props.location;
-    this.whatsappMessageId = props.whatsappMessageId;
-    this.externalRef = props.externalRef;
-    this.metadata = props.metadata ?? {};
-    this.previousValue = props.previousValue;
-    this.newValue = props.newValue;
-    this.occurredAt = props.occurredAt;
-    this.createdAt = props.createdAt!;
-  }
-
-  static create(props: UnifiedTimelineEntryProps): UnifiedTimelineEntry {
-    const now = new Date();
-    return new UnifiedTimelineEntry({
-      id: props.id ?? generateId(),
-      ...props,
-      visibility: props.visibility ?? 'INTERNAL',
-      occurredAt: props.occurredAt ?? now,
-      createdAt: props.createdAt ?? now,
-    });
-  }
-
-  static fromPersistence(data: UnifiedTimelineEntryProps): UnifiedTimelineEntry {
-    return new UnifiedTimelineEntry(data);
-  }
-
-  /**
-   * Check if customer can see this entry
-   */
-  get isCustomerVisible(): boolean {
-    return this.visibility === 'PUBLIC';
-  }
-
-  // Compatibility getters for TimelineRepository
-  get oldValue(): string | undefined {
-    return this.previousValue;
-  }
-
-  get mediaUrls(): string[] {
-    return this.media?.map(m => m.url) || [];
-  }
-
-  get messageId(): string | undefined {
-    return this.whatsappMessageId;
-  }
+function _createUnifiedTimelineEntry(props: UnifiedTimelineEntryProps) {
+    return {
+        id: props.id!,
+        tenantId: props.tenantId,
+        leadId: props.leadId,
+        bookingId: props.bookingId,
+        departureId: props.departureId,
+        tripAssignmentId: props.tripAssignmentId,
+        source: props.source,
+        entryType: props.entryType,
+        visibility: props.visibility,
+        actorId: props.actorId,
+        actorType: props.actorType,
+        actorName: props.actorName,
+        actorPhone: props.actorPhone,
+        title: props.title,
+        description: props.description,
+        media: props.media,
+        location: props.location,
+        whatsappMessageId: props.whatsappMessageId,
+        externalRef: props.externalRef,
+        metadata: props.metadata ?? {},
+        previousValue: props.previousValue,
+        newValue: props.newValue,
+        occurredAt: props.occurredAt,
+        createdAt: props.createdAt!,
+        get isCustomerVisible(): boolean { return props.visibility === 'PUBLIC'; },
+        get oldValue(): string | undefined { return props.previousValue; },
+        get mediaUrls(): string[] { return props.media?.map(m => m.url) || []; },
+        get messageId(): string | undefined { return props.whatsappMessageId; },
+    };
 }
+
+export const UnifiedTimelineEntry = {
+    create(props: UnifiedTimelineEntryProps) {
+        const now = new Date();
+        return _createUnifiedTimelineEntry({
+            id: props.id ?? generateId(),
+            ...props,
+            visibility: props.visibility ?? 'INTERNAL',
+            metadata: props.metadata ?? {},
+            occurredAt: props.occurredAt ?? now,
+            createdAt: props.createdAt ?? now,
+        });
+    },
+    fromPersistence(data: UnifiedTimelineEntryProps) {
+        return _createUnifiedTimelineEntry(data);
+    },
+};
+
+export type UnifiedTimelineEntry = ReturnType<typeof _createUnifiedTimelineEntry>;

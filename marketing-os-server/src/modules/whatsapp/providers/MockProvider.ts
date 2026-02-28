@@ -17,21 +17,25 @@ import { TemplateContent } from '../models/whatsapp/index.js';
 import { generateId } from '../../../shared/utils/index.js';
 
 /**
- * MockProvider - For development and testing
- * 
+ * createMockProvider - For development and testing
+ *
  * Simulates WhatsApp API behavior without making real API calls.
  * Logs all operations for debugging.
  */
-export class MockProvider implements IWhatsAppProvider {
-  readonly providerType: ProviderType = 'MOCK';
-  private sentMessages: SendMessageRequest[] = [];
+export function createMockProvider(): IWhatsAppProvider & {
+  getSentMessages(): SendMessageRequest[];
+  clearSentMessages(): void;
+  simulateIncomingMessage(from: string, text: string): RawWebhookPayload;
+} {
+  const providerType: ProviderType = 'MOCK';
+  const sentMessages: SendMessageRequest[] = [];
 
-  verifyWebhookSignature(payload: RawWebhookPayload): boolean {
+  function verifyWebhookSignature(payload: RawWebhookPayload): boolean {
     console.log('[MockProvider] Verifying webhook signature');
     return payload.signature === 'mock-valid-signature' || true;
   }
 
-  parseWebhookMessage(payload: RawWebhookPayload): IncomingMessage | null {
+  function parseWebhookMessage(payload: RawWebhookPayload): IncomingMessage | null {
     try {
       const body = JSON.parse(payload.rawBody);
       console.log('[MockProvider] Parsing incoming message:', body);
@@ -49,7 +53,7 @@ export class MockProvider implements IWhatsAppProvider {
     }
   }
 
-  parseWebhookStatus(payload: RawWebhookPayload): MessageStatusUpdate | null {
+  function parseWebhookStatus(payload: RawWebhookPayload): MessageStatusUpdate | null {
     try {
       const body = JSON.parse(payload.rawBody);
       if (!body.status) return null;
@@ -65,14 +69,14 @@ export class MockProvider implements IWhatsAppProvider {
     }
   }
 
-  async sendMessage(request: SendMessageRequest): Promise<SendMessageResult> {
+  async function sendMessage(request: SendMessageRequest): Promise<SendMessageResult> {
     console.log('[MockProvider] Sending message:', {
       to: request.recipientPhone,
       type: request.messageType,
       text: request.textContent?.body?.substring(0, 50),
     });
 
-    this.sentMessages.push(request);
+    sentMessages.push(request);
 
     // Simulate success with 95% probability
     if (Math.random() > 0.05) {
@@ -91,7 +95,7 @@ export class MockProvider implements IWhatsAppProvider {
     };
   }
 
-  async sendTemplate(
+  async function sendTemplate(
     recipientPhone: string,
     templateName: string,
     language: string,
@@ -110,7 +114,7 @@ export class MockProvider implements IWhatsAppProvider {
     };
   }
 
-  async uploadMedia(
+  async function uploadMedia(
     fileBuffer: Buffer,
     mimeType: string,
     fileName: string
@@ -124,21 +128,21 @@ export class MockProvider implements IWhatsAppProvider {
     };
   }
 
-  async downloadMedia(mediaId: string): Promise<Buffer> {
+  async function downloadMedia(mediaId: string): Promise<Buffer> {
     console.log('[MockProvider] Downloading media:', mediaId);
     return Buffer.from('mock-media-content');
   }
 
-  async getMediaUrl(mediaId: string): Promise<string> {
+  async function getMediaUrl(mediaId: string): Promise<string> {
     return `https://mock.whatsapp.com/media/${mediaId}`;
   }
 
-  async submitTemplate(template: TemplateSubmission): Promise<string> {
+  async function submitTemplate(template: TemplateSubmission): Promise<string> {
     console.log('[MockProvider] Submitting template:', template.name);
     return `mock_template_${generateId()}`;
   }
 
-  async getTemplateStatus(templateId: string): Promise<TemplateApprovalStatus> {
+  async function getTemplateStatus(templateId: string): Promise<TemplateApprovalStatus> {
     return {
       templateId,
       name: 'mock_template',
@@ -146,24 +150,24 @@ export class MockProvider implements IWhatsAppProvider {
     };
   }
 
-  async markAsRead(providerMessageId: string): Promise<void> {
+  async function markAsRead(providerMessageId: string): Promise<void> {
     console.log('[MockProvider] Marking as read:', providerMessageId);
   }
 
-  async healthCheck(): Promise<boolean> {
+  async function healthCheck(): Promise<boolean> {
     return true;
   }
 
   // Test helpers
-  getSentMessages(): SendMessageRequest[] {
-    return this.sentMessages;
+  function getSentMessages(): SendMessageRequest[] {
+    return sentMessages;
   }
 
-  clearSentMessages(): void {
-    this.sentMessages = [];
+  function clearSentMessages(): void {
+    sentMessages.length = 0;
   }
 
-  simulateIncomingMessage(
+  function simulateIncomingMessage(
     from: string,
     text: string
   ): RawWebhookPayload {
@@ -181,4 +185,23 @@ export class MockProvider implements IWhatsAppProvider {
       headers: {},
     };
   }
+
+  return {
+    providerType,
+    verifyWebhookSignature,
+    parseWebhookMessage,
+    parseWebhookStatus,
+    sendMessage,
+    sendTemplate,
+    uploadMedia,
+    downloadMedia,
+    getMediaUrl,
+    submitTemplate,
+    getTemplateStatus,
+    markAsRead,
+    healthCheck,
+    getSentMessages,
+    clearSentMessages,
+    simulateIncomingMessage,
+  };
 }

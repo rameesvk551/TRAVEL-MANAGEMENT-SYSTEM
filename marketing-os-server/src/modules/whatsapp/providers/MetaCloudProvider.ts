@@ -24,29 +24,67 @@ interface MetaConfig {
 }
 
 /**
- * MetaCloudProvider - WhatsApp Cloud API (Meta) adapter
- * 
+ * Build interactive message payload
+ */
+function buildInteractivePayload(content: NonNullable<SendMessageRequest['interactiveContent']>): Record<string, unknown> {
+  if (content.type === 'BUTTON') {
+    return {
+      type: 'button',
+      header: content.header ? { type: 'text', text: content.header } : undefined,
+      body: { text: content.body },
+      footer: content.footer ? { text: content.footer } : undefined,
+      action: {
+        buttons: content.buttons?.map((btn: any) => ({
+          type: 'reply',
+          reply: { id: btn.id, title: btn.title },
+        })),
+      },
+    };
+  }
+
+  if (content.type === 'LIST') {
+    return {
+      type: 'list',
+      header: content.header ? { type: 'text', text: content.header } : undefined,
+      body: { text: content.body },
+      footer: content.footer ? { text: content.footer } : undefined,
+      action: {
+        button: 'Select',
+        sections: content.sections?.map((section: any) => ({
+          title: section.title,
+          rows: section.rows.map((row: any) => ({
+            id: row.id,
+            title: row.title,
+            description: row.description,
+          })),
+        })),
+      },
+    };
+  }
+
+  return {};
+}
+
+/**
+ * createMetaCloudProvider - WhatsApp Cloud API (Meta) adapter factory
+ *
  * Implements the provider interface for Meta's WhatsApp Business Cloud API.
  * This is the recommended integration for new WhatsApp Business accounts.
  */
-export class MetaCloudProvider implements IWhatsAppProvider {
-  readonly providerType: ProviderType = 'META_CLOUD';
-  private baseUrl: string;
-
-  constructor(private config: MetaConfig) {
-    this.baseUrl = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}`;
-  }
+export function createMetaCloudProvider(config: MetaConfig): IWhatsAppProvider {
+  const providerType: ProviderType = 'META_CLOUD';
+  const baseUrl = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}`;
 
   /**
    * Verify webhook signature from Meta
    */
-  verifyWebhookSignature(payload: RawWebhookPayload): boolean {
+  function verifyWebhookSignature(payload: RawWebhookPayload): boolean {
     const signature = payload.headers['x-hub-signature-256'];
     if (!signature) return false;
 
     // In production: Verify HMAC-SHA256 signature
     // const expectedSignature = crypto
-    //   .createHmac('sha256', this.config.appSecret)
+    //   .createHmac('sha256', config.appSecret)
     //   .update(payload.rawBody)
     //   .digest('hex');
     // return `sha256=${expectedSignature}` === signature;
@@ -58,7 +96,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Parse incoming message from Meta webhook
    */
-  parseWebhookMessage(payload: RawWebhookPayload): IncomingMessage | null {
+  function parseWebhookMessage(payload: RawWebhookPayload): IncomingMessage | null {
     try {
       const body = JSON.parse(payload.rawBody);
       const entry = body.entry?.[0];
@@ -86,7 +124,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
         providerMessageId: msg.id,
         providerTimestamp: new Date(parseInt(msg.timestamp) * 1000),
         senderPhone: msg.from,
-        recipientPhone: value.metadata?.phone_number_id || this.config.phoneNumberId,
+        recipientPhone: value.metadata?.phone_number_id || config.phoneNumberId,
         messageType: (typeMap[msg.type] || 'TEXT') as any,
       };
 
@@ -142,7 +180,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Parse status update from Meta webhook
    */
-  parseWebhookStatus(payload: RawWebhookPayload): MessageStatusUpdate | null {
+  function parseWebhookStatus(payload: RawWebhookPayload): MessageStatusUpdate | null {
     try {
       const body = JSON.parse(payload.rawBody);
       const entry = body.entry?.[0];
@@ -168,7 +206,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Send a message via Meta Cloud API
    */
-  async sendMessage(request: SendMessageRequest): Promise<SendMessageResult> {
+  async function sendMessage(request: SendMessageRequest): Promise<SendMessageResult> {
     try {
       let messagePayload: Record<string, unknown> = {
         messaging_product: 'whatsapp',
@@ -196,7 +234,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
 
         case 'INTERACTIVE':
           messagePayload.type = 'interactive';
-          messagePayload.interactive = this.buildInteractivePayload(request.interactiveContent!);
+          messagePayload.interactive = buildInteractivePayload(request.interactiveContent!);
           break;
 
         case 'LOCATION':
@@ -214,10 +252,10 @@ export class MetaCloudProvider implements IWhatsAppProvider {
         messagePayload.context = { message_id: request.replyToMessageId };
       }
 
-      const response = await fetch(`${this.baseUrl}/messages`, {
+      const response = await fetch(`${baseUrl}/messages`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Authorization': `Bearer ${config.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(messagePayload),
@@ -251,7 +289,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Send template message
    */
-  async sendTemplate(
+  async function sendTemplate(
     recipientPhone: string,
     templateName: string,
     language: string,
@@ -277,10 +315,10 @@ export class MetaCloudProvider implements IWhatsAppProvider {
         },
       };
 
-      const response = await fetch(`${this.baseUrl}/messages`, {
+      const response = await fetch(`${baseUrl}/messages`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Authorization': `Bearer ${config.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(templatePayload),
@@ -314,7 +352,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Upload media
    */
-  async uploadMedia(
+  async function uploadMedia(
     fileBuffer: Buffer,
     mimeType: string,
     fileName: string
@@ -323,10 +361,10 @@ export class MetaCloudProvider implements IWhatsAppProvider {
     formData.append('messaging_product', 'whatsapp');
     formData.append('file', new Blob([fileBuffer], { type: mimeType }), fileName);
 
-    const response = await fetch(`${this.baseUrl}/media`, {
+    const response = await fetch(`${baseUrl}/media`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.config.accessToken}`,
+        'Authorization': `Bearer ${config.accessToken}`,
       },
       body: formData,
     });
@@ -341,13 +379,13 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Download media
    */
-  async downloadMedia(mediaId: string): Promise<Buffer> {
+  async function downloadMedia(mediaId: string): Promise<Buffer> {
     // First, get the media URL
     const urlResponse = await fetch(
-      `https://graph.facebook.com/${this.config.apiVersion}/${mediaId}`,
+      `https://graph.facebook.com/${config.apiVersion}/${mediaId}`,
       {
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Authorization': `Bearer ${config.accessToken}`,
         },
       }
     );
@@ -356,7 +394,7 @@ export class MetaCloudProvider implements IWhatsAppProvider {
     // Then download the file
     const fileResponse = await fetch(urlData.url, {
       headers: {
-        'Authorization': `Bearer ${this.config.accessToken}`,
+        'Authorization': `Bearer ${config.accessToken}`,
       },
     });
 
@@ -367,12 +405,12 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Get media URL
    */
-  async getMediaUrl(mediaId: string): Promise<string> {
+  async function getMediaUrl(mediaId: string): Promise<string> {
     const response = await fetch(
-      `https://graph.facebook.com/${this.config.apiVersion}/${mediaId}`,
+      `https://graph.facebook.com/${config.apiVersion}/${mediaId}`,
       {
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Authorization': `Bearer ${config.accessToken}`,
         },
       }
     );
@@ -383,13 +421,13 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Submit template for approval
    */
-  async submitTemplate(template: TemplateSubmission): Promise<string> {
+  async function submitTemplate(template: TemplateSubmission): Promise<string> {
     const response = await fetch(
-      `https://graph.facebook.com/${this.config.apiVersion}/${this.config.businessAccountId}/message_templates`,
+      `https://graph.facebook.com/${config.apiVersion}/${config.businessAccountId}/message_templates`,
       {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Authorization': `Bearer ${config.accessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -408,12 +446,12 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Get template status
    */
-  async getTemplateStatus(templateId: string): Promise<TemplateApprovalStatus> {
+  async function getTemplateStatus(templateId: string): Promise<TemplateApprovalStatus> {
     const response = await fetch(
-      `https://graph.facebook.com/${this.config.apiVersion}/${templateId}`,
+      `https://graph.facebook.com/${config.apiVersion}/${templateId}`,
       {
         headers: {
-          'Authorization': `Bearer ${this.config.accessToken}`,
+          'Authorization': `Bearer ${config.accessToken}`,
         },
       }
     );
@@ -431,11 +469,11 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Mark message as read
    */
-  async markAsRead(providerMessageId: string): Promise<void> {
-    await fetch(`${this.baseUrl}/messages`, {
+  async function markAsRead(providerMessageId: string): Promise<void> {
+    await fetch(`${baseUrl}/messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${this.config.accessToken}`,
+        'Authorization': `Bearer ${config.accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -449,13 +487,13 @@ export class MetaCloudProvider implements IWhatsAppProvider {
   /**
    * Health check
    */
-  async healthCheck(): Promise<boolean> {
+  async function healthCheck(): Promise<boolean> {
     try {
       const response = await fetch(
-        `https://graph.facebook.com/${this.config.apiVersion}/${this.config.phoneNumberId}`,
+        `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}`,
         {
           headers: {
-            'Authorization': `Bearer ${this.config.accessToken}`,
+            'Authorization': `Bearer ${config.accessToken}`,
           },
         }
       );
@@ -465,45 +503,19 @@ export class MetaCloudProvider implements IWhatsAppProvider {
     }
   }
 
-  /**
-   * Build interactive message payload
-   */
-  private buildInteractivePayload(content: NonNullable<SendMessageRequest['interactiveContent']>): Record<string, unknown> {
-    if (content.type === 'BUTTON') {
-      return {
-        type: 'button',
-        header: content.header ? { type: 'text', text: content.header } : undefined,
-        body: { text: content.body },
-        footer: content.footer ? { text: content.footer } : undefined,
-        action: {
-          buttons: content.buttons?.map((btn: any) => ({
-            type: 'reply',
-            reply: { id: btn.id, title: btn.title },
-          })),
-        },
-      };
-    }
-
-    if (content.type === 'LIST') {
-      return {
-        type: 'list',
-        header: content.header ? { type: 'text', text: content.header } : undefined,
-        body: { text: content.body },
-        footer: content.footer ? { text: content.footer } : undefined,
-        action: {
-          button: 'Select',
-          sections: content.sections?.map((section: any) => ({
-            title: section.title,
-            rows: section.rows.map((row: any) => ({
-              id: row.id,
-              title: row.title,
-              description: row.description,
-            })),
-          })),
-        },
-      };
-    }
-
-    return {};
-  }
+  return {
+    providerType,
+    verifyWebhookSignature,
+    parseWebhookMessage,
+    parseWebhookStatus,
+    sendMessage,
+    sendTemplate,
+    uploadMedia,
+    downloadMedia,
+    getMediaUrl,
+    submitTemplate,
+    getTemplateStatus,
+    markAsRead,
+    healthCheck,
+  };
 }

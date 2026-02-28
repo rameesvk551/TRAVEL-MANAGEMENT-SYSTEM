@@ -134,95 +134,63 @@ export interface ConversationContextProps {
  * KEY PRINCIPLE: This is the bridge between channels (WA/IG/FB) and existing system.
  * All business logic remains in existing services - this only tracks context.
  */
-export class ConversationContext {
-  public readonly id: string;
-  public readonly tenantId: string;
-  public readonly channel: CommunicationChannel;
-  public readonly externalId: string;
-  public readonly primaryActor: ConversationActor;
-  public readonly participants: ConversationActor[];
-  public readonly linkedEntities: LinkedEntity[];
-  public readonly primaryEntity?: LinkedEntity;
-  public readonly state: ConversationState;
-  public readonly workflowProgress?: WorkflowProgress;
-  public readonly lastActivityAt: Date;
-  public readonly sessionStartedAt: Date;
-  public readonly sessionExpiresAt: Date;
-  public readonly messageCount: number;
-  public readonly isOptedIn: boolean;
-  public readonly isEscalated: boolean;
-  public readonly requiresHumanReview: boolean;
-  public readonly providerMetadata: Record<string, unknown>;
-  public readonly createdAt: Date;
-  public readonly updatedAt: Date;
-
-  private constructor(props: ConversationContextProps) {
-    this.id = props.id!;
-    this.tenantId = props.tenantId;
-    this.channel = props.channel;
-    this.externalId = props.externalId;
-    this.primaryActor = props.primaryActor;
-    this.participants = props.participants;
-    this.linkedEntities = props.linkedEntities;
-    this.primaryEntity = props.primaryEntity;
-    this.state = props.state;
-    this.workflowProgress = props.workflowProgress;
-    this.lastActivityAt = props.lastActivityAt;
-    this.sessionStartedAt = props.sessionStartedAt;
-    this.sessionExpiresAt = props.sessionExpiresAt;
-    this.messageCount = props.messageCount;
-    this.isOptedIn = props.isOptedIn;
-    this.isEscalated = props.isEscalated;
-    this.requiresHumanReview = props.requiresHumanReview;
-    this.providerMetadata = props.providerMetadata ?? {};
-    this.createdAt = props.createdAt!;
-    this.updatedAt = props.updatedAt!;
-  }
-
-  static create(props: ConversationContextProps): ConversationContext {
-    const now = new Date();
-    // Default session: 24 hours
-    const sessionExpiry = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
-    return new ConversationContext({
-      id: props.id ?? generateId(),
-      tenantId: props.tenantId,
-      channel: props.channel,
-      externalId: props.externalId,
-      primaryActor: props.primaryActor,
-      participants: props.participants ?? [props.primaryActor],
-      linkedEntities: props.linkedEntities ?? [],
-      primaryEntity: props.primaryEntity,
-      state: props.state ?? 'IDLE',
-      workflowProgress: props.workflowProgress,
-      lastActivityAt: props.lastActivityAt ?? now,
-      sessionStartedAt: props.sessionStartedAt ?? now,
-      sessionExpiresAt: props.sessionExpiresAt ?? sessionExpiry,
-      messageCount: props.messageCount ?? 0,
-      isOptedIn: props.isOptedIn ?? true,
-      isEscalated: props.isEscalated ?? false,
-      requiresHumanReview: props.requiresHumanReview ?? false,
-      providerMetadata: props.providerMetadata ?? {},
-      createdAt: props.createdAt ?? now,
-      updatedAt: props.updatedAt ?? now,
-    });
-  }
-
-  static fromPersistence(data: ConversationContextProps): ConversationContext {
-    return new ConversationContext(data);
-  }
-
-  /**
-   * Check if session is still valid
-   */
-  get isSessionValid(): boolean {
-    return new Date() < this.sessionExpiresAt;
-  }
-
-  /**
-   * Check if conversation has a linked business entity
-   */
-  get hasLinkedEntity(): boolean {
-    return this.linkedEntities.length > 0;
-  }
+function _createConversationContext(props: ConversationContextProps) {
+    return {
+        id: props.id!,
+        tenantId: props.tenantId,
+        channel: props.channel,
+        externalId: props.externalId,
+        primaryActor: props.primaryActor,
+        participants: props.participants,
+        linkedEntities: props.linkedEntities,
+        primaryEntity: props.primaryEntity,
+        state: props.state,
+        workflowProgress: props.workflowProgress,
+        lastActivityAt: props.lastActivityAt,
+        sessionStartedAt: props.sessionStartedAt,
+        sessionExpiresAt: props.sessionExpiresAt,
+        messageCount: props.messageCount,
+        isOptedIn: props.isOptedIn,
+        isEscalated: props.isEscalated,
+        requiresHumanReview: props.requiresHumanReview,
+        providerMetadata: props.providerMetadata ?? {},
+        createdAt: props.createdAt!,
+        updatedAt: props.updatedAt!,
+        get isSessionValid(): boolean { return new Date() < props.sessionExpiresAt; },
+        get hasLinkedEntity(): boolean { return (props.linkedEntities ?? []).length > 0; },
+    };
 }
+
+export const ConversationContext = {
+    create(props: ConversationContextProps) {
+        const now = new Date();
+        const sessionExpiry = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        return _createConversationContext({
+            id: props.id ?? generateId(),
+            tenantId: props.tenantId,
+            channel: props.channel,
+            externalId: props.externalId,
+            primaryActor: props.primaryActor,
+            participants: props.participants ?? [props.primaryActor],
+            linkedEntities: props.linkedEntities ?? [],
+            primaryEntity: props.primaryEntity,
+            state: props.state ?? 'IDLE',
+            workflowProgress: props.workflowProgress,
+            lastActivityAt: props.lastActivityAt ?? now,
+            sessionStartedAt: props.sessionStartedAt ?? now,
+            sessionExpiresAt: props.sessionExpiresAt ?? sessionExpiry,
+            messageCount: props.messageCount ?? 0,
+            isOptedIn: props.isOptedIn ?? true,
+            isEscalated: props.isEscalated ?? false,
+            requiresHumanReview: props.requiresHumanReview ?? false,
+            providerMetadata: props.providerMetadata ?? {},
+            createdAt: props.createdAt ?? now,
+            updatedAt: props.updatedAt ?? now,
+        });
+    },
+    fromPersistence(data: ConversationContextProps) {
+        return _createConversationContext(data);
+    },
+};
+
+export type ConversationContext = ReturnType<typeof _createConversationContext>;

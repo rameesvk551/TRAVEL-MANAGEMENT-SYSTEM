@@ -1,4 +1,4 @@
-import { EmailConnection } from '../../database/models/EmailConnection.js';
+import db from '../../db/sqlmodels/db.EmailConnection.js';
 import { encrypt } from '../../shared/utils/encryption.js';
 import { NodemailerProvider } from './NodemailerProvider.js';
 
@@ -10,11 +10,11 @@ export class EmailSettingsService {
     }
 
     async getSettings(tenantId: string) {
-        return await EmailConnection.findOne({ where: { workspaceId: tenantId } });
+        return await db.EmailConnection.findOne({ where: { workspaceId: tenantId } });
     }
 
     async saveSettings(tenantId: string, data: any) {
-        let settings = await EmailConnection.findOne({ where: { workspaceId: tenantId } });
+        let settings = await db.EmailConnection.findOne({ where: { workspaceId: tenantId } });
 
         const payload: any = {
             workspaceId: tenantId,
@@ -36,14 +36,14 @@ export class EmailSettingsService {
         if (settings) {
             await settings.update(payload);
         } else {
-            settings = await EmailConnection.create(payload);
+            settings = await db.EmailConnection.create(payload);
         }
 
         return settings;
     }
 
     async testConnection(tenantId: string): Promise<{ success: boolean; message: string }> {
-        const settings = await EmailConnection.findOne({ where: { workspaceId: tenantId } });
+        const settings = await db.EmailConnection.findOne({ where: { workspaceId: tenantId } });
         if (!settings) {
             throw new Error('No settings found');
         }

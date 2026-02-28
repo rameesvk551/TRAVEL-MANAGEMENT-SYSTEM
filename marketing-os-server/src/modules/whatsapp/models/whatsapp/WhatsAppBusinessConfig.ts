@@ -76,15 +76,87 @@ export interface WhatsAppBusinessConfigProps {
     updatedAt: Date;
 }
 
-export class WhatsAppBusinessConfig {
-    private constructor(private props: WhatsAppBusinessConfigProps) {}
-    
-    static create(props: Omit<WhatsAppBusinessConfigProps, 'id' | 'createdAt' | 'updatedAt' | 'features'> & {
+function _createWhatsAppBusinessConfig(props: WhatsAppBusinessConfigProps) {
+    let _props = { ...props };
+
+    return {
+        // Getters
+        get id(): string { return _props.id; },
+        get tenantId(): string { return _props.tenantId; },
+        get status(): WABAStatus { return _props.status; },
+        get credentials(): WABACredentials | undefined { return _props.credentials; },
+        get phoneNumber(): PhoneNumberInfo | undefined { return _props.phoneNumber; },
+        get businessName(): string | undefined { return _props.businessName; },
+        get features(): WhatsAppBusinessConfigProps['features'] { return _props.features; },
+        get isConnected(): boolean { return _props.status === 'connected'; },
+
+        // Business methods
+        connect(credentials: WABACredentials, phoneNumber: PhoneNumberInfo): void {
+            _props = { ..._props, credentials, phoneNumber, status: 'connected' as WABAStatus, connectedAt: new Date(), updatedAt: new Date(), errorMessage: undefined };
+        },
+
+        disconnect(): void {
+            _props = { ..._props, status: 'disconnected' as WABAStatus, credentials: undefined, updatedAt: new Date() };
+        },
+
+        markError(errorMessage: string): void {
+            _props = { ..._props, status: 'error' as WABAStatus, errorMessage, updatedAt: new Date() };
+        },
+
+        updatePhoneInfo(phoneNumber: PhoneNumberInfo): void {
+            _props = { ..._props, phoneNumber, lastSyncAt: new Date(), updatedAt: new Date() };
+        },
+
+        updateBusinessProfile(profile: {
+            businessName?: string;
+            businessDescription?: string;
+            businessCategory?: string;
+            businessWebsite?: string;
+            businessEmail?: string;
+            businessProfilePicture?: string;
+        }): void {
+            _props = { ..._props, ...profile, updatedAt: new Date() };
+        },
+
+        enableFeature(feature: keyof WhatsAppBusinessConfigProps['features']): void {
+            _props = { ..._props, features: { ..._props.features, [feature]: true }, updatedAt: new Date() };
+        },
+
+        disableFeature(feature: keyof WhatsAppBusinessConfigProps['features']): void {
+            _props = { ..._props, features: { ..._props.features, [feature]: false }, updatedAt: new Date() };
+        },
+
+        updateOAuthTokens(tokens: WhatsAppBusinessConfigProps['oauthTokens']): void {
+            _props = { ..._props, oauthTokens: tokens, updatedAt: new Date() };
+        },
+
+        // Serialization
+        toJSON(): WhatsAppBusinessConfigProps {
+            return { ..._props };
+        },
+
+        // For API responses (hide sensitive data)
+        toPublicJSON(): Omit<WhatsAppBusinessConfigProps, 'credentials' | 'oauthTokens' | 'webhookSecret'> & {
+            hasCredentials: boolean;
+            phoneNumberDisplay?: string;
+        } {
+            const { credentials, oauthTokens, webhookSecret, ...publicProps } = _props;
+            return {
+                ...publicProps,
+                hasCredentials: !!credentials?.accessToken,
+                phoneNumberDisplay: _props.phoneNumber?.displayPhoneNumber,
+            };
+        },
+    };
+}
+
+export const WhatsAppBusinessConfig = {
+    create(props: Omit<WhatsAppBusinessConfigProps, 'id' | 'createdAt' | 'updatedAt' | 'features'> & {
         id?: string;
         features?: Partial<WhatsAppBusinessConfigProps['features']>;
     }): WhatsAppBusinessConfig {
         const now = new Date();
-        return new WhatsAppBusinessConfig({
+        return _createWhatsAppBusinessConfig({
             ...props,
             id: props.id || crypto.randomUUID(),
             features: {
@@ -96,92 +168,10 @@ export class WhatsAppBusinessConfig {
             createdAt: now,
             updatedAt: now,
         });
-    }
-    
-    static fromPersistence(props: WhatsAppBusinessConfigProps): WhatsAppBusinessConfig {
-        return new WhatsAppBusinessConfig(props);
-    }
-    
-    // Getters
-    get id(): string { return this.props.id; }
-    get tenantId(): string { return this.props.tenantId; }
-    get status(): WABAStatus { return this.props.status; }
-    get credentials(): WABACredentials | undefined { return this.props.credentials; }
-    get phoneNumber(): PhoneNumberInfo | undefined { return this.props.phoneNumber; }
-    get businessName(): string | undefined { return this.props.businessName; }
-    get features(): WhatsAppBusinessConfigProps['features'] { return this.props.features; }
-    get isConnected(): boolean { return this.props.status === 'connected'; }
-    
-    // Business methods
-    connect(credentials: WABACredentials, phoneNumber: PhoneNumberInfo): void {
-        this.props.credentials = credentials;
-        this.props.phoneNumber = phoneNumber;
-        this.props.status = 'connected';
-        this.props.connectedAt = new Date();
-        this.props.updatedAt = new Date();
-        this.props.errorMessage = undefined;
-    }
-    
-    disconnect(): void {
-        this.props.status = 'disconnected';
-        this.props.credentials = undefined;
-        this.props.updatedAt = new Date();
-    }
-    
-    markError(errorMessage: string): void {
-        this.props.status = 'error';
-        this.props.errorMessage = errorMessage;
-        this.props.updatedAt = new Date();
-    }
-    
-    updatePhoneInfo(phoneNumber: PhoneNumberInfo): void {
-        this.props.phoneNumber = phoneNumber;
-        this.props.lastSyncAt = new Date();
-        this.props.updatedAt = new Date();
-    }
-    
-    updateBusinessProfile(profile: {
-        businessName?: string;
-        businessDescription?: string;
-        businessCategory?: string;
-        businessWebsite?: string;
-        businessEmail?: string;
-        businessProfilePicture?: string;
-    }): void {
-        Object.assign(this.props, profile);
-        this.props.updatedAt = new Date();
-    }
-    
-    enableFeature(feature: keyof WhatsAppBusinessConfigProps['features']): void {
-        this.props.features[feature] = true;
-        this.props.updatedAt = new Date();
-    }
-    
-    disableFeature(feature: keyof WhatsAppBusinessConfigProps['features']): void {
-        this.props.features[feature] = false;
-        this.props.updatedAt = new Date();
-    }
-    
-    updateOAuthTokens(tokens: WhatsAppBusinessConfigProps['oauthTokens']): void {
-        this.props.oauthTokens = tokens;
-        this.props.updatedAt = new Date();
-    }
-    
-    // Serialization
-    toJSON(): WhatsAppBusinessConfigProps {
-        return { ...this.props };
-    }
-    
-    // For API responses (hide sensitive data)
-    toPublicJSON(): Omit<WhatsAppBusinessConfigProps, 'credentials' | 'oauthTokens' | 'webhookSecret'> & {
-        hasCredentials: boolean;
-        phoneNumberDisplay?: string;
-    } {
-        const { credentials, oauthTokens, webhookSecret, ...publicProps } = this.props;
-        return {
-            ...publicProps,
-            hasCredentials: !!credentials?.accessToken,
-            phoneNumberDisplay: this.props.phoneNumber?.displayPhoneNumber,
-        };
-    }
-}
+    },
+
+    fromPersistence(props: WhatsAppBusinessConfigProps): WhatsAppBusinessConfig {
+        return _createWhatsAppBusinessConfig(props);
+    },
+};
+export type WhatsAppBusinessConfig = ReturnType<typeof _createWhatsAppBusinessConfig>;

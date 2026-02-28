@@ -1,11 +1,11 @@
 import { Op } from 'sequelize';
 import { ILeadRepository } from './interfaces/ILeadRepository.js';
 import { Lead } from '../campaigns/models/entities/Lead.js';
-import { LeadModel, LeadAttributes } from '../../database/models/LeadModel.js';
+import db from '../../db/sqlmodels/db.LeadModel.js';
 
 export class SequelizeLeadRepository implements ILeadRepository {
     async findById(id: string, tenantId: string): Promise<Lead | null> {
-        const model = await LeadModel.findOne({
+        const model = await db.LeadModel.findOne({
             where: { id, tenantId }
         });
         return model ? model.toEntity() : null;
@@ -54,7 +54,7 @@ export class SequelizeLeadRepository implements ILeadRepository {
             }
         }
 
-        const { rows, count } = await LeadModel.findAndCountAll({
+        const { rows, count } = await db.LeadModel.findAndCountAll({
             where,
             limit: limit ? Number(limit) : undefined,
             offset: offset ? Number(offset) : undefined,
@@ -74,14 +74,14 @@ export class SequelizeLeadRepository implements ILeadRepository {
     }
 
     // Additional methods for bulk operations
-    async bulkCreate(tenantId: string, leads: Partial<LeadAttributes>[]): Promise<Lead[]> {
+    async bulkCreate(tenantId: string, leads: Partial<db.LeadAttributes>[]): Promise<Lead[]> {
         const leadsData = leads.map(l => ({
             ...l,
             tenantId,
             source: l.source || 'import'
         })) as any[]; // Cast to any to bypass strict Optional check for now
 
-        const created = await LeadModel.bulkCreate(leadsData, {
+        const created = await db.LeadModel.bulkCreate(leadsData, {
             ignoreDuplicates: true
         });
         return created.map(c => c.toEntity());

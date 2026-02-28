@@ -114,4 +114,22 @@ export interface ITimelineRepository {
     query: string,
     filters?: TimelineFilters
   ): Promise<UnifiedTimelineEntry[]>;
+
+  /**
+   * Get unified timeline for an entity
+   */
+  getUnifiedTimeline(
+    tenantId: string,
+    entityIds: { leadId?: string; bookingId?: string; departureId?: string; tripAssignmentId?: string },
+    query?: { visibility?: string; limit?: number }
+  ): Promise<UnifiedTimelineEntry[]>;
+
+  /**
+   * Delete entries for an entity
+   */
+  deleteByEntity(
+    entityType: string,
+    entityId: string,
+    tenantId: string
+  ): Promise<void>;
 }

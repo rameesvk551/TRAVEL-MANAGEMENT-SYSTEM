@@ -15,14 +15,55 @@ import {
   ConversationFilters,
 } from '../interfaces/whatsapp/index.js';
 
-/**
- * ConversationRepository - Postgres implementation
- */
-export class ConversationRepository implements IConversationRepository {
-  constructor(private pool: Pool) { }
+function mapToEntity(row: Record<string, unknown>): ConversationContext {
+  const linkedEntities: LinkedEntity[] = (row.linked_entities as unknown[] || [])
+    .filter(Boolean)
+    .map((e: any) => ({
+      type: e.entity_type,
+      entityId: e.entity_id,
+      linkedAt: new Date(e.linked_at),
+      linkedBy: e.linked_by,
+    }));
 
-  async findById(id: string, tenantId: string): Promise<ConversationContext | null> {
-    const row = await this.pool.query(
+  const primaryEntity = linkedEntities.find((e: any) =>
+    (row.linked_entities as any[])?.find((le: any) => le.entity_id === e.entityId && le.is_primary)
+  );
+
+  return ConversationContext.fromPersistence({
+    id: row.id as string,
+    tenantId: row.tenant_id as string,
+    channel: (row.channel as CommunicationChannel) || 'WHATSAPP',
+    externalId: (row.external_id as string) || (row.whatsapp_thread_id as string),
+    primaryActor: {
+      actorType: row.primary_actor_type as any,
+      userId: row.primary_actor_user_id as string,
+      employeeId: row.primary_actor_employee_id as string,
+      contactId: row.primary_actor_contact_id as string,
+      phoneNumber: row.primary_actor_phone as string,
+      displayName: row.primary_actor_name as string,
+    },
+    participants: [],
+    linkedEntities,
+    primaryEntity,
+    state: row.state as ConversationState,
+    workflowProgress: row.workflow_progress as any,
+    lastActivityAt: new Date(row.last_activity_at as string),
+    sessionStartedAt: new Date(row.session_started_at as string),
+    sessionExpiresAt: new Date(row.session_expires_at as string),
+    messageCount: row.message_count as number,
+    isOptedIn: row.is_opted_in as boolean,
+    isEscalated: row.is_escalated as boolean,
+    requiresHumanReview: row.requires_human_review as boolean,
+    providerMetadata: row.provider_metadata as Record<string, unknown>,
+    createdAt: new Date(row.created_at as string),
+    updatedAt: new Date(row.updated_at as string),
+  });
+}
+
+export function createConversationRepository(pool: Pool): IConversationRepository {
+
+  async function findById(id: string, tenantId: string): Promise<ConversationContext | null> {
+    const row = await pool.query(
       `SELECT c.*, 
               json_agg(e.*) FILTER (WHERE e.id IS NOT NULL) as linked_entities
        FROM whatsapp_conversations c
@@ -31,17 +72,15 @@ export class ConversationRepository implements IConversationRepository {
        GROUP BY c.id`,
       [id, tenantId]
     );
-
-    return row.rows[0] ? this.mapToEntity(row.rows[0]) : null;
+    return row.rows[0] ? mapToEntity(row.rows[0]) : null;
   }
 
-  async findByExternalId(
+  async function findByExternalId(
     externalId: string,
     channel: CommunicationChannel,
     tenantId: string
   ): Promise<ConversationContext | null> {
-    // Legacy support: check whatsapp_thread_id if channel is WA and external_id is missing
-    const row = await this.pool.query(
+    const row = await pool.query(
       `SELECT c.*, 
               json_agg(e.*) FILTER (WHERE e.id IS NOT NULL) as linked_entities
        FROM whatsapp_conversations c
@@ -52,19 +91,15 @@ export class ConversationRepository implements IConversationRepository {
        GROUP BY c.id`,
       [externalId, channel, tenantId]
     );
-
-    return row.rows[0] ? this.mapToEntity(row.rows[0]) : null;
+    return row.rows[0] ? mapToEntity(row.rows[0]) : null;
   }
 
-  /**
-   * DEPRECATED: Use findByExternalId with channel='WHATSAPP'
-   */
-  async findByThreadId(threadId: string, tenantId: string): Promise<ConversationContext | null> {
-    return this.findByExternalId(threadId, 'WHATSAPP', tenantId);
+  async function findByThreadId(threadId: string, tenantId: string): Promise<ConversationContext | null> {
+    return findByExternalId(threadId, 'WHATSAPP', tenantId);
   }
 
-  async findActiveByPhone(phoneNumber: string, tenantId: string): Promise<ConversationContext | null> {
-    const row = await this.pool.query(
+  async function findActiveByPhone(phoneNumber: string, tenantId: string): Promise<ConversationContext | null> {
+    const row = await pool.query(
       `SELECT c.*, 
               json_agg(e.*) FILTER (WHERE e.id IS NOT NULL) as linked_entities
        FROM whatsapp_conversations c
@@ -78,16 +113,15 @@ export class ConversationRepository implements IConversationRepository {
        LIMIT 1`,
       [phoneNumber, tenantId]
     );
-
-    return row.rows[0] ? this.mapToEntity(row.rows[0]) : null;
+    return row.rows[0] ? mapToEntity(row.rows[0]) : null;
   }
 
-  async findByLinkedEntity(
+  async function findByLinkedEntity(
     entityType: LinkedEntityType,
     entityId: string,
     tenantId: string
   ): Promise<ConversationContext[]> {
-    const rows = await this.pool.query(
+    const rows = await pool.query(
       `SELECT c.*, 
               json_agg(e2.*) FILTER (WHERE e2.id IS NOT NULL) as linked_entities
        FROM whatsapp_conversations c
@@ -98,11 +132,10 @@ export class ConversationRepository implements IConversationRepository {
        ORDER BY c.last_activity_at DESC`,
       [entityType, entityId, tenantId]
     );
-
-    return rows.rows.map(this.mapToEntity);
+    return rows.rows.map(mapToEntity);
   }
 
-  async findAll(tenantId: string, filters?: ConversationFilters): Promise<ConversationContext[]> {
+  async function findAll(tenantId: string, filters?: ConversationFilters): Promise<ConversationContext[]> {
     let query = `
       SELECT c.*, 
              json_agg(e.*) FILTER (WHERE e.id IS NOT NULL) as linked_entities
@@ -118,51 +151,43 @@ export class ConversationRepository implements IConversationRepository {
       query += ` AND (c.channel = $${paramCount} OR ($${paramCount} = 'WHATSAPP' AND c.channel IS NULL))`;
       params.push(filters.channel);
     }
-
     if (filters?.externalId) {
       paramCount++;
       query += ` AND (c.external_id = $${paramCount} OR c.whatsapp_thread_id = $${paramCount})`;
       params.push(filters.externalId);
     }
-
     if (filters?.state) {
       paramCount++;
       query += ` AND c.state = $${paramCount}`;
       params.push(filters.state);
     }
-
     if (filters?.isEscalated !== undefined) {
       paramCount++;
       query += ` AND c.is_escalated = $${paramCount}`;
       params.push(filters.isEscalated);
     }
-
     if (filters?.phoneNumber) {
       paramCount++;
       query += ` AND c.primary_actor_phone = $${paramCount}`;
       params.push(filters.phoneNumber);
     }
-
     query += ` GROUP BY c.id ORDER BY c.last_activity_at DESC`;
-
     if (filters?.limit) {
       paramCount++;
       query += ` LIMIT $${paramCount}`;
       params.push(filters.limit);
     }
-
     if (filters?.offset) {
       paramCount++;
       query += ` OFFSET $${paramCount}`;
       params.push(filters.offset);
     }
-
-    const rows = await this.pool.query(query, params);
-    return rows.rows.map(this.mapToEntity);
+    const rows = await pool.query(query, params);
+    return rows.rows.map(mapToEntity);
   }
 
-  async findPendingReview(tenantId: string): Promise<ConversationContext[]> {
-    const rows = await this.pool.query(
+  async function findPendingReview(tenantId: string): Promise<ConversationContext[]> {
+    const rows = await pool.query(
       `SELECT c.*, 
               json_agg(e.*) FILTER (WHERE e.id IS NOT NULL) as linked_entities
        FROM whatsapp_conversations c
@@ -172,212 +197,118 @@ export class ConversationRepository implements IConversationRepository {
        ORDER BY c.last_activity_at ASC`,
       [tenantId]
     );
-
-    return rows.rows.map(this.mapToEntity);
+    return rows.rows.map(mapToEntity);
   }
 
-  async save(context: ConversationContext): Promise<ConversationContext> {
-    const existing = await this.pool.query(
+  async function save(context: ConversationContext): Promise<ConversationContext> {
+    const existing = await pool.query(
       'SELECT id FROM whatsapp_conversations WHERE id = $1',
       [context.id]
     );
 
     if (existing.rows.length > 0) {
-      // Update
-      await this.pool.query(
+      await pool.query(
         `UPDATE whatsapp_conversations SET
-          state = $2,
-          workflow_progress = $3,
-          last_activity_at = $4,
-          session_expires_at = $5,
-          message_count = $6,
-          is_opted_in = $7,
-          is_escalated = $8,
-          requires_human_review = $9,
-          provider_metadata = $10,
+          state = $2, workflow_progress = $3, last_activity_at = $4,
+          session_expires_at = $5, message_count = $6, is_opted_in = $7,
+          is_escalated = $8, requires_human_review = $9, provider_metadata = $10,
           updated_at = NOW()
         WHERE id = $1`,
         [
-          context.id,
-          context.state,
-          JSON.stringify(context.workflowProgress),
-          context.lastActivityAt,
-          context.sessionExpiresAt,
-          context.messageCount,
-          context.isOptedIn,
-          context.isEscalated,
-          context.requiresHumanReview,
+          context.id, context.state, JSON.stringify(context.workflowProgress),
+          context.lastActivityAt, context.sessionExpiresAt, context.messageCount,
+          context.isOptedIn, context.isEscalated, context.requiresHumanReview,
           JSON.stringify(context.providerMetadata),
         ]
       );
     } else {
-      // Insert
-      await this.pool.query(
+      await pool.query(
         `INSERT INTO whatsapp_conversations (
-          id, tenant_id, 
-          channel, external_id, whatsapp_thread_id,
+          id, tenant_id, channel, external_id, whatsapp_thread_id,
           primary_actor_type, primary_actor_user_id, primary_actor_employee_id,
           primary_actor_contact_id, primary_actor_phone, primary_actor_name,
           state, workflow_progress, last_activity_at, session_started_at,
           session_expires_at, message_count, is_opted_in, is_escalated,
           requires_human_review, provider_metadata, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)`,
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)`,
         [
-          context.id,
-          context.tenantId,
-          context.channel,
-          context.externalId,
-          context.externalId, // Backwards compatibility for whatsapp_thread_id
-          context.primaryActor.actorType,
-          context.primaryActor.userId,
-          context.primaryActor.employeeId,
-          context.primaryActor.contactId,
-          context.primaryActor.phoneNumber,
-          context.primaryActor.displayName,
-          context.state,
-          JSON.stringify(context.workflowProgress),
-          context.lastActivityAt,
-          context.sessionStartedAt,
-          context.sessionExpiresAt,
-          context.messageCount,
-          context.isOptedIn,
-          context.isEscalated,
-          context.requiresHumanReview,
-          JSON.stringify(context.providerMetadata),
-          context.createdAt,
-          context.updatedAt,
+          context.id, context.tenantId, context.channel, context.externalId, context.externalId,
+          context.primaryActor.actorType, context.primaryActor.userId, context.primaryActor.employeeId,
+          context.primaryActor.contactId, context.primaryActor.phoneNumber, context.primaryActor.displayName,
+          context.state, JSON.stringify(context.workflowProgress), context.lastActivityAt, context.sessionStartedAt,
+          context.sessionExpiresAt, context.messageCount, context.isOptedIn, context.isEscalated,
+          context.requiresHumanReview, JSON.stringify(context.providerMetadata), context.createdAt, context.updatedAt,
         ]
       );
     }
-
     return context;
   }
 
-  async updateState(
-    id: string,
-    tenantId: string,
-    state: ConversationState
-  ): Promise<ConversationContext> {
-    await this.pool.query(
+  async function updateState(id: string, tenantId: string, state: ConversationState): Promise<ConversationContext> {
+    await pool.query(
       `UPDATE whatsapp_conversations SET state = $3, updated_at = NOW()
        WHERE id = $1 AND tenant_id = $2`,
       [id, tenantId, state]
     );
-
-    const result = await this.findById(id, tenantId);
+    const result = await findById(id, tenantId);
     if (!result) throw new Error('Conversation not found');
     return result;
   }
 
-  async linkEntity(
-    conversationId: string,
-    tenantId: string,
-    entityType: LinkedEntityType,
-    entityId: string,
-    isPrimary?: boolean
+  async function linkEntity(
+    conversationId: string, tenantId: string,
+    entityType: LinkedEntityType, entityId: string, isPrimary?: boolean
   ): Promise<ConversationContext> {
-    // If making primary, unset other primaries first
     if (isPrimary) {
-      await this.pool.query(
-        `UPDATE whatsapp_conversation_entities SET is_primary = FALSE
-         WHERE conversation_id = $1`,
+      await pool.query(
+        `UPDATE whatsapp_conversation_entities SET is_primary = FALSE WHERE conversation_id = $1`,
         [conversationId]
       );
     }
-
-    await this.pool.query(
+    await pool.query(
       `INSERT INTO whatsapp_conversation_entities 
        (conversation_id, entity_type, entity_id, is_primary, linked_at, linked_by)
        VALUES ($1, $2, $3, $4, NOW(), 'SYSTEM')
-       ON CONFLICT (conversation_id, entity_type, entity_id) DO UPDATE
-       SET is_primary = $4`,
+       ON CONFLICT (conversation_id, entity_type, entity_id) DO UPDATE SET is_primary = $4`,
       [conversationId, entityType, entityId, isPrimary ?? false]
     );
-
-    const result = await this.findById(conversationId, tenantId);
+    const result = await findById(conversationId, tenantId);
     if (!result) throw new Error('Conversation not found');
     return result;
   }
 
-  async recordActivity(id: string, tenantId: string): Promise<void> {
-    await this.pool.query(
+  async function recordActivity(id: string, tenantId: string): Promise<void> {
+    await pool.query(
       `UPDATE whatsapp_conversations SET 
-        message_count = message_count + 1,
-        last_activity_at = NOW(),
-        updated_at = NOW()
+        message_count = message_count + 1, last_activity_at = NOW(), updated_at = NOW()
        WHERE id = $1 AND tenant_id = $2`,
       [id, tenantId]
     );
   }
 
-  async expireStaleSessions(tenantId: string): Promise<number> {
-    const result = await this.pool.query(
+  async function expireStaleSessions(tenantId: string): Promise<number> {
+    const result = await pool.query(
       `UPDATE whatsapp_conversations SET state = 'EXPIRED', updated_at = NOW()
-       WHERE tenant_id = $1 
-         AND session_expires_at < NOW()
+       WHERE tenant_id = $1 AND session_expires_at < NOW()
          AND state NOT IN ('COMPLETED', 'EXPIRED')`,
       [tenantId]
     );
-
     return result.rowCount || 0;
   }
 
-  async countActive(tenantId: string): Promise<number> {
-    const result = await this.pool.query(
+  async function countActive(tenantId: string): Promise<number> {
+    const result = await pool.query(
       `SELECT COUNT(*) as count FROM whatsapp_conversations
-       WHERE tenant_id = $1 
-         AND session_expires_at > NOW()
+       WHERE tenant_id = $1 AND session_expires_at > NOW()
          AND state NOT IN ('COMPLETED', 'EXPIRED')`,
       [tenantId]
     );
-
     return parseInt(result.rows[0].count);
   }
 
-  private mapToEntity(row: Record<string, unknown>): ConversationContext {
-    const linkedEntities: LinkedEntity[] = (row.linked_entities as unknown[] || [])
-      .filter(Boolean)
-      .map((e: any) => ({
-        type: e.entity_type,
-        entityId: e.entity_id,
-        linkedAt: new Date(e.linked_at),
-        linkedBy: e.linked_by,
-      }));
-
-    const primaryEntity = linkedEntities.find((e: any) =>
-      (row.linked_entities as any[])?.find((le: any) => le.entity_id === e.entityId && le.is_primary)
-    );
-
-    return ConversationContext.fromPersistence({
-      id: row.id as string,
-      tenantId: row.tenant_id as string,
-      // Map DB fields to Entity fields
-      channel: (row.channel as CommunicationChannel) || 'WHATSAPP',
-      externalId: (row.external_id as string) || (row.whatsapp_thread_id as string),
-
-      primaryActor: {
-        actorType: row.primary_actor_type as any,
-        userId: row.primary_actor_user_id as string,
-        employeeId: row.primary_actor_employee_id as string,
-        contactId: row.primary_actor_contact_id as string,
-        phoneNumber: row.primary_actor_phone as string,
-        displayName: row.primary_actor_name as string,
-      },
-      participants: [],
-      linkedEntities,
-      primaryEntity,
-      state: row.state as ConversationState,
-      workflowProgress: row.workflow_progress as any,
-      lastActivityAt: new Date(row.last_activity_at as string),
-      sessionStartedAt: new Date(row.session_started_at as string),
-      sessionExpiresAt: new Date(row.session_expires_at as string),
-      messageCount: row.message_count as number,
-      isOptedIn: row.is_opted_in as boolean,
-      isEscalated: row.is_escalated as boolean,
-      requiresHumanReview: row.requires_human_review as boolean,
-      providerMetadata: row.provider_metadata as Record<string, unknown>,
-      createdAt: new Date(row.created_at as string),
-      updatedAt: new Date(row.updated_at as string),
-    });
-  }
+  return {
+    findById, findByExternalId, findByThreadId, findActiveByPhone,
+    findByLinkedEntity, findAll, findPendingReview, save, updateState,
+    linkEntity, recordActivity, expireStaleSessions, countActive,
+  };
 }

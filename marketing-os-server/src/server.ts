@@ -2,7 +2,7 @@ import { createApp } from './app.js';
 import { config } from './config/env.js';
 import { connectSequelize, connectToMongoDB, testConnection } from './config/database.js';
 import { getRedisClient } from './config/redis.js';
-import { setupAssociations } from './database/models/index.js';
+import db from './db/sqlmodels/index.js';
 import { SocketServer } from './sockets/SocketServer.js';
 import { logger } from './config/logger.js';
 
@@ -17,7 +17,7 @@ async function main(): Promise<void> {
         await testConnection();
 
         // Register all Sequelize model associations
-        setupAssociations();
+        db.setupAssociations();
         logger.info('✅ Model associations registered.');
 
         // Verify Redis

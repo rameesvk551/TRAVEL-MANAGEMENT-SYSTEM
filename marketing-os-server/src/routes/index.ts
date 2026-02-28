@@ -1,9 +1,6 @@
 import type { Express } from 'express';
 import { logger } from '../config/logger.js';
-import { AuthRepository } from '../modules/auth/auth.repository.js';
-import { AuthService } from '../modules/auth/auth.service.js';
-import { AuthController } from '../modules/auth/auth.controller.js';
-import { createAuthRoutes } from '../modules/auth/auth.routes.js';
+import { authRouter } from '../modules/auth/auth.routes.js';
 import { getRedisClient } from '../config/redis.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { tenantMiddleware } from '../middlewares/tenant.middleware.js';
@@ -55,15 +52,8 @@ export interface AppDependencies {
  * Register minimal routes needed for current WhatsApp onboarding flow.
  */
 export function registerRoutes(app: Express): AppDependencies {
-    // 1. Auth Module
-    const authRepository = new AuthRepository();
-    const redisClient = getRedisClient();
-    const authService = new AuthService(authRepository, undefined, redisClient);
-    const authController = new AuthController(authService);
-    const authRouter = createAuthRoutes(authController);
-
     // 2. Shared middlewares
-    const protect = authMiddleware(authService);
+    const protect = authMiddleware();
 
     // 3. Automation Module (Flows)
     const flowRepository = new MongoFlowRepository();

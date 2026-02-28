@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UnauthorizedError } from '../utils/apiError.js';
+import { validateToken } from '../modules/auth/auth.service.js';
 
 // Re-export the Express Request type augmentation
 declare global {
@@ -25,7 +26,7 @@ declare global {
  * Auth middleware factory.
  * Validates JWT token and attaches user/context to request.
  */
-export const authMiddleware = (authService: any, billingService?: any) => {
+export const authMiddleware = (billingService?: any) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
             const authHeader = req.headers.authorization;
@@ -37,7 +38,7 @@ export const authMiddleware = (authService: any, billingService?: any) => {
             let decoded: { userId: string; tenantId: string; role: string };
 
             try {
-                decoded = authService.validateToken(token);
+                decoded = validateToken(token);
             } catch (error) {
                 throw new UnauthorizedError('Invalid or expired token');
             }

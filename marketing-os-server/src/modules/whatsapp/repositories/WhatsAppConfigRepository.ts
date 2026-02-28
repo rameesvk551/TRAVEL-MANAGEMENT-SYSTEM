@@ -28,33 +28,46 @@ export interface WhatsAppConfigRow {
     updated_at: Date;
 }
 
-export class WhatsAppConfigRepository {
-    constructor(private pool: Pool) { }
+function mapRow(row: any): WhatsAppConfigRow | null {
+    if (!row) return null;
+    const mapped = { ...row };
+    if (mapped.access_token) {
+        try {
+            mapped.access_token = decryptSecret(mapped.access_token);
+        } catch (error) {
+            console.error('[WhatsAppConfigRepository] Failed to decrypt access token for tenant:', mapped.tenant_id, error);
+            mapped.access_token = null;
+        }
+    }
+    return mapped as WhatsAppConfigRow;
+}
 
-    async findByTenantId(tenantId: string): Promise<WhatsAppConfigRow | null> {
-        const result = await this.pool.query(
+export function createWhatsAppConfigRepository(pool: Pool) {
+
+    async function findByTenantId(tenantId: string): Promise<WhatsAppConfigRow | null> {
+        const result = await pool.query(
             `SELECT * FROM whatsapp_business_configs WHERE tenant_id = $1`,
             [tenantId]
         );
-        return this.mapRow(result.rows[0] || null);
+        return mapRow(result.rows[0] || null);
     }
 
-    async findByWabaId(wabaId: string): Promise<WhatsAppConfigRow[]> {
-        const result = await this.pool.query(
+    async function findByWabaId(wabaId: string): Promise<WhatsAppConfigRow[]> {
+        const result = await pool.query(
             `SELECT * FROM whatsapp_business_configs WHERE waba_id = $1`,
             [wabaId]
         );
-        return result.rows.map((row) => this.mapRow(row) as WhatsAppConfigRow);
+        return result.rows.map((row) => mapRow(row) as WhatsAppConfigRow);
     }
 
-    async findAllConnected(): Promise<WhatsAppConfigRow[]> {
-        const result = await this.pool.query(
+    async function findAllConnected(): Promise<WhatsAppConfigRow[]> {
+        const result = await pool.query(
             `SELECT * FROM whatsapp_business_configs WHERE status = 'connected' ORDER BY connected_at DESC`
         );
-        return result.rows.map((row) => this.mapRow(row) as WhatsAppConfigRow);
+        return result.rows.map((row) => mapRow(row) as WhatsAppConfigRow);
     }
 
-    async save(config: {
+    async function save(config: {
         tenantId: string;
         credentialSource: 'own' | 'managed';
         status?: string;
@@ -78,92 +91,52 @@ export class WhatsAppConfigRepository {
         phone_display, verified_name, quality_rating,
         business_name, webhook_verify_token, features, rate_limits,
         connected_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,NOW())
       ON CONFLICT (tenant_id)
       DO UPDATE SET
-        credential_source = EXCLUDED.credential_source,
-        status = EXCLUDED.status,
+        credential_source = EXCLUDED.credential_source, status = EXCLUDED.status,
         onboarding_method = COALESCE(EXCLUDED.onboarding_method, whatsapp_business_configs.onboarding_method),
-        access_token = EXCLUDED.access_token,
-        phone_number_id = EXCLUDED.phone_number_id,
-        waba_id = EXCLUDED.waba_id,
-        business_id = EXCLUDED.business_id,
-        phone_display = EXCLUDED.phone_display,
-        verified_name = EXCLUDED.verified_name,
-        quality_rating = EXCLUDED.quality_rating,
-        business_name = EXCLUDED.business_name,
+        access_token = EXCLUDED.access_token, phone_number_id = EXCLUDED.phone_number_id,
+        waba_id = EXCLUDED.waba_id, business_id = EXCLUDED.business_id,
+        phone_display = EXCLUDED.phone_display, verified_name = EXCLUDED.verified_name,
+        quality_rating = EXCLUDED.quality_rating, business_name = EXCLUDED.business_name,
         webhook_verify_token = COALESCE(EXCLUDED.webhook_verify_token, whatsapp_business_configs.webhook_verify_token),
         features = COALESCE(EXCLUDED.features, whatsapp_business_configs.features),
         rate_limits = COALESCE(EXCLUDED.rate_limits, whatsapp_business_configs.rate_limits),
-        connected_at = EXCLUDED.connected_at,
-        updated_at = NOW()
-      RETURNING *
-    `;
-
-        const result = await this.pool.query(query, [
-            config.tenantId,
-            config.credentialSource,
-            config.status || 'connected',
-            config.onboardingMethod || 'manual',
-            encryptSecret(config.accessToken || null),
-            config.phoneNumberId || null,
-            config.wabaId || null,
-            config.businessId || null,
-            config.phoneDisplay || null,
-            config.verifiedName || null,
-            config.qualityRating || null,
-            config.businessName || null,
-            config.webhookVerifyToken || null,
-            JSON.stringify(config.features || {}),
-            JSON.stringify(config.rateLimits || {}),
+        connected_at = EXCLUDED.connected_at, updated_at = NOW()
+      RETURNING *`;
+        const result = await pool.query(query, [
+            config.tenantId, config.credentialSource, config.status || 'connected',
+            config.onboardingMethod || 'manual', encryptSecret(config.accessToken || null),
+            config.phoneNumberId || null, config.wabaId || null, config.businessId || null,
+            config.phoneDisplay || null, config.verifiedName || null, config.qualityRating || null,
+            config.businessName || null, config.webhookVerifyToken || null,
+            JSON.stringify(config.features || {}), JSON.stringify(config.rateLimits || {}),
             config.status === 'connected' ? new Date() : null,
         ]);
-
-        return this.mapRow(result.rows[0]) as WhatsAppConfigRow;
+        return mapRow(result.rows[0]) as WhatsAppConfigRow;
     }
 
-    async updateStatus(
-        tenantId: string,
-        status: string,
-        errorMessage?: string
-    ): Promise<void> {
-        await this.pool.query(
-            `UPDATE whatsapp_business_configs 
-       SET status = $2, error_message = $3, updated_at = NOW()
-       WHERE tenant_id = $1`,
+    async function updateStatus(tenantId: string, status: string, errorMessage?: string): Promise<void> {
+        await pool.query(
+            `UPDATE whatsapp_business_configs SET status = $2, error_message = $3, updated_at = NOW() WHERE tenant_id = $1`,
             [tenantId, status, errorMessage || null]
         );
     }
 
-    async updateLastSync(tenantId: string): Promise<void> {
-        await this.pool.query(
+    async function updateLastSync(tenantId: string): Promise<void> {
+        await pool.query(
             `UPDATE whatsapp_business_configs SET last_sync_at = NOW(), updated_at = NOW() WHERE tenant_id = $1`,
             [tenantId]
         );
     }
 
-    async delete(tenantId: string): Promise<void> {
-        await this.pool.query(
+    async function deleteConfig(tenantId: string): Promise<void> {
+        await pool.query(
             `DELETE FROM whatsapp_business_configs WHERE tenant_id = $1`,
             [tenantId]
         );
     }
 
-    private mapRow(row: any): WhatsAppConfigRow | null {
-        if (!row) {
-            return null;
-        }
-
-        const mapped = { ...row };
-        if (mapped.access_token) {
-            try {
-                mapped.access_token = decryptSecret(mapped.access_token);
-            } catch (error) {
-                console.error('[WhatsAppConfigRepository] Failed to decrypt access token for tenant:', mapped.tenant_id, error);
-                mapped.access_token = null;
-            }
-        }
-
-        return mapped as WhatsAppConfigRow;
-    }
+    return { findByTenantId, findByWabaId, findAllConnected, save, updateStatus, updateLastSync, delete: deleteConfig };
 }

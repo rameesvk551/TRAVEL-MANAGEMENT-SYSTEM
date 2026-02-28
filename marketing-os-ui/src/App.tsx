@@ -9,7 +9,6 @@ import GrowthDashboard from './pages/GrowthDashboard';
 import TrackingSetup from './pages/TrackingSetup';
 import RevenueDashboard from './pages/RevenueDashboard';
 import CRMDashboard from './pages/CRMDashboard';
-import ContactDetails from './pages/crm/ContactDetails';
 import WhatsAppDashboard from './pages/WhatsAppDashboard';
 import EmailDashboard from './pages/EmailDashboard';
 import EmailTemplates from './pages/EmailTemplates';
@@ -167,7 +166,6 @@ function App() {
                 <Route path="growth/widgets/edit/:id" element={<WidgetBuilder />} />
                 <Route path="revenue" element={<RevenueDashboard />} />
                 <Route path="crm" element={<CRMDashboard />} />
-                <Route path="crm/contacts/:id" element={<ContactDetails />} />
                 <Route path="whatsapp" element={<WhatsAppDashboard />} />
                 <Route path="email" element={<EmailDashboard />} />
                 <Route path="email/templates" element={<EmailTemplates />} />

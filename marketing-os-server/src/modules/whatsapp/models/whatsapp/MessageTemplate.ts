@@ -102,68 +102,49 @@ export interface MessageTemplateProps {
 
 /**
  * MessageTemplate - Pre-approved WhatsApp Business templates
- * 
+ *
  * WhatsApp requires template approval for proactive messages.
  * This entity tracks templates and their approval status.
  */
-export class MessageTemplate {
-  public readonly id: string;
-  public readonly tenantId: string;
-  public readonly templateName: string;
-  public readonly providerTemplateId?: string;
-  public readonly language: string;
-  public readonly category: TemplateCategory;
-  public readonly useCase: TemplateUseCase;
-  public readonly headerType?: 'TEXT' | 'IMAGE' | 'VIDEO' | 'DOCUMENT';
-  public readonly headerContent?: string;
-  public readonly bodyContent: string;
-  public readonly footerContent?: string;
-  public components?: any[];
-  public readonly variables: TemplateVariable[];
-  public readonly buttons: TemplateButton[];
-  public readonly status: TemplateStatus;
-  public readonly rejectionReason?: string;
-  public readonly submittedAt?: Date;
-  public readonly approvedAt?: Date;
-  public readonly usageCount: number;
-  public readonly lastUsedAt?: Date;
-  public readonly requiresOptIn: boolean;
-  public readonly minIntervalMinutes: number;
-  public readonly createdAt: Date;
-  public readonly updatedAt: Date;
-  public readonly createdBy: string;
+function _createMessageTemplate(props: MessageTemplateProps) {
+  return {
+    id: props.id!,
+    tenantId: props.tenantId,
+    templateName: props.templateName,
+    providerTemplateId: props.providerTemplateId,
+    language: props.language,
+    category: props.category,
+    useCase: (props.useCase || 'CUSTOM') as TemplateUseCase,
+    headerType: props.headerType,
+    headerContent: props.headerContent,
+    bodyContent: props.bodyContent || '',
+    footerContent: props.footerContent,
+    components: props.components,
+    variables: props.variables || [],
+    buttons: props.buttons || [],
+    status: props.status,
+    rejectionReason: props.rejectionReason,
+    submittedAt: props.submittedAt,
+    approvedAt: props.approvedAt,
+    usageCount: props.usageCount,
+    lastUsedAt: props.lastUsedAt,
+    requiresOptIn: props.requiresOptIn,
+    minIntervalMinutes: props.minIntervalMinutes,
+    createdAt: props.createdAt!,
+    updatedAt: props.updatedAt!,
+    createdBy: props.createdBy,
 
-  private constructor(props: MessageTemplateProps) {
-    this.id = props.id!;
-    this.tenantId = props.tenantId;
-    this.templateName = props.templateName;
-    this.providerTemplateId = props.providerTemplateId;
-    this.language = props.language;
-    this.category = props.category;
-    this.useCase = props.useCase || 'CUSTOM';
-    this.headerType = props.headerType;
-    this.headerContent = props.headerContent;
-    this.bodyContent = props.bodyContent || '';
-    this.footerContent = props.footerContent;
-    this.components = props.components;
-    this.variables = props.variables || [];
-    this.buttons = props.buttons || [];
-    this.status = props.status;
-    this.rejectionReason = props.rejectionReason;
-    this.submittedAt = props.submittedAt;
-    this.approvedAt = props.approvedAt;
-    this.usageCount = props.usageCount;
-    this.lastUsedAt = props.lastUsedAt;
-    this.requiresOptIn = props.requiresOptIn;
-    this.minIntervalMinutes = props.minIntervalMinutes;
-    this.createdAt = props.createdAt!;
-    this.updatedAt = props.updatedAt!;
-    this.createdBy = props.createdBy;
-  }
+    /** Check if template can be used for sending */
+    get isUsable(): boolean {
+      return this.status === 'APPROVED';
+    },
+  };
+}
 
-  static create(props: Partial<MessageTemplateProps> & { tenantId: string; templateName: string; category: TemplateCategory; language: string; createdBy: string }): MessageTemplate {
+export const MessageTemplate = {
+  create(props: Partial<MessageTemplateProps> & { tenantId: string; templateName: string; category: TemplateCategory; language: string; createdBy: string }): MessageTemplate {
     const now = new Date();
-    return new MessageTemplate({
+    return _createMessageTemplate({
       id: props.id ?? generateId(),
       ...props,
       variables: props.variables ?? [],
@@ -175,16 +156,10 @@ export class MessageTemplate {
       createdAt: props.createdAt ?? now,
       updatedAt: props.updatedAt ?? now,
     } as MessageTemplateProps);
-  }
+  },
 
-  static fromPersistence(data: MessageTemplateProps): MessageTemplate {
-    return new MessageTemplate(data);
-  }
-
-  /**
-   * Check if template can be used for sending
-   */
-  get isUsable(): boolean {
-    return this.status === 'APPROVED';
-  }
-}
+  fromPersistence(data: MessageTemplateProps): MessageTemplate {
+    return _createMessageTemplate(data);
+  },
+};
+export type MessageTemplate = ReturnType<typeof _createMessageTemplate>;

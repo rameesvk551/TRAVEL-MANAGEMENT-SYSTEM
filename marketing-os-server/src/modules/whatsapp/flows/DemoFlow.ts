@@ -26,409 +26,22 @@ const conversationStates = new Map<string, FlowState>();
 /**
  * Demo Travel Booking Flow
  */
-export class DemoFlow {
-  private config = getConfig();
-  private baseUrl: string;
-  private token: string;
-  private phoneNumberId: string;
-
-  constructor() {
-    this.token = this.config.whatsapp.meta?.accessToken || '';
-    this.phoneNumberId = this.config.whatsapp.meta?.phoneNumberId || '';
-    this.baseUrl = `https://graph.facebook.com/${this.config.whatsapp.meta?.apiVersion}/${this.phoneNumberId}`;
-  }
-
-  /**
-   * Process incoming message and respond
-   */
-  async processMessage(from: string, messageText: string, buttonId?: string, listId?: string): Promise<void> {
-    const state = conversationStates.get(from) || { step: 'start', data: {} };
-    const input = buttonId || listId || messageText.toLowerCase().trim();
-
-    console.log(`[DemoFlow] Processing: ${from} | Step: ${state.step} | Input: ${input}`);
-
-    switch (state.step) {
-      case 'start':
-        await this.sendWelcome(from);
-        state.step = 'awaiting_choice';
-        break;
-
-      case 'awaiting_choice':
-        if (input.includes('book') || input === 'book_trip') {
-          await this.sendDestinations(from);
-          state.step = 'awaiting_destination';
-        } else if (input.includes('package') || input === 'view_packages') {
-          await this.sendPackages(from);
-          state.step = 'awaiting_package';
-        } else if (input.includes('status') || input === 'check_status') {
-          await this.sendBookingStatus(from);
-          state.step = 'start';
-        } else if (input.includes('help') || input === 'talk_agent') {
-          await this.sendAgentConnect(from);
-          state.step = 'start';
-        } else {
-          await this.sendWelcome(from);
-          state.step = 'awaiting_choice';
-        }
-        break;
-
-      case 'awaiting_destination':
-        state.data.destination = this.getDestinationName(input);
-        await this.sendDateOptions(from, state.data.destination);
-        state.step = 'awaiting_date';
-        break;
-
-      case 'awaiting_date':
-        state.data.date = this.getDateFromInput(input);
-        await this.sendTravelerCount(from);
-        state.step = 'awaiting_travelers';
-        break;
-
-      case 'awaiting_travelers':
-        state.data.travelers = this.getTravelerCount(input);
-        await this.sendBookingSummary(from, state.data);
-        state.step = 'awaiting_confirmation';
-        break;
-
-      case 'awaiting_confirmation':
-        if (input === 'confirm_booking' || input.includes('yes') || input.includes('confirm')) {
-          await this.sendBookingConfirmed(from, state.data);
-          state.step = 'start';
-          state.data = {};
-        } else if (input === 'modify_booking' || input.includes('change') || input.includes('modify')) {
-          await this.sendDestinations(from);
-          state.step = 'awaiting_destination';
-          state.data = {};
-        } else {
-          await this.sendBookingCancelled(from);
-          state.step = 'start';
-          state.data = {};
-        }
-        break;
-
-      case 'awaiting_package':
-        state.data.package = input;
-        await this.sendPackageDetails(from, input);
-        state.step = 'awaiting_package_action';
-        break;
-
-      case 'awaiting_package_action':
-        if (input === 'book_package' || input.includes('book')) {
-          await this.sendTravelerCount(from);
-          state.step = 'awaiting_travelers';
-        } else {
-          await this.sendWelcome(from);
-          state.step = 'awaiting_choice';
-        }
-        break;
-
-      default:
-        await this.sendWelcome(from);
-        state.step = 'awaiting_choice';
-    }
-
-    conversationStates.set(from, state);
-  }
-
-  /**
-   * Send welcome message with options
-   */
-  private async sendWelcome(to: string): Promise<void> {
-    await this.sendInteractiveButtons(to, {
-      header: '🌍 Welcome to Wayon Travel!',
-      body: 'Hello! I\'m your travel assistant. How can I help you today?\n\nChoose an option below:',
-      footer: 'Powered by Wayon TMS',
-      buttons: [
-        { id: 'book_trip', title: '✈️ Book a Trip' },
-        { id: 'view_packages', title: '📦 View Packages' },
-        { id: 'check_status', title: '📋 Booking Status' },
-      ],
-    });
-  }
-
-  /**
-   * Send destination options
-   */
-  private async sendDestinations(to: string): Promise<void> {
-    await this.sendInteractiveList(to, {
-      header: '🗺️ Choose Destination',
-      body: 'Select your dream destination from our popular locations:',
-      footer: 'All prices are per person',
-      buttonText: 'View Destinations',
-      sections: [
-        {
-          title: '🏔️ Mountain Destinations',
-          rows: [
-            { id: 'dest_manali', title: 'Manali', description: '₹8,999 | 4N/5D | Adventure' },
-            { id: 'dest_leh', title: 'Leh Ladakh', description: '₹15,999 | 6N/7D | Scenic' },
-            { id: 'dest_shimla', title: 'Shimla', description: '₹6,999 | 3N/4D | Heritage' },
-          ],
-        },
-        {
-          title: '🏖️ Beach Destinations',
-          rows: [
-            { id: 'dest_goa', title: 'Goa', description: '₹7,499 | 3N/4D | Beach Party' },
-            { id: 'dest_andaman', title: 'Andaman', description: '₹22,999 | 5N/6D | Island' },
-            { id: 'dest_kerala', title: 'Kerala', description: '₹12,999 | 4N/5D | Backwaters' },
-          ],
-        },
-        {
-          title: '🏛️ Heritage Destinations',
-          rows: [
-            { id: 'dest_rajasthan', title: 'Rajasthan', description: '₹11,999 | 5N/6D | Royal' },
-            { id: 'dest_varanasi', title: 'Varanasi', description: '₹5,999 | 2N/3D | Spiritual' },
-          ],
-        },
-      ],
-    });
-  }
-
-  /**
-   * Send date options
-   */
-  private async sendDateOptions(to: string, destination: string): Promise<void> {
-    const dates = this.getUpcomingDates();
-    await this.sendInteractiveList(to, {
-      header: `📅 Select Date for ${destination}`,
-      body: 'Choose your preferred departure date:',
-      footer: 'Subject to availability',
-      buttonText: 'View Dates',
-      sections: [
-        {
-          title: 'Available Departures',
-          rows: dates.map((date, i) => ({
-            id: `date_${i}`,
-            title: date.display,
-            description: date.slots,
-          })),
-        },
-      ],
-    });
-  }
-
-  /**
-   * Send traveler count options
-   */
-  private async sendTravelerCount(to: string): Promise<void> {
-    await this.sendInteractiveButtons(to, {
-      header: '👥 Number of Travelers',
-      body: 'How many people will be traveling?',
-      buttons: [
-        { id: 'travelers_1', title: '1 Person' },
-        { id: 'travelers_2', title: '2 People' },
-        { id: 'travelers_4', title: '4+ People' },
-      ],
-    });
-  }
-
-  /**
-   * Send booking summary
-   */
-  private async sendBookingSummary(to: string, data: Record<string, any>): Promise<void> {
-    const price = this.calculatePrice(data);
-    await this.sendInteractiveButtons(to, {
-      header: '📋 Booking Summary',
-      body: `Please review your booking:\n\n` +
-        `🗺️ Destination: ${data.destination}\n` +
-        `📅 Date: ${data.date}\n` +
-        `👥 Travelers: ${data.travelers}\n` +
-        `💰 Total: ₹${price.toLocaleString()}\n\n` +
-        `Would you like to confirm?`,
-      footer: 'Confirmation required',
-      buttons: [
-        { id: 'confirm_booking', title: '✅ Confirm' },
-        { id: 'modify_booking', title: '✏️ Modify' },
-        { id: 'cancel_booking', title: '❌ Cancel' },
-      ],
-    });
-  }
-
-  /**
-   * Send booking confirmed
-   */
-  private async sendBookingConfirmed(to: string, data: Record<string, any>): Promise<void> {
-    const bookingId = `WYN${Date.now().toString().slice(-8)}`;
-    const price = this.calculatePrice(data);
-    
-    await this.sendText(to, 
-      `🎉 *Booking Confirmed!*\n\n` +
-      `Your booking has been confirmed.\n\n` +
-      `📌 *Booking ID:* ${bookingId}\n` +
-      `🗺️ *Destination:* ${data.destination}\n` +
-      `📅 *Date:* ${data.date}\n` +
-      `👥 *Travelers:* ${data.travelers}\n` +
-      `💰 *Amount:* ₹${price.toLocaleString()}\n\n` +
-      `📧 Confirmation email sent!\n` +
-      `📱 Download invoice from our app.\n\n` +
-      `Thank you for choosing Wayon Travel! 🙏\n\n` +
-      `_Type "hi" to start a new conversation._`
-    );
-  }
-
-  /**
-   * Send booking cancelled
-   */
-  private async sendBookingCancelled(to: string): Promise<void> {
-    await this.sendText(to,
-      `❌ *Booking Cancelled*\n\n` +
-      `No worries! Your booking has been cancelled.\n\n` +
-      `Feel free to start again whenever you're ready.\n` +
-      `_Type "hi" to explore our destinations._`
-    );
-  }
-
-  /**
-   * Send packages list
-   */
-  private async sendPackages(to: string): Promise<void> {
-    await this.sendInteractiveList(to, {
-      header: '📦 Special Packages',
-      body: 'Check out our curated travel packages:',
-      footer: 'Limited time offers!',
-      buttonText: 'View Packages',
-      sections: [
-        {
-          title: '🔥 Trending Packages',
-          rows: [
-            { id: 'pkg_honeymoon', title: 'Honeymoon Special', description: '₹29,999 | Maldives 5N/6D' },
-            { id: 'pkg_adventure', title: 'Adventure Pack', description: '₹19,999 | Rishikesh 4N/5D' },
-            { id: 'pkg_family', title: 'Family Holiday', description: '₹24,999 | Singapore 4N/5D' },
-          ],
-        },
-        {
-          title: '💰 Budget Packages',
-          rows: [
-            { id: 'pkg_weekend', title: 'Weekend Getaway', description: '₹4,999 | Lonavala 2N/3D' },
-            { id: 'pkg_pilgrim', title: 'Pilgrimage Tour', description: '₹7,999 | Char Dham 5N/6D' },
-          ],
-        },
-      ],
-    });
-  }
-
-  /**
-   * Send package details
-   */
-  private async sendPackageDetails(to: string, packageId: string): Promise<void> {
-    const pkg = this.getPackageDetails(packageId);
-    await this.sendInteractiveButtons(to, {
-      header: `📦 ${pkg.name}`,
-      body: `${pkg.description}\n\n` +
-        `📍 ${pkg.destination}\n` +
-        `⏱️ ${pkg.duration}\n` +
-        `💰 ${pkg.price}\n\n` +
-        `✨ *Includes:*\n${pkg.includes.map(i => `• ${i}`).join('\n')}`,
-      footer: pkg.validity,
-      buttons: [
-        { id: 'book_package', title: '🎫 Book Now' },
-        { id: 'view_packages', title: '↩️ Other Packages' },
-        { id: 'talk_agent', title: '💬 Talk to Agent' },
-      ],
-    });
-  }
-
-  /**
-   * Send booking status
-   */
-  private async sendBookingStatus(to: string): Promise<void> {
-    // Dummy booking status
-    await this.sendText(to,
-      `📋 *Your Recent Bookings*\n\n` +
-      `1️⃣ *WYN12345678*\n` +
-      `   📍 Goa | 📅 Jan 15, 2026\n` +
-      `   ✅ Confirmed\n\n` +
-      `2️⃣ *WYN87654321*\n` +
-      `   📍 Manali | 📅 Feb 10, 2026\n` +
-      `   ⏳ Payment Pending\n\n` +
-      `_Reply with booking ID for details._\n` +
-      `_Type "hi" for main menu._`
-    );
-  }
-
-  /**
-   * Send agent connect message
-   */
-  private async sendAgentConnect(to: string): Promise<void> {
-    await this.sendText(to,
-      `👤 *Connecting to Agent*\n\n` +
-      `Our travel expert will connect with you shortly.\n\n` +
-      `⏰ Average wait time: 2-3 minutes\n` +
-      `📞 Or call us: +91 98765 43210\n\n` +
-      `_Type "hi" to go back to self-service._`
-    );
-  }
+export function createDemoFlow() {
+  const config = getConfig();
+  const token = config.whatsapp.meta?.accessToken || '';
+  const phoneNumberId = config.whatsapp.meta?.phoneNumberId || '';
+  const baseUrl = `https://graph.facebook.com/${config.whatsapp.meta?.apiVersion}/${phoneNumberId}`;
 
   // ============================================
   // API HELPERS
   // ============================================
 
-  private async sendText(to: string, text: string): Promise<void> {
-    await this.callApi({
-      messaging_product: 'whatsapp',
-      to,
-      type: 'text',
-      text: { body: text },
-    });
-  }
-
-  private async sendInteractiveButtons(to: string, content: {
-    header?: string;
-    body: string;
-    footer?: string;
-    buttons: Array<{ id: string; title: string }>;
-  }): Promise<void> {
-    await this.callApi({
-      messaging_product: 'whatsapp',
-      to,
-      type: 'interactive',
-      interactive: {
-        type: 'button',
-        header: content.header ? { type: 'text', text: content.header } : undefined,
-        body: { text: content.body },
-        footer: content.footer ? { text: content.footer } : undefined,
-        action: {
-          buttons: content.buttons.map(b => ({
-            type: 'reply',
-            reply: { id: b.id, title: b.title },
-          })),
-        },
-      },
-    });
-  }
-
-  private async sendInteractiveList(to: string, content: {
-    header?: string;
-    body: string;
-    footer?: string;
-    buttonText: string;
-    sections: Array<{
-      title: string;
-      rows: Array<{ id: string; title: string; description?: string }>;
-    }>;
-  }): Promise<void> {
-    await this.callApi({
-      messaging_product: 'whatsapp',
-      to,
-      type: 'interactive',
-      interactive: {
-        type: 'list',
-        header: content.header ? { type: 'text', text: content.header } : undefined,
-        body: { text: content.body },
-        footer: content.footer ? { text: content.footer } : undefined,
-        action: {
-          button: content.buttonText,
-          sections: content.sections,
-        },
-      },
-    });
-  }
-
-  private async callApi(payload: Record<string, any>): Promise<any> {
+  async function callApi(payload: Record<string, any>): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/messages`, {
+      const response = await fetch(`${baseUrl}/messages`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.token}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
@@ -449,11 +62,72 @@ export class DemoFlow {
     }
   }
 
+  async function sendText(to: string, text: string): Promise<void> {
+    await callApi({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'text',
+      text: { body: text },
+    });
+  }
+
+  async function sendInteractiveButtons(to: string, content: {
+    header?: string;
+    body: string;
+    footer?: string;
+    buttons: Array<{ id: string; title: string }>;
+  }): Promise<void> {
+    await callApi({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'interactive',
+      interactive: {
+        type: 'button',
+        header: content.header ? { type: 'text', text: content.header } : undefined,
+        body: { text: content.body },
+        footer: content.footer ? { text: content.footer } : undefined,
+        action: {
+          buttons: content.buttons.map(b => ({
+            type: 'reply',
+            reply: { id: b.id, title: b.title },
+          })),
+        },
+      },
+    });
+  }
+
+  async function sendInteractiveList(to: string, content: {
+    header?: string;
+    body: string;
+    footer?: string;
+    buttonText: string;
+    sections: Array<{
+      title: string;
+      rows: Array<{ id: string; title: string; description?: string }>;
+    }>;
+  }): Promise<void> {
+    await callApi({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'interactive',
+      interactive: {
+        type: 'list',
+        header: content.header ? { type: 'text', text: content.header } : undefined,
+        body: { text: content.body },
+        footer: content.footer ? { text: content.footer } : undefined,
+        action: {
+          button: content.buttonText,
+          sections: content.sections,
+        },
+      },
+    });
+  }
+
   // ============================================
   // DATA HELPERS
   // ============================================
 
-  private getDestinationName(id: string): string {
+  function getDestinationName(id: string): string {
     const destinations: Record<string, string> = {
       dest_manali: 'Manali',
       dest_leh: 'Leh Ladakh',
@@ -467,7 +141,7 @@ export class DemoFlow {
     return destinations[id] || id;
   }
 
-  private getUpcomingDates(): Array<{ display: string; slots: string }> {
+  function getUpcomingDates(): Array<{ display: string; slots: string }> {
     const dates = [];
     const today = new Date();
     for (let i = 7; i < 35; i += 7) {
@@ -480,7 +154,7 @@ export class DemoFlow {
     return dates;
   }
 
-  private getDateFromInput(id: string): string {
+  function getDateFromInput(id: string): string {
     const match = id.match(/date_(\d+)/);
     if (match) {
       const idx = parseInt(match[1]);
@@ -490,7 +164,7 @@ export class DemoFlow {
     return id;
   }
 
-  private getTravelerCount(id: string): string {
+  function getTravelerCount(id: string): string {
     const counts: Record<string, string> = {
       travelers_1: '1 Adult',
       travelers_2: '2 Adults',
@@ -499,7 +173,7 @@ export class DemoFlow {
     return counts[id] || id;
   }
 
-  private calculatePrice(data: Record<string, any>): number {
+  function calculatePrice(data: Record<string, any>): number {
     const basePrices: Record<string, number> = {
       'Manali': 8999,
       'Leh Ladakh': 15999,
@@ -515,7 +189,7 @@ export class DemoFlow {
     return base * travelers;
   }
 
-  private getPackageDetails(id: string): {
+  function getPackageDetails(id: string): {
     name: string;
     description: string;
     destination: string;
@@ -574,20 +248,350 @@ export class DemoFlow {
     return packages[id] || packages.pkg_weekend;
   }
 
+  // ============================================
+  // FLOW STEPS
+  // ============================================
+
+  /**
+   * Send welcome message with options
+   */
+  async function sendWelcome(to: string): Promise<void> {
+    await sendInteractiveButtons(to, {
+      header: '🌍 Welcome to Wayon Travel!',
+      body: 'Hello! I\'m your travel assistant. How can I help you today?\n\nChoose an option below:',
+      footer: 'Powered by Wayon TMS',
+      buttons: [
+        { id: 'book_trip', title: '✈️ Book a Trip' },
+        { id: 'view_packages', title: '📦 View Packages' },
+        { id: 'check_status', title: '📋 Booking Status' },
+      ],
+    });
+  }
+
+  /**
+   * Send destination options
+   */
+  async function sendDestinations(to: string): Promise<void> {
+    await sendInteractiveList(to, {
+      header: '🗺️ Choose Destination',
+      body: 'Select your dream destination from our popular locations:',
+      footer: 'All prices are per person',
+      buttonText: 'View Destinations',
+      sections: [
+        {
+          title: '🏔️ Mountain Destinations',
+          rows: [
+            { id: 'dest_manali', title: 'Manali', description: '₹8,999 | 4N/5D | Adventure' },
+            { id: 'dest_leh', title: 'Leh Ladakh', description: '₹15,999 | 6N/7D | Scenic' },
+            { id: 'dest_shimla', title: 'Shimla', description: '₹6,999 | 3N/4D | Heritage' },
+          ],
+        },
+        {
+          title: '🏖️ Beach Destinations',
+          rows: [
+            { id: 'dest_goa', title: 'Goa', description: '₹7,499 | 3N/4D | Beach Party' },
+            { id: 'dest_andaman', title: 'Andaman', description: '₹22,999 | 5N/6D | Island' },
+            { id: 'dest_kerala', title: 'Kerala', description: '₹12,999 | 4N/5D | Backwaters' },
+          ],
+        },
+        {
+          title: '🏛️ Heritage Destinations',
+          rows: [
+            { id: 'dest_rajasthan', title: 'Rajasthan', description: '₹11,999 | 5N/6D | Royal' },
+            { id: 'dest_varanasi', title: 'Varanasi', description: '₹5,999 | 2N/3D | Spiritual' },
+          ],
+        },
+      ],
+    });
+  }
+
+  /**
+   * Send date options
+   */
+  async function sendDateOptions(to: string, destination: string): Promise<void> {
+    const dates = getUpcomingDates();
+    await sendInteractiveList(to, {
+      header: `📅 Select Date for ${destination}`,
+      body: 'Choose your preferred departure date:',
+      footer: 'Subject to availability',
+      buttonText: 'View Dates',
+      sections: [
+        {
+          title: 'Available Departures',
+          rows: dates.map((date, i) => ({
+            id: `date_${i}`,
+            title: date.display,
+            description: date.slots,
+          })),
+        },
+      ],
+    });
+  }
+
+  /**
+   * Send traveler count options
+   */
+  async function sendTravelerCount(to: string): Promise<void> {
+    await sendInteractiveButtons(to, {
+      header: '👥 Number of Travelers',
+      body: 'How many people will be traveling?',
+      buttons: [
+        { id: 'travelers_1', title: '1 Person' },
+        { id: 'travelers_2', title: '2 People' },
+        { id: 'travelers_4', title: '4+ People' },
+      ],
+    });
+  }
+
+  /**
+   * Send booking summary
+   */
+  async function sendBookingSummary(to: string, data: Record<string, any>): Promise<void> {
+    const price = calculatePrice(data);
+    await sendInteractiveButtons(to, {
+      header: '📋 Booking Summary',
+      body: `Please review your booking:\n\n` +
+        `🗺️ Destination: ${data.destination}\n` +
+        `📅 Date: ${data.date}\n` +
+        `👥 Travelers: ${data.travelers}\n` +
+        `💰 Total: ₹${price.toLocaleString()}\n\n` +
+        `Would you like to confirm?`,
+      footer: 'Confirmation required',
+      buttons: [
+        { id: 'confirm_booking', title: '✅ Confirm' },
+        { id: 'modify_booking', title: '✏️ Modify' },
+        { id: 'cancel_booking', title: '❌ Cancel' },
+      ],
+    });
+  }
+
+  /**
+   * Send booking confirmed
+   */
+  async function sendBookingConfirmed(to: string, data: Record<string, any>): Promise<void> {
+    const bookingId = `WYN${Date.now().toString().slice(-8)}`;
+    const price = calculatePrice(data);
+    
+    await sendText(to, 
+      `🎉 *Booking Confirmed!*\n\n` +
+      `Your booking has been confirmed.\n\n` +
+      `📌 *Booking ID:* ${bookingId}\n` +
+      `🗺️ *Destination:* ${data.destination}\n` +
+      `📅 *Date:* ${data.date}\n` +
+      `👥 *Travelers:* ${data.travelers}\n` +
+      `💰 *Amount:* ₹${price.toLocaleString()}\n\n` +
+      `📧 Confirmation email sent!\n` +
+      `📱 Download invoice from our app.\n\n` +
+      `Thank you for choosing Wayon Travel! 🙏\n\n` +
+      `_Type "hi" to start a new conversation._`
+    );
+  }
+
+  /**
+   * Send booking cancelled
+   */
+  async function sendBookingCancelled(to: string): Promise<void> {
+    await sendText(to,
+      `❌ *Booking Cancelled*\n\n` +
+      `No worries! Your booking has been cancelled.\n\n` +
+      `Feel free to start again whenever you're ready.\n` +
+      `_Type "hi" to explore our destinations._`
+    );
+  }
+
+  /**
+   * Send packages list
+   */
+  async function sendPackages(to: string): Promise<void> {
+    await sendInteractiveList(to, {
+      header: '📦 Special Packages',
+      body: 'Check out our curated travel packages:',
+      footer: 'Limited time offers!',
+      buttonText: 'View Packages',
+      sections: [
+        {
+          title: '🔥 Trending Packages',
+          rows: [
+            { id: 'pkg_honeymoon', title: 'Honeymoon Special', description: '₹29,999 | Maldives 5N/6D' },
+            { id: 'pkg_adventure', title: 'Adventure Pack', description: '₹19,999 | Rishikesh 4N/5D' },
+            { id: 'pkg_family', title: 'Family Holiday', description: '₹24,999 | Singapore 4N/5D' },
+          ],
+        },
+        {
+          title: '💰 Budget Packages',
+          rows: [
+            { id: 'pkg_weekend', title: 'Weekend Getaway', description: '₹4,999 | Lonavala 2N/3D' },
+            { id: 'pkg_pilgrim', title: 'Pilgrimage Tour', description: '₹7,999 | Char Dham 5N/6D' },
+          ],
+        },
+      ],
+    });
+  }
+
+  /**
+   * Send package details
+   */
+  async function sendPackageDetails(to: string, packageId: string): Promise<void> {
+    const pkg = getPackageDetails(packageId);
+    await sendInteractiveButtons(to, {
+      header: `📦 ${pkg.name}`,
+      body: `${pkg.description}\n\n` +
+        `📍 ${pkg.destination}\n` +
+        `⏱️ ${pkg.duration}\n` +
+        `💰 ${pkg.price}\n\n` +
+        `✨ *Includes:*\n${pkg.includes.map(i => `• ${i}`).join('\n')}`,
+      footer: pkg.validity,
+      buttons: [
+        { id: 'book_package', title: '🎫 Book Now' },
+        { id: 'view_packages', title: '↩️ Other Packages' },
+        { id: 'talk_agent', title: '💬 Talk to Agent' },
+      ],
+    });
+  }
+
+  /**
+   * Send booking status
+   */
+  async function sendBookingStatus(to: string): Promise<void> {
+    // Dummy booking status
+    await sendText(to,
+      `📋 *Your Recent Bookings*\n\n` +
+      `1️⃣ *WYN12345678*\n` +
+      `   📍 Goa | 📅 Jan 15, 2026\n` +
+      `   ✅ Confirmed\n\n` +
+      `2️⃣ *WYN87654321*\n` +
+      `   📍 Manali | 📅 Feb 10, 2026\n` +
+      `   ⏳ Payment Pending\n\n` +
+      `_Reply with booking ID for details._\n` +
+      `_Type "hi" for main menu._`
+    );
+  }
+
+  /**
+   * Send agent connect message
+   */
+  async function sendAgentConnect(to: string): Promise<void> {
+    await sendText(to,
+      `👤 *Connecting to Agent*\n\n` +
+      `Our travel expert will connect with you shortly.\n\n` +
+      `⏰ Average wait time: 2-3 minutes\n` +
+      `📞 Or call us: +91 98765 43210\n\n` +
+      `_Type "hi" to go back to self-service._`
+    );
+  }
+
+  // ============================================
+  // MAIN PROCESSOR
+  // ============================================
+
+  /**
+   * Process incoming message and respond
+   */
+  async function processMessage(from: string, messageText: string, buttonId?: string, listId?: string): Promise<void> {
+    const state = conversationStates.get(from) || { step: 'start', data: {} };
+    const input = buttonId || listId || messageText.toLowerCase().trim();
+
+    console.log(`[DemoFlow] Processing: ${from} | Step: ${state.step} | Input: ${input}`);
+
+    switch (state.step) {
+      case 'start':
+        await sendWelcome(from);
+        state.step = 'awaiting_choice';
+        break;
+
+      case 'awaiting_choice':
+        if (input.includes('book') || input === 'book_trip') {
+          await sendDestinations(from);
+          state.step = 'awaiting_destination';
+        } else if (input.includes('package') || input === 'view_packages') {
+          await sendPackages(from);
+          state.step = 'awaiting_package';
+        } else if (input.includes('status') || input === 'check_status') {
+          await sendBookingStatus(from);
+          state.step = 'start';
+        } else if (input.includes('help') || input === 'talk_agent') {
+          await sendAgentConnect(from);
+          state.step = 'start';
+        } else {
+          await sendWelcome(from);
+          state.step = 'awaiting_choice';
+        }
+        break;
+
+      case 'awaiting_destination':
+        state.data.destination = getDestinationName(input);
+        await sendDateOptions(from, state.data.destination);
+        state.step = 'awaiting_date';
+        break;
+
+      case 'awaiting_date':
+        state.data.date = getDateFromInput(input);
+        await sendTravelerCount(from);
+        state.step = 'awaiting_travelers';
+        break;
+
+      case 'awaiting_travelers':
+        state.data.travelers = getTravelerCount(input);
+        await sendBookingSummary(from, state.data);
+        state.step = 'awaiting_confirmation';
+        break;
+
+      case 'awaiting_confirmation':
+        if (input === 'confirm_booking' || input.includes('yes') || input.includes('confirm')) {
+          await sendBookingConfirmed(from, state.data);
+          state.step = 'start';
+          state.data = {};
+        } else if (input === 'modify_booking' || input.includes('change') || input.includes('modify')) {
+          await sendDestinations(from);
+          state.step = 'awaiting_destination';
+          state.data = {};
+        } else {
+          await sendBookingCancelled(from);
+          state.step = 'start';
+          state.data = {};
+        }
+        break;
+
+      case 'awaiting_package':
+        state.data.package = input;
+        await sendPackageDetails(from, input);
+        state.step = 'awaiting_package_action';
+        break;
+
+      case 'awaiting_package_action':
+        if (input === 'book_package' || input.includes('book')) {
+          await sendTravelerCount(from);
+          state.step = 'awaiting_travelers';
+        } else {
+          await sendWelcome(from);
+          state.step = 'awaiting_choice';
+        }
+        break;
+
+      default:
+        await sendWelcome(from);
+        state.step = 'awaiting_choice';
+    }
+
+    conversationStates.set(from, state);
+  }
+
   /**
    * Reset conversation state
    */
-  resetState(phone: string): void {
+  function resetState(phone: string): void {
     conversationStates.delete(phone);
   }
 
   /**
    * Get current state (for debugging)
    */
-  getState(phone: string): FlowState | undefined {
+  function getState(phone: string): FlowState | undefined {
     return conversationStates.get(phone);
   }
+
+  return { processMessage, resetState, getState };
 }
 
 // Export singleton instance
-export const demoFlow = new DemoFlow();
+export const demoFlow = createDemoFlow();

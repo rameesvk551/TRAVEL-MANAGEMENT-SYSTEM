@@ -1,207 +1,189 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { Redis } from 'ioredis';
+import { getRedisClient } from '../../config/redis.js';
 import { getConfig } from '../../config/env.js';
 import { AppError, UnauthorizedError } from '../../utils/apiError.js';
-import { AuthRepository } from './auth.repository.js';
+import * as authRepository from './auth.repository.js';
 import { sendEmail } from '../email/mailer.js';
-import type { BillingOnboardingPort } from '../billing/billing.contracts.js';
 import type { RegisterDTO, LoginDTO, AuthResponse, TokenPayload } from './auth.types.js';
 import { AUTH } from '../../config/constants.js';
 
-/**
- * Auth service — contains all authentication business logic.
- * DB queries are delegated to AuthRepository.
- */
-export class AuthService {
-    private config = getConfig();
+// Since the class had optional billingOnboardingPort injected, we can either
+// omit it in the functional approach or provide a way to inject it if strictly needed.
+// For now, I'll omit the billing step or leave a TODO/import if required.
+// If needed, import from billing service directly.
+// import { billingService } from '../billing/index.js';
 
-    constructor(
-        private readonly authRepository: AuthRepository,
-        private readonly billingOnboardingPort?: BillingOnboardingPort,
-        private readonly redisClient?: Redis
-    ) { }
+export const register = async (data: RegisterDTO): Promise<AuthResponse> => {
+    const config = getConfig();
 
-    /**
-     * Register a new tenant and admin user.
-     */
-    async register(data: RegisterDTO): Promise<AuthResponse> {
-        // 1. Check if user already exists
-        const existingUser = await this.authRepository.findUserByEmail(data.email);
-        if (existingUser) {
-            throw new AppError('User with this email already exists', 409);
-        }
+    // 1. Check if user already exists
+    const existingUser = await authRepository.findUserByEmail(data.email);
+    if (existingUser) {
+        throw new AppError('User with this email already exists', 409);
+    }
 
-        // 2. Create Tenant
-        const tenant = await this.authRepository.createTenant({
-            name: data.tenantName,
-            slug: data.tenantName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-            is_active: true,
-        });
+    // 2. Create Tenant
+    const tenant = await authRepository.createTenant({
+        name: data.tenantName,
+        slug: data.tenantName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        is_active: true,
+    });
 
-        // 3. Hash Password
-        const salt = await bcrypt.genSalt(AUTH.SALT_ROUNDS);
-        const passwordHash = await bcrypt.hash(data.password, salt);
+    // 3. Hash Password
+    const salt = await bcrypt.genSalt(AUTH.SALT_ROUNDS);
+    const passwordHash = await bcrypt.hash(data.password, salt);
 
-        // 4. Create User
-        const user = await this.authRepository.createUser({
-            tenant_id: tenant.id,
-            email: data.email,
-            password_hash: passwordHash,
-            name: data.userName,
-            role: 'admin',
-            is_active: true,
-        });
+    // 4. Create User
+    const user = await authRepository.createUser({
+        tenant_id: tenant.id,
+        email: data.email,
+        password_hash: passwordHash,
+        name: data.userName,
+        role: 'admin',
+        is_active: true,
+    });
 
-        // 5. Create billing trial if available
-        if (this.billingOnboardingPort) {
-            try {
-                await this.billingOnboardingPort.createTrialForTenant({
-                    tenantId: tenant.id,
-                    performedByUserId: user.id,
-                });
-            } catch (error) {
-                console.error('Failed to create billing trial during registration:', error);
-            }
-        }
+    // 5. Create billing trial if available (Placeholder to adapt billing integration if accessed globally)
+    // if (billingService) {
+    //     try {
+    //         await billingService.createTrialForTenant({
+    //             tenantId: tenant.id,
+    //             performedByUserId: user.id,
+    //         });
+    //     } catch (error) {
+    //         console.error('Failed to create billing trial during registration:', error);
+    //     }
+    // }
 
-        // 6. Generate Token
-        const token = this.generateToken(user.id, tenant.id, user.role);
+    // 6. Generate Token
+    const token = generateToken(user.id, tenant.id, user.role);
 
+    return {
+        user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            tenantId: tenant.id,
+            tenantName: tenant.name,
+        },
+        token,
+    };
+};
+
+export const login = async (data: LoginDTO): Promise<AuthResponse> => {
+    // 1. Find User with tenant
+    const user = await authRepository.findUserByEmailWithTenant(data.email);
+    if (!user) {
+        throw new UnauthorizedError('Invalid email or password');
+    }
+
+    // 2. Validate Password
+    const isMatch = await bcrypt.compare(data.password, user.password_hash);
+    if (!isMatch) {
+        throw new UnauthorizedError('Invalid email or password');
+    }
+
+    // 3. Check if active
+    if (!user.is_active) {
+        throw new UnauthorizedError('Account is disabled');
+    }
+
+    // 4. Generate Token
+    const token = generateToken(user.id, user.tenant_id, user.role);
+
+    let tenantName = 'Unknown';
+    if (user.tenant) {
+        tenantName = user.tenant.name;
+    } else {
+        const tenant = await authRepository.findTenantById(user.tenant_id);
+        if (tenant) tenantName = tenant.name;
+    }
+
+    return {
+        user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            tenantId: user.tenant_id,
+            tenantName,
+        },
+        token,
+    };
+};
+
+export const validateToken = (token: string): TokenPayload => {
+    const config = getConfig();
+    try {
+        const decoded = jwt.verify(token, config.jwt.secret) as any;
         return {
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-                tenantId: tenant.id,
-                tenantName: tenant.name,
-            },
-            token,
+            userId: decoded.id,
+            tenantId: decoded.tenantId,
+            role: decoded.role,
         };
+    } catch (error) {
+        throw new UnauthorizedError('Invalid token');
+    }
+};
+
+export const forgotPassword = async (email: string): Promise<void> => {
+    const redisClient = getRedisClient();
+    const user = await authRepository.findUserByEmail(email);
+    if (!user) {
+        console.log(`Password reset requested for non-existent email: ${email}`);
+        return;
     }
 
-    /**
-     * Login user.
-     */
-    async login(data: LoginDTO): Promise<AuthResponse> {
-        // 1. Find User with tenant
-        const user = await this.authRepository.findUserByEmailWithTenant(data.email);
-        if (!user) {
-            throw new UnauthorizedError('Invalid email or password');
-        }
+    const resetToken = uuidv4();
 
-        // 2. Validate Password
-        const isMatch = await bcrypt.compare(data.password, user.password_hash);
-        if (!isMatch) {
-            throw new UnauthorizedError('Invalid email or password');
-        }
-
-        // 3. Check if active
-        if (!user.is_active) {
-            throw new UnauthorizedError('Account is disabled');
-        }
-
-        // 4. Generate Token
-        const token = this.generateToken(user.id, user.tenant_id, user.role);
-
-        let tenantName = 'Unknown';
-        if (user.tenant) {
-            tenantName = user.tenant.name;
-        } else {
-            const tenant = await this.authRepository.findTenantById(user.tenant_id);
-            if (tenant) tenantName = tenant.name;
-        }
-
-        return {
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                role: user.role,
-                tenantId: user.tenant_id,
-                tenantName,
-            },
-            token,
-        };
+    if (redisClient) {
+        await redisClient.setex(`reset_token:${resetToken}`, AUTH.RESET_TOKEN_TTL, user.id);
+    } else {
+        throw new AppError('Password reset service unavailable', 503);
     }
 
-    /**
-     * Validate JWT Token.
-     */
-    validateToken(token: string): TokenPayload {
-        try {
-            const decoded = jwt.verify(token, this.config.jwt.secret) as any;
-            return {
-                userId: decoded.id,
-                tenantId: decoded.tenantId,
-                role: decoded.role,
-            };
-        } catch (error) {
-            throw new UnauthorizedError('Invalid token');
-        }
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+    const html = `
+        <h3>Password Reset Request</h3>
+        <p>You requested to reset your password.</p>
+        <p>Click the link below to reset it (valid for 15 minutes):</p>
+        <a href="${resetLink}">Reset Password</a>
+        <p>If you didn't request this, please ignore this email.</p>
+    `;
+
+    await sendEmail(user.email, 'Password Reset Request', html);
+};
+
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+    const redisClient = getRedisClient();
+    if (!redisClient) {
+        throw new AppError('Password reset service unavailable', 503);
     }
 
-    /**
-     * Initiate Password Reset.
-     */
-    async forgotPassword(email: string): Promise<void> {
-        const user = await this.authRepository.findUserByEmail(email);
-        if (!user) {
-            console.log(`Password reset requested for non-existent email: ${email}`);
-            return;
-        }
-
-        const resetToken = uuidv4();
-
-        if (this.redisClient) {
-            await this.redisClient.setex(`reset_token:${resetToken}`, AUTH.RESET_TOKEN_TTL, user.id);
-        } else {
-            throw new AppError('Password reset service unavailable', 503);
-        }
-
-        const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
-        const html = `
-            <h3>Password Reset Request</h3>
-            <p>You requested to reset your password.</p>
-            <p>Click the link below to reset it (valid for 15 minutes):</p>
-            <a href="${resetLink}">Reset Password</a>
-            <p>If you didn't request this, please ignore this email.</p>
-        `;
-
-        await sendEmail(user.email, 'Password Reset Request', html);
+    const userId = await redisClient.get(`reset_token:${token}`);
+    if (!userId) {
+        throw new AppError('Invalid or expired reset token', 400);
     }
 
-    /**
-     * Complete Password Reset.
-     */
-    async resetPassword(token: string, newPassword: string): Promise<void> {
-        if (!this.redisClient) {
-            throw new AppError('Password reset service unavailable', 503);
-        }
+    const salt = await bcrypt.genSalt(AUTH.SALT_ROUNDS);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
 
-        const userId = await this.redisClient.get(`reset_token:${token}`);
-        if (!userId) {
-            throw new AppError('Invalid or expired reset token', 400);
-        }
-
-        const salt = await bcrypt.genSalt(AUTH.SALT_ROUNDS);
-        const passwordHash = await bcrypt.hash(newPassword, salt);
-
-        const user = await this.authRepository.updateUserPassword(userId, passwordHash);
-        if (!user) {
-            throw new AppError('User not found', 404);
-        }
-
-        await this.redisClient.del(`reset_token:${token}`);
+    const user = await authRepository.updateUserPassword(userId, passwordHash);
+    if (!user) {
+        throw new AppError('User not found', 404);
     }
 
-    private generateToken(userId: string, tenantId: string, role: string): string {
-        return jwt.sign(
-            { id: userId, tenantId, role },
-            this.config.jwt.secret,
-            { expiresIn: this.config.jwt.expiresIn } as jwt.SignOptions
-        );
-    }
-}
+    await redisClient.del(`reset_token:${token}`);
+};
+
+const generateToken = (userId: string, tenantId: string, role: string): string => {
+    const config = getConfig();
+    return jwt.sign(
+        { id: userId, tenantId, role },
+        config.jwt.secret,
+        { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
+    );
+};

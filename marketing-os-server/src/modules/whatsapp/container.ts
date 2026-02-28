@@ -13,39 +13,39 @@ import {
 } from './interfaces/whatsapp/index.js';
 
 // Infrastructure implementations
-import { ConversationRepository } from './repositories/ConversationRepository.js';
-import { MessageRepository } from './repositories/MessageRepository.js';
-import { TimelineRepository } from './repositories/TimelineRepository.js';
-import { WhatsAppConfigRepository } from './repositories/WhatsAppConfigRepository.js';
-import { WhatsAppAuditLogRepository } from './repositories/WhatsAppAuditLogRepository.js';
-import { MetaCloudProvider } from './providers/MetaCloudProvider.js';
-import { MockProvider } from './providers/MockProvider.js';
-import { TenantProviderFactory } from './providers/TenantProviderFactory.js';
+import { createConversationRepository } from './repositories/ConversationRepository.js';
+import { createMessageRepository } from './repositories/MessageRepository.js';
+import { createTimelineRepository } from './repositories/TimelineRepository.js';
+import { createWhatsAppConfigRepository } from './repositories/WhatsAppConfigRepository.js';
+import { createWhatsAppAuditLogRepository } from './repositories/WhatsAppAuditLogRepository.js';
+import { createMetaCloudProvider } from './providers/MetaCloudProvider.js';
+import { createMockProvider } from './providers/MockProvider.js';
+import { createTenantProviderFactory } from './providers/TenantProviderFactory.js';
 
 // Application services
 import {
-  ConversationService,
-  MessageService,
-  TimelineService,
-  WorkflowOrchestrator,
-  OperationsCommandHandler,
-  NotificationService,
+  createConversationService,
+  createMessageService,
+  createTimelineService,
+  createWorkflowOrchestrator,
+  createOperationsCommandHandler,
+  createNotificationService,
 } from './services/index.js';
-import { WhatsAppAdapter } from './WhatsAppAdapter.js';
-import { MetaTemplateSyncService } from './services/MetaTemplateSyncService.js';
+import { createWhatsAppAdapter } from './WhatsAppAdapter.js';
+import { createMetaTemplateSyncService } from './services/MetaTemplateSyncService.js';
 
 // Presentation controllers
 import {
-  WebhookController,
-  ConversationController,
-  TimelineController,
-  TemplateController,
-  WhatsAppAnalyticsController,
-  AutomationController,
+  createWebhookController,
+  createConversationController,
+  createTimelineController,
+  createTemplateController,
+  createWhatsAppAnalyticsController,
+  createAutomationController,
 } from './controllers/index.js';
 
-import { WhatsAppAnalyticsService } from './services/WhatsAppAnalyticsService.js';
-import { AutomationEngine } from './services/AutomationEngine.js';
+import { createWhatsAppAnalyticsService } from './services/WhatsAppAnalyticsService.js';
+import { createAutomationEngine } from './services/AutomationEngine.js';
 
 /**
  * WhatsApp container - holds all WhatsApp-related dependencies
@@ -57,31 +57,31 @@ export interface WhatsAppContainer {
   timelineRepo: ITimelineRepository;
   optInRepo: any;
   templateRepo: any;
-  waConfigRepo: WhatsAppConfigRepository;
-  auditLogRepo: WhatsAppAuditLogRepository;
+  waConfigRepo: ReturnType<typeof createWhatsAppConfigRepository>;
+  auditLogRepo: ReturnType<typeof createWhatsAppAuditLogRepository>;
 
   // Provider
   provider: IWhatsAppProvider;
-  tenantProviderFactory: TenantProviderFactory;
+  tenantProviderFactory: ReturnType<typeof createTenantProviderFactory>;
 
   // Services
-  conversationService: ConversationService;
-  messageService: MessageService;
-  timelineService: TimelineService;
-  workflowOrchestrator: WorkflowOrchestrator;
-  commandHandler: OperationsCommandHandler;
-  notificationService: NotificationService;
-  metaTemplateSyncService: MetaTemplateSyncService;
+  conversationService: ReturnType<typeof createConversationService>;
+  messageService: ReturnType<typeof createMessageService>;
+  timelineService: ReturnType<typeof createTimelineService>;
+  workflowOrchestrator: ReturnType<typeof createWorkflowOrchestrator>;
+  commandHandler: ReturnType<typeof createOperationsCommandHandler>;
+  notificationService: ReturnType<typeof createNotificationService>;
+  metaTemplateSyncService: ReturnType<typeof createMetaTemplateSyncService>;
 
   // Controllers
-  webhookController: WebhookController;
-  conversationController: ConversationController;
-  timelineController: TimelineController;
-  templateController: TemplateController;
-  analyticsController: WhatsAppAnalyticsController;
-  analyticsService: WhatsAppAnalyticsService;
-  automationEngine: AutomationEngine;
-  automationController: AutomationController;
+  webhookController: ReturnType<typeof createWebhookController>;
+  conversationController: ReturnType<typeof createConversationController>;
+  timelineController: ReturnType<typeof createTimelineController>;
+  templateController: ReturnType<typeof createTemplateController>;
+  analyticsController: ReturnType<typeof createWhatsAppAnalyticsController>;
+  analyticsService: ReturnType<typeof createWhatsAppAnalyticsService>;
+  automationEngine: ReturnType<typeof createAutomationEngine>;
+  automationController: ReturnType<typeof createAutomationController>;
   flowEngine: any;
   flowRepository: any;
   instagramWebhookController: any;
@@ -110,28 +110,28 @@ export function createWhatsAppContainer(
   // REPOSITORIES
   // ============================================
 
-  const conversationRepo = new ConversationRepository(pool);
-  const messageRepo = new MessageRepository(pool);
-  const timelineRepo = new TimelineRepository(pool);
+  const conversationRepo = createConversationRepository(pool);
+  const messageRepo = createMessageRepository(pool);
+  const timelineRepo = createTimelineRepository(pool);
 
   // Placeholder repositories (would be implemented similarly)
   const optInRepo = createOptInRepository(pool);
   const templateRepo = createTemplateRepository(pool);
-  const waConfigRepo = new WhatsAppConfigRepository(pool);
-  const auditLogRepo = new WhatsAppAuditLogRepository(pool);
+  const waConfigRepo = createWhatsAppConfigRepository(pool);
+  const auditLogRepo = createWhatsAppAuditLogRepository(pool);
 
   // ============================================
   // PROVIDER (global fallback + tenant-aware factory)
   // ============================================
 
   const provider = createProvider(config);
-  const tenantProviderFactory = new TenantProviderFactory(waConfigRepo, pool);
+  const tenantProviderFactory = createTenantProviderFactory(waConfigRepo, pool);
 
   // ============================================
   // META TEMPLATE SYNC
   // ============================================
 
-  const metaTemplateSyncService = new MetaTemplateSyncService(
+  const metaTemplateSyncService = createMetaTemplateSyncService(
     tenantProviderFactory,
     config.whatsapp.meta?.apiVersion || 'v21.0'
   );
@@ -152,7 +152,7 @@ export function createWhatsAppContainer(
   };
 
   // WhatsApp Adapter
-  const whatsAppAdapter = new WhatsAppAdapter(provider);
+  const whatsAppAdapter = createWhatsAppAdapter(provider);
   channelFactory.registerAdapter('WHATSAPP', whatsAppAdapter);
 
   // ============================================
@@ -164,7 +164,7 @@ export function createWhatsAppContainer(
     findOrCreate: async (phone: string, tenantId: string) => ({ id: phone, fullName: phone }),
   };
 
-  const conversationService = new ConversationService(
+  const conversationService = createConversationService(
     conversationRepo,
     messageRepo,
     existingServices.leadService,
@@ -172,16 +172,16 @@ export function createWhatsAppContainer(
     contactService
   );
 
-  const timelineService = new TimelineService(timelineRepo);
+  const timelineService = createTimelineService(timelineRepo);
 
-  const messageService = new MessageService(
+  const messageService = createMessageService(
     messageRepo,
     channelFactory,
     conversationService,
     timelineService
   );
 
-  const workflowOrchestrator = new WorkflowOrchestrator(
+  const workflowOrchestrator = createWorkflowOrchestrator(
     conversationService,
     messageService,
     timelineService,
@@ -191,7 +191,7 @@ export function createWhatsAppContainer(
     existingServices.holdService
   );
 
-  const commandHandler = new OperationsCommandHandler(
+  const commandHandler = createOperationsCommandHandler(
     messageService,
     timelineService,
     existingServices.leadService,
@@ -200,7 +200,7 @@ export function createWhatsAppContainer(
     existingServices.holdService
   );
 
-  const notificationService = new NotificationService(
+  const notificationService = createNotificationService(
     messageService,
     timelineService,
     conversationRepo
@@ -226,7 +226,7 @@ export function createWhatsAppContainer(
     getSettings: async (tenantId: string) => null,
   };
 
-  const webhookController = new WebhookController(
+  const webhookController = createWebhookController(
     provider,
     conversationService,
     messageService,
@@ -236,7 +236,7 @@ export function createWhatsAppContainer(
     auditLogRepo
   );
 
-  const conversationController = new ConversationController(
+  const conversationController = createConversationController(
     conversationService,
     messageService,
     timelineService,
@@ -244,22 +244,22 @@ export function createWhatsAppContainer(
     optInRepo
   );
 
-  const timelineController = new TimelineController(
+  const timelineController = createTimelineController(
     timelineService,
     timelineRepo
   );
 
-  const templateController = new TemplateController(templateRepo, metaTemplateSyncService);
+  const templateController = createTemplateController(templateRepo, metaTemplateSyncService);
 
-  const analyticsService = new WhatsAppAnalyticsService(pool);
-  const analyticsController = new WhatsAppAnalyticsController(analyticsService);
+  const analyticsService = createWhatsAppAnalyticsService(pool);
+  const analyticsController = createWhatsAppAnalyticsController(analyticsService);
 
-  const automationEngine = new AutomationEngine(
+  const automationEngine = createAutomationEngine(
     messageService,
     conversationService
   );
 
-  const automationController = new AutomationController(automationEngine);
+  const automationController = createAutomationController(automationEngine);
 
   // Instagram & Omnichannel controllers (stubs until modules exist)
   const instagramWebhookController: any = {
@@ -320,10 +320,10 @@ function createProvider(config: any): IWhatsAppProvider {
 
   switch (providerType) {
     case 'meta':
-      return new MetaCloudProvider(config.whatsapp?.meta || {});
+      return createMetaCloudProvider(config.whatsapp?.meta || {});
     case 'mock':
     default:
-      return new MockProvider();
+      return createMockProvider();
   }
 }
 

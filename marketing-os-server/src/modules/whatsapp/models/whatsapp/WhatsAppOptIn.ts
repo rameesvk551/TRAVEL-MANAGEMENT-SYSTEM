@@ -71,65 +71,58 @@ export interface WhatsAppOptInProps {
 
 /**
  * WhatsAppOptIn - GDPR/TCPA compliant consent tracking
- * 
+ *
  * CRITICAL: Without proper opt-in, WhatsApp will block the business.
  * This entity maintains auditable consent records.
  */
-export class WhatsAppOptIn {
-  public readonly id: string;
-  public readonly tenantId: string;
-  public readonly phoneNumber: string;
-  public readonly contactId?: string;
-  public readonly leadId?: string;
-  public readonly status: OptInStatus;
-  public readonly optInDate: Date;
-  public readonly optOutDate?: Date;
-  public readonly expiresAt?: Date;
-  public readonly source: OptInSource;
-  public readonly consentText: string;
-  public readonly ipAddress?: string;
-  public readonly userAgent?: string;
-  public readonly allowUtilityMessages: boolean;
-  public readonly allowMarketingMessages: boolean;
-  public readonly auditLog: OptInAuditEntry[];
-  public readonly lastMessageSentAt?: Date;
-  public readonly lastMessageReceivedAt?: Date;
-  public readonly totalMessagesSent: number;
-  public readonly totalMessagesReceived: number;
-  public readonly createdAt: Date;
-  public readonly updatedAt: Date;
+function _createWhatsAppOptIn(props: WhatsAppOptInProps) {
+  return {
+    id: props.id!,
+    tenantId: props.tenantId,
+    phoneNumber: props.phoneNumber,
+    contactId: props.contactId,
+    leadId: props.leadId,
+    status: props.status,
+    optInDate: props.optInDate,
+    optOutDate: props.optOutDate,
+    expiresAt: props.expiresAt,
+    source: props.source,
+    consentText: props.consentText,
+    ipAddress: props.ipAddress,
+    userAgent: props.userAgent,
+    allowUtilityMessages: props.allowUtilityMessages,
+    allowMarketingMessages: props.allowMarketingMessages,
+    auditLog: props.auditLog,
+    lastMessageSentAt: props.lastMessageSentAt,
+    lastMessageReceivedAt: props.lastMessageReceivedAt,
+    totalMessagesSent: props.totalMessagesSent,
+    totalMessagesReceived: props.totalMessagesReceived,
+    createdAt: props.createdAt!,
+    updatedAt: props.updatedAt!,
 
-  private constructor(props: WhatsAppOptInProps) {
-    this.id = props.id!;
-    this.tenantId = props.tenantId;
-    this.phoneNumber = props.phoneNumber;
-    this.contactId = props.contactId;
-    this.leadId = props.leadId;
-    this.status = props.status;
-    this.optInDate = props.optInDate;
-    this.optOutDate = props.optOutDate;
-    this.expiresAt = props.expiresAt;
-    this.source = props.source;
-    this.consentText = props.consentText;
-    this.ipAddress = props.ipAddress;
-    this.userAgent = props.userAgent;
-    this.allowUtilityMessages = props.allowUtilityMessages;
-    this.allowMarketingMessages = props.allowMarketingMessages;
-    this.auditLog = props.auditLog;
-    this.lastMessageSentAt = props.lastMessageSentAt;
-    this.lastMessageReceivedAt = props.lastMessageReceivedAt;
-    this.totalMessagesSent = props.totalMessagesSent;
-    this.totalMessagesReceived = props.totalMessagesReceived;
-    this.createdAt = props.createdAt!;
-    this.updatedAt = props.updatedAt!;
-  }
+    /** Check if user can receive utility messages */
+    get canReceiveUtility(): boolean {
+      return this.status === 'OPTED_IN' &&
+        this.allowUtilityMessages &&
+        (!this.expiresAt || new Date() < this.expiresAt);
+    },
 
-  static create(props: WhatsAppOptInProps): WhatsAppOptIn {
+    /** Check if user can receive marketing messages */
+    get canReceiveMarketing(): boolean {
+      return this.status === 'OPTED_IN' &&
+        this.allowMarketingMessages &&
+        (!this.expiresAt || new Date() < this.expiresAt);
+    },
+  };
+}
+
+export const WhatsAppOptIn = {
+  create(props: WhatsAppOptInProps): WhatsAppOptIn {
     const now = new Date();
     // Default expiry: 12 months
     const defaultExpiry = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
 
-    return new WhatsAppOptIn({
+    return _createWhatsAppOptIn({
       id: props.id ?? generateId(),
       ...props,
       optInDate: props.optInDate ?? now,
@@ -150,27 +143,10 @@ export class WhatsAppOptIn {
       createdAt: props.createdAt ?? now,
       updatedAt: props.updatedAt ?? now,
     });
-  }
+  },
 
-  static fromPersistence(data: WhatsAppOptInProps): WhatsAppOptIn {
-    return new WhatsAppOptIn(data);
-  }
-
-  /**
-   * Check if user can receive utility messages
-   */
-  get canReceiveUtility(): boolean {
-    return this.status === 'OPTED_IN' &&
-      this.allowUtilityMessages &&
-      (!this.expiresAt || new Date() < this.expiresAt);
-  }
-
-  /**
-   * Check if user can receive marketing messages
-   */
-  get canReceiveMarketing(): boolean {
-    return this.status === 'OPTED_IN' &&
-      this.allowMarketingMessages &&
-      (!this.expiresAt || new Date() < this.expiresAt);
-  }
-}
+  fromPersistence(data: WhatsAppOptInProps): WhatsAppOptIn {
+    return _createWhatsAppOptIn(data);
+  },
+};
+export type WhatsAppOptIn = ReturnType<typeof _createWhatsAppOptIn>;

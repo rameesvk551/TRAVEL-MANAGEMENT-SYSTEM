@@ -1,8 +1,8 @@
 // infrastructure/whatsapp/repositories/index.ts
 // Repository exports
 
-export { ConversationRepository } from './ConversationRepository.js';
-export { MessageRepository } from './MessageRepository.js';
-export { TimelineRepository } from './TimelineRepository.js';
-export { WhatsAppConfigRepository } from './WhatsAppConfigRepository.js';
-export { WhatsAppAuditLogRepository } from './WhatsAppAuditLogRepository.js';
+export { createConversationRepository } from './ConversationRepository.js';
+export { createMessageRepository } from './MessageRepository.js';
+export { createTimelineRepository } from './TimelineRepository.js';
+export { createWhatsAppConfigRepository, WhatsAppConfigRow } from './WhatsAppConfigRepository.js';
+export { createWhatsAppAuditLogRepository, WhatsAppAuditLogInput } from './WhatsAppAuditLogRepository.js';

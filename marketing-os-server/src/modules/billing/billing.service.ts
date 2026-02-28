@@ -1,8 +1,8 @@
 import { createHash } from 'crypto';
 import { Op, Transaction } from 'sequelize';
 import { sequelize } from '../../config/database.js';
-import { Tenant } from '../../database/models/Tenant.js';
-import { User } from '../../database/models/User.js';
+import db from '../../db/sqlmodels/db.Tenant.js';
+import db from '../../db/sqlmodels/db.User.js';
 import { BillingAuditLogModel } from './models/BillingAuditLogModel.js';
 import { BillingCouponModel } from './models/BillingCouponModel.js';
 import { BillingInvoiceModel, type BillingInvoiceLineItem } from './models/BillingInvoiceModel.js';
@@ -223,15 +223,15 @@ export class BillingService implements BillingOnboardingPort {
         couponCode?: string;
         requestedByUserId: string;
     }) {
-        const tenant = await Tenant.findByPk(input.tenantId);
-        const user = await User.findByPk(input.requestedByUserId);
+        const tenant = await db.Tenant.findByPk(input.tenantId);
+        const user = await db.User.findByPk(input.requestedByUserId);
 
         if (!tenant) {
-            throw new Error('Tenant not found');
+            throw new Error('db.Tenant not found');
         }
 
         if (!user) {
-            throw new Error('User not found');
+            throw new Error('db.User not found');
         }
 
         const subscription = await this.getOrCreateTrialSubscription(input.tenantId, input.requestedByUserId);
@@ -296,11 +296,11 @@ export class BillingService implements BillingOnboardingPort {
         requestedByUserId: string;
         couponCode?: string;
     }) {
-        const tenant = await Tenant.findByPk(input.tenantId);
-        const user = await User.findByPk(input.requestedByUserId);
+        const tenant = await db.Tenant.findByPk(input.tenantId);
+        const user = await db.User.findByPk(input.requestedByUserId);
 
         if (!tenant || !user) {
-            throw new Error('Tenant or user not found');
+            throw new Error('db.Tenant or user not found');
         }
 
         const subscription = await this.getOrCreateTrialSubscription(input.tenantId, input.requestedByUserId);

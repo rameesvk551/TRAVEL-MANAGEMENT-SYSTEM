@@ -1,47 +1,42 @@
-import { User, Tenant } from './auth.model.js';
+import db from '../../db/sqlmodels/index.js';
 
-/**
- * Auth repository — encapsulates all database queries for the auth module.
- */
-export class AuthRepository {
-    async findUserByEmail(email: string) {
-        return User.findOne({ where: { email } });
-    }
+export const findUserByEmail = async (email: string) => {
+    return db.User.findOne({ where: { email } });
+};
 
-    async findUserByEmailWithTenant(email: string) {
-        return User.findOne({
-            where: { email },
-            include: [{ model: Tenant, as: 'tenant' }],
-        });
-    }
+export const findUserByEmailWithTenant = async (email: string) => {
+    return db.User.findOne({
+        where: { email },
+        include: [{ model: db.Tenant, as: 'tenant' }],
+    });
+};
 
-    async findUserById(id: string) {
-        return User.findByPk(id);
-    }
+export const findUserById = async (id: string) => {
+    return db.User.findByPk(id);
+};
 
-    async findTenantById(id: string) {
-        return Tenant.findByPk(id);
-    }
+export const findTenantById = async (id: string) => {
+    return db.Tenant.findByPk(id);
+};
 
-    async createTenant(data: { name: string; slug: string; is_active: boolean }) {
-        return Tenant.create(data);
-    }
+export const createTenant = async (data: { name: string; slug: string; is_active: boolean }) => {
+    return db.Tenant.create(data);
+};
 
-    async createUser(data: {
-        tenant_id: string;
-        email: string;
-        password_hash: string;
-        name: string;
-        role: string;
-        is_active: boolean;
-    }) {
-        return User.create(data);
-    }
+export const createUser = async (data: {
+    tenant_id: string;
+    email: string;
+    password_hash: string;
+    name: string;
+    role: string;
+    is_active: boolean;
+}) => {
+    return db.User.create(data);
+};
 
-    async updateUserPassword(userId: string, passwordHash: string) {
-        const user = await User.findByPk(userId);
-        if (!user) return null;
-        await user.update({ password_hash: passwordHash });
-        return user;
-    }
-}
+export const updateUserPassword = async (userId: string, passwordHash: string) => {
+    const user = await db.User.findByPk(userId);
+    if (!user) return null;
+    await user.update({ password_hash: passwordHash });
+    return user;
+};

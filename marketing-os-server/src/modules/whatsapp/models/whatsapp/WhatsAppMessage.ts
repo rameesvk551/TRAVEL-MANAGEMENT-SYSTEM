@@ -160,99 +160,63 @@ export interface WhatsAppMessageProps {
  * PROVIDER AGNOSTIC: Works with Meta, Twilio, or any provider.
  * The adapter layer normalizes incoming messages to this format.
  */
-export class WhatsAppMessage {
-  public readonly id: string;
-  public readonly tenantId: string;
-  public readonly conversationId: string;
-  public readonly providerMessageId: string;
-  public readonly providerTimestamp: Date;
-  public readonly direction: MessageDirection;
-  public readonly senderPhone: string;
-  public readonly recipientPhone: string;
-  public readonly messageType: MessageType;
-  public readonly textContent?: TextContent;
-  public readonly mediaContent?: MediaContent;
-  public readonly locationContent?: LocationContent;
-  public readonly contactContent?: ContactContent;
-  public readonly interactiveContent?: InteractiveContent;
-  public readonly templateContent?: TemplateContent;
-  public readonly replyToMessageId?: string;
-  public readonly selectedButtonId?: string;
-  public readonly selectedListItemId?: string;
-  public readonly status: DeliveryStatus;
-  public readonly statusTimestamps: Record<string, Date | undefined>;
-  public readonly failureReason?: string;
-  public readonly linkedLeadId?: string;
-  public readonly linkedBookingId?: string;
-  public readonly linkedTripId?: string;
-  public readonly handledByUserId?: string;
-  public readonly isProcessed: boolean;
-  public readonly processingError?: string;
-  public readonly requiresResponse: boolean;
-  public readonly idempotencyKey: string;
-  public readonly createdAt: Date;
-  public readonly updatedAt: Date;
-
-  private constructor(props: WhatsAppMessageProps) {
-    this.id = props.id!;
-    this.tenantId = props.tenantId;
-    this.conversationId = props.conversationId;
-    this.providerMessageId = props.providerMessageId;
-    this.providerTimestamp = props.providerTimestamp;
-    this.direction = props.direction;
-    this.senderPhone = props.senderPhone;
-    this.recipientPhone = props.recipientPhone;
-    this.messageType = props.messageType;
-    this.textContent = props.textContent;
-    this.mediaContent = props.mediaContent;
-    this.locationContent = props.locationContent;
-    this.contactContent = props.contactContent;
-    this.interactiveContent = props.interactiveContent;
-    this.templateContent = props.templateContent;
-    this.replyToMessageId = props.replyToMessageId;
-    this.selectedButtonId = props.selectedButtonId;
-    this.selectedListItemId = props.selectedListItemId;
-    this.status = props.status;
-    this.statusTimestamps = props.statusTimestamps;
-    this.failureReason = props.failureReason;
-    this.linkedLeadId = props.linkedLeadId;
-    this.linkedBookingId = props.linkedBookingId;
-    this.linkedTripId = props.linkedTripId;
-    this.handledByUserId = props.handledByUserId;
-    this.isProcessed = props.isProcessed;
-    this.processingError = props.processingError;
-    this.requiresResponse = props.requiresResponse;
-    this.idempotencyKey = props.idempotencyKey;
-    this.createdAt = props.createdAt!;
-    this.updatedAt = props.updatedAt!;
-  }
-
-  static create(props: WhatsAppMessageProps): WhatsAppMessage {
-    const now = new Date();
-    return new WhatsAppMessage({
-      id: props.id ?? generateId(),
-      ...props,
-      status: props.status ?? 'PENDING',
-      statusTimestamps: props.statusTimestamps ?? {},
-      isProcessed: props.isProcessed ?? false,
-      requiresResponse: props.requiresResponse ?? false,
-      idempotencyKey: props.idempotencyKey ?? `${props.providerMessageId}-${props.tenantId}`,
-      createdAt: props.createdAt ?? now,
-      updatedAt: props.updatedAt ?? now,
-    });
-  }
-
-  static fromPersistence(data: WhatsAppMessageProps): WhatsAppMessage {
-    return new WhatsAppMessage(data);
-  }
-
-  /**
-   * Get text body regardless of message type
-   */
-  get textBody(): string {
-    if (this.textContent) return this.textContent.body;
-    if (this.mediaContent?.caption) return this.mediaContent.caption;
-    if (this.interactiveContent) return this.interactiveContent.body;
-    return '';
-  }
+function _createWhatsAppMessage(props: WhatsAppMessageProps) {
+    return {
+        id: props.id!,
+        tenantId: props.tenantId,
+        conversationId: props.conversationId,
+        providerMessageId: props.providerMessageId,
+        providerTimestamp: props.providerTimestamp,
+        direction: props.direction,
+        senderPhone: props.senderPhone,
+        recipientPhone: props.recipientPhone,
+        messageType: props.messageType,
+        textContent: props.textContent,
+        mediaContent: props.mediaContent,
+        locationContent: props.locationContent,
+        contactContent: props.contactContent,
+        interactiveContent: props.interactiveContent,
+        templateContent: props.templateContent,
+        replyToMessageId: props.replyToMessageId,
+        selectedButtonId: props.selectedButtonId,
+        selectedListItemId: props.selectedListItemId,
+        status: props.status,
+        statusTimestamps: props.statusTimestamps ?? {},
+        failureReason: props.failureReason,
+        linkedLeadId: props.linkedLeadId,
+        linkedBookingId: props.linkedBookingId,
+        linkedTripId: props.linkedTripId,
+        handledByUserId: props.handledByUserId,
+        isProcessed: props.isProcessed,
+        processingError: props.processingError,
+        requiresResponse: props.requiresResponse,
+        idempotencyKey: props.idempotencyKey,
+        createdAt: props.createdAt!,
+        updatedAt: props.updatedAt!,
+        get textBody(): string {
+            return props.textContent?.body || props.mediaContent?.caption || props.interactiveContent?.body || '';
+        },
+    };
 }
+
+export const WhatsAppMessage = {
+    create(props: WhatsAppMessageProps) {
+        const now = new Date();
+        return _createWhatsAppMessage({
+            ...props,
+            id: props.id ?? generateId(),
+            status: props.status ?? 'PENDING',
+            statusTimestamps: props.statusTimestamps ?? {},
+            isProcessed: props.isProcessed ?? false,
+            requiresResponse: props.requiresResponse ?? false,
+            idempotencyKey: props.idempotencyKey ?? `${props.providerMessageId}-${props.tenantId}`,
+            createdAt: props.createdAt ?? now,
+            updatedAt: props.updatedAt ?? now,
+        });
+    },
+    fromPersistence(data: WhatsAppMessageProps) {
+        return _createWhatsAppMessage(data);
+    },
+};
+
+export type WhatsAppMessage = ReturnType<typeof _createWhatsAppMessage>;
