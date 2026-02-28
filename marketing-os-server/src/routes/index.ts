@@ -1,14 +1,10 @@
 import type { Express } from 'express';
 import { logger } from '../config/logger.js';
-import onboardingRouter from '../modules/whatsapp/routes/onboarding.routes.js';
 import { AuthRepository } from '../modules/auth/auth.repository.js';
 import { AuthService } from '../modules/auth/auth.service.js';
 import { AuthController } from '../modules/auth/auth.controller.js';
 import { createAuthRoutes } from '../modules/auth/auth.routes.js';
 import { getRedisClient } from '../config/redis.js';
-import { WhatsAppStoreService } from '../modules/store/store.service.js';
-import { StoreController } from '../modules/store/store.controller.js';
-import { createStoreRoutes } from '../modules/store/store.routes.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { tenantMiddleware } from '../middlewares/tenant.middleware.js';
 import { createFlowRoutes } from '../modules/flow/flow.routes.js';
@@ -66,18 +62,8 @@ export function registerRoutes(app: Express): AppDependencies {
     const authController = new AuthController(authService);
     const authRouter = createAuthRoutes(authController);
 
-    // 2. Store Module
-    const storeService = new WhatsAppStoreService();
-    const storeController = new StoreController(storeService);
-
-    // Middlewares for store
+    // 2. Shared middlewares
     const protect = authMiddleware(authService);
-
-    const storeRouter = createStoreRoutes({
-        storeController,
-        authMiddleware: protect,
-        tenantMiddleware
-    });
 
     // 3. Automation Module (Flows)
     const flowRepository = new MongoFlowRepository();
@@ -127,13 +113,11 @@ export function registerRoutes(app: Express): AppDependencies {
     });
 
     app.use('/api/v1/auth', authRouter);
-    app.use('/api/v1/whatsapp/onboard', onboardingRouter);
     app.use('/api/v1/whatsapp', whatsAppRoutes);
-    app.use('/api/v1/store', storeRouter);
     app.use('/api/v1/automation/flows', flowRouter);
     app.use('/api/v1/leads', leadRouter);
 
-    logger.info('Registered routes: /api/v1/auth, /api/v1/whatsapp, /api/v1/store, /api/v1/automation/flows, /api/v1/leads');
+    logger.info('Registered routes: /api/v1/auth, /api/v1/whatsapp, /api/v1/automation/flows, /api/v1/leads');
 
     return {
         campaignDispatcher: noopCampaignDispatcher,

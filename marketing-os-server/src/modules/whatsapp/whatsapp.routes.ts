@@ -747,16 +747,6 @@ export function createWhatsAppRoutes(dependencies: {
     }
   });
 
-  // ============================================
-  // Onboarding Routes (Embedded Signup / QR Code)
-  // ============================================
-  // Import and mount onboarding routes
-  import('./routes/onboarding.routes.js').then(({ default: onboardingRoutes }) => {
-    router.use('/onboard', onboardingRoutes);
-  }).catch(err => {
-    console.warn('Failed to load onboarding routes:', err.message);
-  });
-
   return router;
 }
 

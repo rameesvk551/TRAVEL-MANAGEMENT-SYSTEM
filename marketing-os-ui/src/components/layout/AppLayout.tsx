@@ -19,7 +19,6 @@ import {
     FundProjectionScreenOutlined,
     AlertOutlined,
     WhatsAppOutlined,
-    ShopOutlined,
     MenuOutlined,
     CloseOutlined,
 } from '@ant-design/icons';
@@ -72,11 +71,6 @@ const navItems: MenuItem[] = [
         key: '/whatsapp',
         icon: <WhatsAppOutlined />,
         label: 'WhatsApp',
-    },
-    {
-        key: '/wa-store',
-        icon: <ShopOutlined />,
-        label: 'WA Business Automation',
     },
     {
         key: '/email',
