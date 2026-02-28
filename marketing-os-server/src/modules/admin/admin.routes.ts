@@ -1,5 +1,5 @@
 ﻿import { Router, RequestHandler } from 'express';
-import { AdminController } from './AdminController.js';
+import { AdminController } from './admin.controller.js';
 
 const SUPER_ADMIN_ROLES = new Set(['super_admin', 'platform_admin', 'owner']);
 

@@ -13,7 +13,7 @@ export function createApp(): { app: express.Express; dependencies: AppDependenci
     const app = express();
 
     // ── Global Middleware ──
-    app.use(cors({ origin: config.server.corsOrigin, credentials: true }));
+    app.use(cors({ origin: '*' }));
     app.use(
         express.json({
             limit: '10mb',

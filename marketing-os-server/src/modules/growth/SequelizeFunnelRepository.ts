@@ -1,4 +1,4 @@
-import { Funnel, FunnelStep } from '../modules/growth/models/Funnel';
+import { Funnel, FunnelStep } from '../modules/growth/models/Funnel.js';
 import { FunnelModel } from '../models/FunnelModel.js';
 import { sequelize } from '../../config/database.js';
 import { QueryTypes } from 'sequelize';

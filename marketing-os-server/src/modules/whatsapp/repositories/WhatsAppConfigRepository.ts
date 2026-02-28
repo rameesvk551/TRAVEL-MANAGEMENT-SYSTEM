@@ -2,6 +2,7 @@
 // Persists per-tenant WABA credentials (BYO + Managed)
 
 import { Pool } from 'pg';
+import { decryptSecret, encryptSecret } from '../security/tokenCipher.js';
 
 export interface WhatsAppConfigRow {
     id: string;
@@ -35,7 +36,7 @@ export class WhatsAppConfigRepository {
             `SELECT * FROM whatsapp_business_configs WHERE tenant_id = $1`,
             [tenantId]
         );
-        return result.rows[0] || null;
+        return this.mapRow(result.rows[0] || null);
     }
 
     async findByWabaId(wabaId: string): Promise<WhatsAppConfigRow[]> {
@@ -43,14 +44,14 @@ export class WhatsAppConfigRepository {
             `SELECT * FROM whatsapp_business_configs WHERE waba_id = $1`,
             [wabaId]
         );
-        return result.rows;
+        return result.rows.map((row) => this.mapRow(row) as WhatsAppConfigRow);
     }
 
     async findAllConnected(): Promise<WhatsAppConfigRow[]> {
         const result = await this.pool.query(
             `SELECT * FROM whatsapp_business_configs WHERE status = 'connected' ORDER BY connected_at DESC`
         );
-        return result.rows;
+        return result.rows.map((row) => this.mapRow(row) as WhatsAppConfigRow);
     }
 
     async save(config: {
@@ -104,7 +105,7 @@ export class WhatsAppConfigRepository {
             config.credentialSource,
             config.status || 'connected',
             config.onboardingMethod || 'manual',
-            config.accessToken || null,
+            encryptSecret(config.accessToken || null),
             config.phoneNumberId || null,
             config.wabaId || null,
             config.businessId || null,
@@ -118,7 +119,7 @@ export class WhatsAppConfigRepository {
             config.status === 'connected' ? new Date() : null,
         ]);
 
-        return result.rows[0];
+        return this.mapRow(result.rows[0]) as WhatsAppConfigRow;
     }
 
     async updateStatus(
@@ -146,5 +147,23 @@ export class WhatsAppConfigRepository {
             `DELETE FROM whatsapp_business_configs WHERE tenant_id = $1`,
             [tenantId]
         );
+    }
+
+    private mapRow(row: any): WhatsAppConfigRow | null {
+        if (!row) {
+            return null;
+        }
+
+        const mapped = { ...row };
+        if (mapped.access_token) {
+            try {
+                mapped.access_token = decryptSecret(mapped.access_token);
+            } catch (error) {
+                console.error('[WhatsAppConfigRepository] Failed to decrypt access token for tenant:', mapped.tenant_id, error);
+                mapped.access_token = null;
+            }
+        }
+
+        return mapped as WhatsAppConfigRow;
     }
 }

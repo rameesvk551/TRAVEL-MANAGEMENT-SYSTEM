@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { FunnelAnalyticsService } from '../modules/growth';
+import { FunnelAnalyticsService } from '../modules/growth.js';
 
 export class FunnelController {
     constructor(private funnelService: FunnelAnalyticsService) { }

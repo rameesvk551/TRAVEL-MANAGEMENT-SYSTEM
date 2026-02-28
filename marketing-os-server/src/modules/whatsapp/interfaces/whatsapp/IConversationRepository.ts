@@ -7,7 +7,7 @@ import {
   ConversationState,
   LinkedEntityType,
   CommunicationChannel,
-} from '../../entities/whatsapp/ConversationContext.js';
+} from '../../models/whatsapp/ConversationContext.js';
 
 export interface ConversationFilters {
   channel?: CommunicationChannel;

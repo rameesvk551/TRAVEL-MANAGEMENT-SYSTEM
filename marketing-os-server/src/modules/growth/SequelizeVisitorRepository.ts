@@ -1,6 +1,6 @@
 import { Op, fn, col, literal } from 'sequelize';
-import { Visitor } from '../modules/growth/models/Visitor';
-import { IVisitorRepository, VisitorFilters } from '../modules/growth/interfaces/IVisitorRepository';
+import { Visitor } from '../modules/growth/models/Visitor.js';
+import { IVisitorRepository, VisitorFilters } from '../modules/growth/interfaces/IVisitorRepository.js';
 import { VisitorModel } from '../models/VisitorModel.js';
 
 export class SequelizeVisitorRepository implements IVisitorRepository {

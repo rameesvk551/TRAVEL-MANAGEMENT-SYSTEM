@@ -16,6 +16,10 @@ import {
     Form,
     Input,
     Tabs,
+    Select,
+    Row,
+    Col,
+    Statistic,
 } from 'antd';
 import {
     WhatsAppOutlined,
@@ -46,7 +50,10 @@ interface ConnectionStatus {
     onboardingMethod?: 'embedded_signup' | 'manual' | 'qr_code';
     phoneNumber?: string;
     businessName?: string;
+    businessId?: string;
+    wabaId?: string;
     qualityRating?: 'GREEN' | 'YELLOW' | 'RED';
+    requiredPermissions?: string[];
     features: {
         catalogEnabled: boolean;
         cartEnabled: boolean;
@@ -62,10 +69,54 @@ interface ManualCredentials {
     businessName?: string;
 }
 
+interface OAuthPhoneNumberAsset {
+    id: string;
+    displayPhoneNumber: string;
+    verifiedName: string;
+    qualityRating?: 'GREEN' | 'YELLOW' | 'RED';
+}
+
+interface OAuthWabaAsset {
+    id: string;
+    name: string;
+    phoneNumbers: OAuthPhoneNumberAsset[];
+}
+
+interface OAuthBusinessAsset {
+    id: string;
+    name: string;
+    whatsappBusinessAccounts: OAuthWabaAsset[];
+}
+
+interface OAuthAssetsResponse {
+    sessionId: string;
+    expiresAt: string;
+    grantedScopes: string[];
+    missingScopes: string[];
+    businesses: OAuthBusinessAsset[];
+}
+
+interface DashboardData {
+    connected: boolean;
+    businesses: OAuthBusinessAsset[];
+    analytics: {
+        inbound7d: number;
+        outbound7d: number;
+        inbound30d: number;
+        outbound30d: number;
+        templatesApproved: number;
+        templatesTotal: number;
+    };
+}
+
 // WhatsApp Onboarding API
 const onboardApi = {
     getConfig: () => apiClient.get<{ data: OnboardConfig }>('/whatsapp/onboard/config'),
     getStatus: () => apiClient.get<{ data: ConnectionStatus }>('/whatsapp/onboard/status'),
+    getDashboard: () => apiClient.get<{ data: DashboardData }>('/whatsapp/onboard/dashboard'),
+    loadOAuthAssets: (code: string) => apiClient.post('/whatsapp/onboard/oauth/assets', { code }),
+    connectOAuthAssets: (payload: { sessionId: string; businessId?: string; wabaId: string; phoneNumberId: string }) =>
+        apiClient.post('/whatsapp/onboard/oauth/connect', payload),
     completeOnboarding: (code: string) => apiClient.post('/whatsapp/onboard/complete', { code }),
     manualConnect: (credentials: ManualCredentials) => apiClient.post('/whatsapp/onboard/manual', credentials),
     testConnection: (credentials: ManualCredentials) => apiClient.post('/whatsapp/onboard/test', credentials),
@@ -82,6 +133,10 @@ const WhatsAppOnboarding: React.FC = () => {
     const [manualForm] = Form.useForm();
     const [testingConnection, setTestingConnection] = useState(false);
     const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+    const [oauthSession, setOauthSession] = useState<OAuthAssetsResponse | null>(null);
+    const [selectedBusinessId, setSelectedBusinessId] = useState<string | undefined>();
+    const [selectedWabaId, setSelectedWabaId] = useState<string | undefined>();
+    const [selectedPhoneId, setSelectedPhoneId] = useState<string | undefined>();
 
     // Check URL params for onboarding result
     useEffect(() => {
@@ -114,11 +169,18 @@ const WhatsAppOnboarding: React.FC = () => {
         refetchInterval: 30000, // Refresh every 30s
     });
 
+    const { data: dashboardData } = useQuery({
+        queryKey: ['whatsapp-onboard-dashboard'],
+        queryFn: () => onboardApi.getDashboard(),
+        enabled: Boolean(statusData?.data?.data?.isConnected),
+    });
+
     const disconnectMutation = useMutation({
         mutationFn: () => onboardApi.disconnect(),
         onSuccess: () => {
             message.success('WhatsApp disconnected');
             queryClient.invalidateQueries({ queryKey: ['whatsapp-status'] });
+            queryClient.invalidateQueries({ queryKey: ['whatsapp-onboard-dashboard'] });
             setShowDisconnectConfirm(false);
         },
         onError: () => {
@@ -131,6 +193,7 @@ const WhatsAppOnboarding: React.FC = () => {
         onSuccess: () => {
             message.success('Status refreshed');
             refetchStatus();
+            queryClient.invalidateQueries({ queryKey: ['whatsapp-onboard-dashboard'] });
         },
     });
 
@@ -140,11 +203,26 @@ const WhatsAppOnboarding: React.FC = () => {
         onSuccess: () => {
             message.success('WhatsApp Business connected successfully!');
             queryClient.invalidateQueries({ queryKey: ['whatsapp-status'] });
+            queryClient.invalidateQueries({ queryKey: ['whatsapp-onboard-dashboard'] });
             manualForm.resetFields();
             setTestResult(null);
         },
         onError: (err: any) => {
             message.error(err.response?.data?.error || 'Failed to connect');
+        },
+    });
+
+    const connectOAuthSelectionMutation = useMutation({
+        mutationFn: (payload: { sessionId: string; businessId?: string; wabaId: string; phoneNumberId: string }) =>
+            onboardApi.connectOAuthAssets(payload),
+        onSuccess: () => {
+            message.success('WhatsApp Business connected successfully');
+            setCurrentStep(3);
+            queryClient.invalidateQueries({ queryKey: ['whatsapp-status'] });
+            queryClient.invalidateQueries({ queryKey: ['whatsapp-onboard-dashboard'] });
+        },
+        onError: (err: any) => {
+            message.error(err.response?.data?.error || 'Failed to connect selected assets');
         },
     });
 
@@ -185,10 +263,29 @@ const WhatsAppOnboarding: React.FC = () => {
         manualConnectMutation.mutate(values);
     };
 
+    const handleConnectSelectedAssets = () => {
+        if (!oauthSession?.sessionId || !selectedWabaId || !selectedPhoneId) {
+            message.error('Please select a WhatsApp account and phone number');
+            return;
+        }
+
+        connectOAuthSelectionMutation.mutate({
+            sessionId: oauthSession.sessionId,
+            businessId: selectedBusinessId,
+            wabaId: selectedWabaId,
+            phoneNumberId: selectedPhoneId,
+        });
+    };
+
     const config = configData?.data?.data;
     const status = statusData?.data?.data;
+    const dashboard = dashboardData?.data?.data;
     const isConnected = status?.isConnected;
     const isConfigured = !!config?.appId;
+    const selectedBusiness = oauthSession?.businesses.find((item) => item.id === selectedBusinessId);
+    const availableWabas = selectedBusiness?.whatsappBusinessAccounts || [];
+    const selectedWaba = availableWabas.find((item) => item.id === selectedWabaId);
+    const availablePhones = selectedWaba?.phoneNumbers || [];
 
     // Handle Facebook SDK Login
     const handleConnectWithFacebook = () => {
@@ -239,15 +336,36 @@ const WhatsAppOnboarding: React.FC = () => {
                 setIsConnecting(false);
                 
                 if (response.authResponse && response.authResponse.code) {
-                    // Send code to backend
-                    message.loading('Completing setup...');
-                    onboardApi.completeOnboarding(response.authResponse.code)
-                        .then(() => {
-                            message.success('WhatsApp Business connected!');
-                            queryClient.invalidateQueries({ queryKey: ['whatsapp-status'] });
+                    message.loading({ content: 'Loading your business assets...', key: 'wa-oauth' });
+                    onboardApi.loadOAuthAssets(response.authResponse.code)
+                        .then((apiResponse: any) => {
+                            const payload = apiResponse?.data?.data as OAuthAssetsResponse;
+                            setOauthSession(payload);
+
+                            const firstBusiness = payload?.businesses?.[0];
+                            const firstWaba = firstBusiness?.whatsappBusinessAccounts?.[0];
+                            const firstPhone = firstWaba?.phoneNumbers?.[0];
+
+                            setSelectedBusinessId(firstBusiness?.id);
+                            setSelectedWabaId(firstWaba?.id);
+                            setSelectedPhoneId(firstPhone?.id);
+                            setCurrentStep(2);
+
+                            if (payload?.missingScopes?.length) {
+                                message.warning({
+                                    content: `Missing permissions: ${payload.missingScopes.join(', ')}`,
+                                    key: 'wa-oauth',
+                                    duration: 6,
+                                });
+                            } else {
+                                message.success({ content: 'Select your business assets to finish setup', key: 'wa-oauth' });
+                            }
                         })
                         .catch((err) => {
-                            message.error(err.response?.data?.error || 'Connection failed');
+                            message.error({
+                                content: err.response?.data?.error || 'Connection failed',
+                                key: 'wa-oauth',
+                            });
                         });
                 } else {
                     message.warning('Login cancelled or failed');
@@ -358,6 +476,49 @@ const WhatsAppOnboarding: React.FC = () => {
                         </Space>
                     </Descriptions.Item>
                 </Descriptions>
+
+                {dashboard?.analytics && (
+                    <>
+                        <Divider />
+                        <Title level={5}>Business Asset Dashboard</Title>
+                        <Row gutter={12}>
+                            <Col span={12}>
+                                <Statistic title="Inbound (7d)" value={dashboard.analytics.inbound7d || 0} />
+                            </Col>
+                            <Col span={12}>
+                                <Statistic title="Outbound (7d)" value={dashboard.analytics.outbound7d || 0} />
+                            </Col>
+                            <Col span={12} style={{ marginTop: 12 }}>
+                                <Statistic title="Inbound (30d)" value={dashboard.analytics.inbound30d || 0} />
+                            </Col>
+                            <Col span={12} style={{ marginTop: 12 }}>
+                                <Statistic title="Outbound (30d)" value={dashboard.analytics.outbound30d || 0} />
+                            </Col>
+                        </Row>
+                        <div style={{ marginTop: 16 }}>
+                            <Text type="secondary">
+                                Templates Approved: {dashboard.analytics.templatesApproved || 0} / {dashboard.analytics.templatesTotal || 0}
+                            </Text>
+                        </div>
+                    </>
+                )}
+
+                {!!status?.requiredPermissions?.length && (
+                    <>
+                        <Divider />
+                        <Alert
+                            type="info"
+                            message="Meta App Review Permissions"
+                            description={
+                                <Space wrap>
+                                    {status.requiredPermissions.map((scope) => (
+                                        <Tag key={scope}>{scope}</Tag>
+                                    ))}
+                                </Space>
+                            }
+                        />
+                    </>
+                )}
 
                 <Modal
                     title="Disconnect WhatsApp?"
@@ -541,6 +702,14 @@ const WhatsAppOnboarding: React.FC = () => {
                 </Text>
             </div>
 
+            <Alert
+                type="info"
+                showIcon
+                style={{ marginBottom: 20 }}
+                message="Meta Review Flow"
+                description="1) Login with Facebook 2) Select Business assets 3) Connect WhatsApp 4) Send test message 5) Receive reply 6) Review analytics dashboard"
+            />
+
             <Tabs
                 activeKey={connectionMethod}
                 onChange={(key) => setConnectionMethod(key as 'qr' | 'manual')}
@@ -557,7 +726,8 @@ const WhatsAppOnboarding: React.FC = () => {
                             <div>
                                 <Steps current={currentStep} items={[
                                     { title: 'Prepare', description: 'Requirements' },
-                                    { title: 'Connect', description: 'Link WhatsApp' },
+                                    { title: 'Login', description: 'Facebook OAuth' },
+                                    { title: 'Assets', description: 'Select Business + Phone' },
                                     { title: 'Done', description: 'Confirm' },
                                 ]} style={{ marginBottom: 32 }} />
 
@@ -627,9 +797,91 @@ const WhatsAppOnboarding: React.FC = () => {
                                 )}
 
                                 {currentStep === 2 && (
+                                    <div>
+                                        <Alert
+                                            type="info"
+                                            showIcon
+                                            message="Select your Meta business assets"
+                                            description="Choose the Business Manager, WhatsApp Business Account and phone number to connect."
+                                            style={{ marginBottom: 20 }}
+                                        />
+
+                                        <Form layout="vertical">
+                                            <Form.Item label="Business Manager">
+                                                <Select
+                                                    value={selectedBusinessId}
+                                                    onChange={(value) => {
+                                                        setSelectedBusinessId(value);
+                                                        const business = oauthSession?.businesses.find((item) => item.id === value);
+                                                        const nextWaba = business?.whatsappBusinessAccounts?.[0];
+                                                        setSelectedWabaId(nextWaba?.id);
+                                                        setSelectedPhoneId(nextWaba?.phoneNumbers?.[0]?.id);
+                                                    }}
+                                                    options={(oauthSession?.businesses || []).map((business) => ({
+                                                        value: business.id,
+                                                        label: `${business.name} (${business.id})`,
+                                                    }))}
+                                                    placeholder="Select business manager"
+                                                />
+                                            </Form.Item>
+
+                                            <Form.Item label="WhatsApp Business Account">
+                                                <Select
+                                                    value={selectedWabaId}
+                                                    onChange={(value) => {
+                                                        setSelectedWabaId(value);
+                                                        const nextPhone = availableWabas.find((item) => item.id === value)?.phoneNumbers?.[0];
+                                                        setSelectedPhoneId(nextPhone?.id);
+                                                    }}
+                                                    options={availableWabas.map((waba) => ({
+                                                        value: waba.id,
+                                                        label: `${waba.name} (${waba.id})`,
+                                                    }))}
+                                                    placeholder="Select WABA"
+                                                />
+                                            </Form.Item>
+
+                                            <Form.Item label="Phone Number">
+                                                <Select
+                                                    value={selectedPhoneId}
+                                                    onChange={setSelectedPhoneId}
+                                                    options={availablePhones.map((phone) => ({
+                                                        value: phone.id,
+                                                        label: `${phone.displayPhoneNumber} (${phone.id})`,
+                                                    }))}
+                                                    placeholder="Select phone number"
+                                                />
+                                            </Form.Item>
+                                        </Form>
+
+                                        {!!oauthSession?.missingScopes?.length && (
+                                            <Alert
+                                                type="warning"
+                                                showIcon
+                                                style={{ marginBottom: 16 }}
+                                                message="Missing permissions"
+                                                description={`Missing: ${oauthSession.missingScopes.join(', ')}`}
+                                            />
+                                        )}
+
+                                        <Space>
+                                            <Button onClick={() => setCurrentStep(1)}>Back</Button>
+                                            <Button
+                                                type="primary"
+                                                loading={connectOAuthSelectionMutation.isPending}
+                                                onClick={handleConnectSelectedAssets}
+                                                disabled={!selectedWabaId || !selectedPhoneId}
+                                            >
+                                                Connect Selected Assets
+                                            </Button>
+                                        </Space>
+                                    </div>
+                                )}
+
+                                {currentStep === 3 && (
                                     <Result
                                         icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                                        title="Connection Successful!"
+                                        title="Connection Successful"
                                         subTitle="Your WhatsApp Business account is now connected"
                                         extra={<Button type="primary" onClick={() => refetchStatus()}>View Status</Button>}
                                     />

@@ -7,7 +7,7 @@ import {
   MessageDirection,
   MessageType,
   DeliveryStatus,
-} from '../../entities/whatsapp/WhatsAppMessage.js';
+} from '../../models/whatsapp/WhatsAppMessage.js';
 
 export interface MessageFilters {
   conversationId?: string;

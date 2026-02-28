@@ -2,8 +2,8 @@
 // Conversational state machine for WhatsApp Store automation
 // Handles: catalog browsing, checkout flow, order status, payment follow-up
 
-import { WhatsAppStoreService } from './WhatsAppStoreService.js';
-import { StoreSettings } from '../database/models/StoreSettings.js';
+import { WhatsAppStoreService } from './store.service.js';
+import { StoreSettingsModel as StoreSettings } from '../../database/models/StoreSettings.js';
 
 export type ChatState =
     | 'idle'

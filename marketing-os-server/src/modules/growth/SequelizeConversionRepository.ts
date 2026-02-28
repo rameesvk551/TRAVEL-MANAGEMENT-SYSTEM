@@ -1,7 +1,7 @@
 import { Op, fn, col, literal } from 'sequelize';
 import { sequelize } from '../../config/database.js';
-import { Conversion } from '../modules/growth/models/Conversion';
-import { IConversionRepository, ConversionFilters } from '../modules/growth/interfaces/IConversionRepository';
+import { Conversion } from '../modules/growth/models/Conversion.js';
+import { IConversionRepository, ConversionFilters } from '../modules/growth/interfaces/IConversionRepository.js';
 import { ConversionModel } from '../models/ConversionModel.js';
 
 export class SequelizeConversionRepository implements IConversionRepository {

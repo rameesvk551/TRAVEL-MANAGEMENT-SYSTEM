@@ -1,6 +1,6 @@
-import { ITrafficSourceRepository } from '../modules/growth/interfaces/ITrafficSourceRepository';
-import { IVisitorRepository } from '../modules/growth/interfaces/IVisitorRepository';
-import { ITrackingEventRepository } from '../modules/growth/interfaces/ITrackingEventRepository';
+import { ITrafficSourceRepository } from '../modules/growth/interfaces/ITrafficSourceRepository.js';
+import { IVisitorRepository } from '../modules/growth/interfaces/IVisitorRepository.js';
+import { ITrackingEventRepository } from '../modules/growth/interfaces/ITrackingEventRepository.js';
 
 export interface DateRange {
     start: Date;

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { IntegrationService } from '../modules/growth';
+import { IntegrationService } from '../modules/growth.js';
 
 /**
  * Controller for managing third-party ad platform integrations.

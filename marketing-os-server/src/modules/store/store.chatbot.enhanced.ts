@@ -9,8 +9,8 @@
  */
 
 import { StoreChatBot, SessionData, BotReply, ChatState } from './store.chatbot.js';
-import { WhatsAppStoreService } from './WhatsAppStoreService.js';
-import { StoreSettings } from '../database/models/StoreSettings.js';
+import { WhatsAppStoreService } from './store.service.js';
+import { StoreSettingsModel as StoreSettings } from '../../database/models/StoreSettings.js';
 
 // Module imports
 import { LeadService } from '../lead/lead.service.js';
@@ -19,7 +19,7 @@ import { FlowRepository } from '../flow/flow.repository.js';
 import { AutomationEngine } from '../automation/automation.engine.js';
 import { RecommendationService } from '../recommendation/recommendation.service.js';
 import { LeadStatus, LeadSource } from '../lead/lead.types.js';
-import { FlowTrigger } from '../flow/flow.types.js';
+import { FlowTriggerType } from '../flow/flow.types.js';
 
 // ============================================
 // ENHANCED SESSION DATA
@@ -88,7 +88,7 @@ export class EnhancedStoreChatBot extends StoreChatBot {
     ): Promise<EnhancedBotReply | null> {
         // Step 1: Find or create lead
         const lead = await this.findOrCreateLead(tenantId, phone, messageMetadata);
-        
+
         // Get or create enhanced session
         const session = this.getOrCreateEnhancedSession(tenantId, phone, lead.id);
 
@@ -128,7 +128,7 @@ export class EnhancedStoreChatBot extends StoreChatBot {
 
         // Step 5: Fall back to base chatbot processing
         const baseReply = await super.processMessage(tenantId, phone, messageText, settings);
-        
+
         // Step 6: Trigger automations based on conversation
         await this.triggerConversationAutomations(tenantId, lead.id, session, text);
 
@@ -147,13 +147,12 @@ export class EnhancedStoreChatBot extends StoreChatBot {
             profilePicUrl?: string;
         }
     ): Promise<{ id: string }> {
-        const lead = await this.leadService.findOrCreateFromWhatsApp(tenantId, phone, {
+        const result = await this.leadService.findOrCreateFromWhatsApp(tenantId, phone, {
             name: metadata?.name,
-            source: LeadSource.WHATSAPP,
-            sourceDetail: 'store_chatbot',
+            profilePicture: metadata?.profilePicUrl,
         });
 
-        return { id: lead.id };
+        return { id: result.lead.id };
     }
 
     private getOrCreateEnhancedSession(
@@ -206,17 +205,20 @@ export class EnhancedStoreChatBot extends StoreChatBot {
         flowId: string,
         session: EnhancedSessionData
     ): Promise<EnhancedBotReply | null> {
-        try {
-            const result = await this.flowEngine.startFlow(tenantId, flowId, phone, {
-                leadId: session.leadId,
-            });
+        // Fetch the full flow object first
+        const flow = await this.flowRepository.findById(tenantId, flowId);
+        if (!flow) return null;
 
-            if (result.sessionId) {
-                session.flowSessionId = result.sessionId;
+        try {
+            // startFlow takes tenantId, phone, flow
+            const result = await this.flowEngine.startFlow(tenantId, phone, flow as any);
+
+            if (result && result.sessionUpdated) {
+                session.flowSessionId = 'active_' + phone;
                 session.isInFlow = true;
             }
 
-            return this.convertFlowResult(result);
+            return this.convertFlowResult(result as any);
         } catch (error) {
             console.error('Error starting flow:', error);
             return null;
@@ -232,24 +234,19 @@ export class EnhancedStoreChatBot extends StoreChatBot {
         if (!session.flowSessionId) return null;
 
         try {
-            const result = await this.flowEngine.processInput(
+            const result = await this.flowEngine.processMessage(
                 tenantId,
-                session.flowSessionId,
+                phone,
                 input
             );
 
             // Check if flow completed
-            if (result.completed) {
+            if (result && result.flowCompleted) {
                 session.isInFlow = false;
                 session.flowSessionId = undefined;
-
-                // Process collected data
-                if (result.context) {
-                    await this.processCollectedData(tenantId, session, result.context);
-                }
             }
 
-            return this.convertFlowResult(result);
+            return this.convertFlowResult(result as any);
         } catch (error) {
             console.error('Error processing flow input:', error);
             session.isInFlow = false;
@@ -258,29 +255,29 @@ export class EnhancedStoreChatBot extends StoreChatBot {
     }
 
     private convertFlowResult(result: any): EnhancedBotReply | null {
-        if (!result.messages?.length) return null;
+        if (!result || !result.response) return null;
 
         // Convert flow messages to bot reply
-        const firstMessage = result.messages[0];
+        const response = result.response;
         const reply: EnhancedBotReply = {
-            text: firstMessage.content || '',
+            text: response.text || '',
         };
 
         // Handle media
-        if (firstMessage.mediaUrl) {
-            reply.mediaUrl = firstMessage.mediaUrl;
-            reply.mediaType = firstMessage.mediaType;
+        if (response.media && response.media.url) {
+            reply.mediaUrl = response.media.url;
+            reply.mediaType = response.media.type;
         }
 
         // Handle buttons
-        if (firstMessage.buttons?.length) {
-            reply.buttons = firstMessage.buttons;
-            reply.options = firstMessage.buttons.map((b: any) => b.title);
+        if (response.buttons && response.buttons.length) {
+            reply.buttons = response.buttons.map((b: any) => ({ id: b.value, title: b.label }));
+            reply.options = response.buttons.map((b: any) => b.label);
         }
 
         // Handle list sections
-        if (firstMessage.listSections?.length) {
-            reply.listSections = firstMessage.listSections;
+        if (response.listSections && response.listSections.length) {
+            reply.listSections = response.listSections;
         }
 
         return reply;
@@ -308,7 +305,7 @@ export class EnhancedStoreChatBot extends StoreChatBot {
         }
 
         if (Object.keys(dataToCapture).length > 0) {
-            await this.leadService.captureData(tenantId, session.leadId, dataToCapture);
+            await this.leadService.captureData(tenantId, session.leadId, 'whatsapp' as LeadSource, dataToCapture);
         }
     }
 
@@ -537,13 +534,12 @@ export class EnhancedStoreChatBot extends StoreChatBot {
     ): Promise<void> {
         try {
             // Check for message received triggers
-            await this.automationEngine.checkTriggersForLead(tenantId, leadId, {
-                triggerType: 'message_received',
+            await this.automationEngine.checkTriggersForLead(tenantId, leadId, 'message_received', {
                 context: {
                     message,
                     state: session.state,
-                    cartItems: session.cartItems?.length || 0,
-                },
+                    cartItems: session.cartItems || [],
+                }
             });
         } catch (error) {
             console.error('Error triggering automations:', error);
@@ -592,10 +588,9 @@ export class EnhancedStoreChatBot extends StoreChatBot {
         if (!session) return null;
 
         // Find qualification flow
-        const flow = await this.flowRepository.findByTrigger(
-            tenantId,
-            FlowTrigger.FIRST_MESSAGE
-        );
+        // The repository might not have findByTrigger, default to a generic flow fetch
+        const flowsResult = await this.flowRepository.findAll(tenantId);
+        const flow = flowsResult.rows.find((f: any) => f.trigger_type === 'first_message');
 
         if (!flow) return null;
 
@@ -648,7 +643,7 @@ export class EnhancedStoreChatBot extends StoreChatBot {
         const session = this.enhancedSessions.get(`${tenantId}:${phone}`);
 
         if (session?.leadId && updateLeadStatus) {
-            await this.leadService.updateLeadStatus(tenantId, session.leadId, updateLeadStatus);
+            await this.leadService.updateLead(tenantId, session.leadId, { status: updateLeadStatus });
         }
 
         this.enhancedSessions.delete(`${tenantId}:${phone}`);

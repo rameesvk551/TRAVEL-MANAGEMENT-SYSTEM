@@ -6,7 +6,7 @@ import { getConfig } from '../../config/env.js';
 import { AppError, UnauthorizedError } from '../../utils/apiError.js';
 import { AuthRepository } from './auth.repository.js';
 import { sendEmail } from '../email/mailer.js';
-import type { BillingOnboardingPort } from '../../application/billing/contracts/BillingOnboardingPort.js';
+import type { BillingOnboardingPort } from '../billing/billing.contracts.js';
 import type { RegisterDTO, LoginDTO, AuthResponse, TokenPayload } from './auth.types.js';
 import { AUTH } from '../../config/constants.js';
 

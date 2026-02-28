@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { AIInsightsService } from '../modules/ai';
+import { AIInsightsService } from '../modules/ai.js';
 
 export class AIController {
     constructor(private aiService: AIInsightsService) { }

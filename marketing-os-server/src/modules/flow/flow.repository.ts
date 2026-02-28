@@ -167,7 +167,7 @@ export class FlowRepository {
             current_node_id?: string;
             collected_data?: Record<string, any>;
             cart_items?: CartItem[];
-            selected_product_id?: string | null;
+            selected_product_id?: string;
             variables?: Record<string, any>;
             is_active?: boolean;
             completed_at?: Date;
@@ -207,7 +207,7 @@ export class FlowRepository {
         if (!session) return null;
 
         const cartItems = [...(session.cart_items || [])];
-        
+
         // Check if product already in cart
         const existingIndex = cartItems.findIndex(c => c.product_id === item.product_id);
         if (existingIndex >= 0) {
@@ -227,7 +227,7 @@ export class FlowRepository {
         if (!session) return null;
 
         let cartItems = [...(session.cart_items || [])];
-        
+
         if (quantity <= 0) {
             cartItems = cartItems.filter(c => c.product_id !== productId);
         } else {

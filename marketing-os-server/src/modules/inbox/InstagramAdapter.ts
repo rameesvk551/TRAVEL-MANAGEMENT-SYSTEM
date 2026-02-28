@@ -1,5 +1,5 @@
 import { ChannelAdapter } from '../../application/interfaces/ChannelAdapter.js';
-import { ConversationContext } from '../modules/whatsapp/models/ConversationContext';
+import { ConversationContext } from '../modules/whatsapp/models/ConversationContext.js';
 import axios, { AxiosInstance } from 'axios';
 
 /**

@@ -1,6 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../../config/database.js';
-import { Transaction, type TransactionProps } from '../../../domain/revenue/entities/Transaction.js';
+
 
 export class TransactionModel extends Model {
     declare id: string;
@@ -17,9 +17,7 @@ export class TransactionModel extends Model {
     declare metadata: Record<string, any>;
     declare createdAt: Date;
 
-    toEntity(): Transaction {
-        return Transaction.fromPersistence(this.get({ plain: true }) as TransactionProps);
-    }
+
 }
 
 TransactionModel.init({

@@ -1,6 +1,6 @@
 import { Op, fn, col, literal } from 'sequelize';
-import { TrafficSource } from '../modules/growth/models/TrafficSource';
-import { ITrafficSourceRepository, SourceFilters } from '../modules/growth/interfaces/ITrafficSourceRepository';
+import { TrafficSource } from '../modules/growth/models/TrafficSource.js';
+import { ITrafficSourceRepository, SourceFilters } from '../modules/growth/interfaces/ITrafficSourceRepository.js';
 import { TrafficSourceModel } from '../models/TrafficSourceModel.js';
 
 export class SequelizeTrafficSourceRepository implements ITrafficSourceRepository {

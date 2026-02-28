@@ -1,5 +1,5 @@
-import { Funnel, FunnelStep, FunnelProps } from '../modules/growth/models/Funnel';
-import { SequelizeFunnelRepository, FunnelStepResult } from '../modules/growth';
+import { Funnel, FunnelStep, FunnelProps } from '../modules/growth/models/Funnel.js';
+import { SequelizeFunnelRepository, FunnelStepResult } from '../modules/growth.js';
 
 export interface CreateFunnelDTO {
     tenantId: string;

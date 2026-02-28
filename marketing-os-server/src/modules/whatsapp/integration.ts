@@ -42,7 +42,7 @@ export interface WhatsAppIntegrationOptions {
  *
  * @example
  * ```typescript
- * import { initializeWhatsApp } from './infrastructure/whatsapp/integration';
+ * import { initializeWhatsApp } from './infrastructure/whatsapp/integration.js';
  *
  * // In your app setup (app.ts)
  * const whatsApp = await initializeWhatsApp(app, pool, {

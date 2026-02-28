@@ -17,6 +17,7 @@ import { ConversationRepository } from './repositories/ConversationRepository.js
 import { MessageRepository } from './repositories/MessageRepository.js';
 import { TimelineRepository } from './repositories/TimelineRepository.js';
 import { WhatsAppConfigRepository } from './repositories/WhatsAppConfigRepository.js';
+import { WhatsAppAuditLogRepository } from './repositories/WhatsAppAuditLogRepository.js';
 import { MetaCloudProvider } from './providers/MetaCloudProvider.js';
 import { MockProvider } from './providers/MockProvider.js';
 import { TenantProviderFactory } from './providers/TenantProviderFactory.js';
@@ -57,6 +58,7 @@ export interface WhatsAppContainer {
   optInRepo: any;
   templateRepo: any;
   waConfigRepo: WhatsAppConfigRepository;
+  auditLogRepo: WhatsAppAuditLogRepository;
 
   // Provider
   provider: IWhatsAppProvider;
@@ -116,6 +118,7 @@ export function createWhatsAppContainer(
   const optInRepo = createOptInRepository(pool);
   const templateRepo = createTemplateRepository(pool);
   const waConfigRepo = new WhatsAppConfigRepository(pool);
+  const auditLogRepo = new WhatsAppAuditLogRepository(pool);
 
   // ============================================
   // PROVIDER (global fallback + tenant-aware factory)
@@ -229,14 +232,16 @@ export function createWhatsAppContainer(
     messageService,
     workflowOrchestrator,
     flowEngine,
-    tenantRepository
+    tenantRepository,
+    auditLogRepo
   );
 
   const conversationController = new ConversationController(
     conversationService,
     messageService,
     timelineService,
-    conversationRepo
+    conversationRepo,
+    optInRepo
   );
 
   const timelineController = new TimelineController(
@@ -274,6 +279,7 @@ export function createWhatsAppContainer(
     optInRepo,
     templateRepo,
     waConfigRepo,
+    auditLogRepo,
 
     // Provider
     provider,

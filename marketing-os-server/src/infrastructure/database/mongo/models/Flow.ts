@@ -2,37 +2,37 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IFlow extends Document {
     tenantId: string;
-    id: string; // Mongoose virtual
     name: string;
     description?: string;
-    triggerType: 'keyword' | 'event';
-    keywords?: string[];
-    nodes: any[];
-    edges: any[];
+    triggerKeywords: string[];
+    triggerType: string;
     isActive: boolean;
+    isDefault: boolean;
+    priority: number;
+    nodes: Array<Record<string, any>>;
+    startNodeId: string;
+    metadata: Record<string, any>;
     createdAt: Date;
     updatedAt: Date;
 }
 
-const FlowSchema: Schema = new Schema({
-    tenantId: { type: String, required: true, index: true },
-    name: { type: String, required: true },
-    description: { type: String },
-    triggerType: { type: String, enum: ['keyword', 'event'], default: 'keyword' },
-    keywords: [{ type: String }],
-    nodes: [{ type: Schema.Types.Mixed }], // Storing ReactFlow nodes as mixed JSON
-    edges: [{ type: Schema.Types.Mixed }], // Storing ReactFlow edges as mixed JSON
-    isActive: { type: Boolean, default: false },
-}, {
-    timestamps: true,
-    toJSON: {
-        virtuals: true,
-        transform: function (doc, ret) {
-            delete ret._id;
-            delete ret.__v;
-            return ret;
-        }
+const FlowSchema = new Schema<IFlow>(
+    {
+        tenantId: { type: String, required: true, index: true },
+        name: { type: String, required: true },
+        description: { type: String },
+        triggerKeywords: { type: [String], default: [] },
+        triggerType: { type: String, default: 'keyword' },
+        isActive: { type: Boolean, default: true },
+        isDefault: { type: Boolean, default: false },
+        priority: { type: Number, default: 0 },
+        nodes: { type: [Schema.Types.Mixed], default: [] },
+        startNodeId: { type: String, required: true },
+        metadata: { type: Schema.Types.Mixed, default: {} },
+    },
+    {
+        timestamps: true,
     }
-});
+);
 
 export const Flow = mongoose.model<IFlow>('Flow', FlowSchema);

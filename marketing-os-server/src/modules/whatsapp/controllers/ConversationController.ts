@@ -5,7 +5,8 @@ export class ConversationController {
         private conversationService: any,
         private messageService: any,
         private timelineService: any,
-        private conversationRepo: any
+        private conversationRepo: any,
+        private optInRepo?: any
     ) { }
 
     list = async (req: any, res: any, next: any) => {
@@ -39,8 +40,30 @@ export class ConversationController {
             const userId = req.context?.userId;
             const { id } = req.params;
             const { text, recipientPhone } = req.body;
-            if (!tenantId || !userId) { res.status(401).json({ error: 'Authentication required' }); return; }
-            const result = await this.messageService.sendText({ tenantId, recipientPhone, text, senderUserId: userId, linkTo: id ? { type: 'LEAD', entityId: id } : undefined });
+            if (!tenantId) { res.status(401).json({ error: 'Authentication required' }); return; }
+
+            // Resolve phone from conversation if not provided
+            let phone = recipientPhone;
+            if (!phone && id) {
+                const conv = await this.conversationRepo.findById(id, tenantId);
+                if (conv) {
+                    phone = conv.primaryActor?.phoneNumber || conv.externalId;
+                }
+            }
+            if (!phone) { res.status(400).json({ error: 'Could not resolve recipient phone' }); return; }
+
+            if (this.optInRepo) {
+                const optIn = await this.optInRepo.findByPhone(phone, tenantId);
+                if (!optIn || optIn.status !== 'OPTED_IN') {
+                    res.status(403).json({
+                        error: 'Recipient has not opted in to receive WhatsApp messages',
+                        code: 'NO_OPT_IN',
+                    });
+                    return;
+                }
+            }
+
+            const result = await this.messageService.sendText({ tenantId, recipientPhone: phone, text, senderUserId: userId || 'system', linkTo: id ? { type: 'LEAD', entityId: id } : undefined });
             if (!result.success) { res.status(400).json({ error: result.error }); return; }
             res.json({ data: result });
         } catch (error) { next(error); }
@@ -126,19 +149,53 @@ export class ConversationController {
             if (!tenantId || !userId) { res.status(401).json({ error: 'Authentication required' }); return; }
             if (!Array.isArray(recipients) || recipients.length === 0) { res.status(400).json({ error: 'Recipients list is required' }); return; }
 
+            const eligibleRecipients: Array<{ phone: string; variables?: any }> = [];
+            const rejectedRecipients: Array<{ phone: string; reason: string }> = [];
+
+            if (this.optInRepo) {
+                for (const recipient of recipients) {
+                    const optIn = await this.optInRepo.findByPhone(recipient.phone, tenantId);
+                    if (!optIn || optIn.status !== 'OPTED_IN') {
+                        rejectedRecipients.push({
+                            phone: recipient.phone,
+                            reason: 'Recipient is not opted in',
+                        });
+                        continue;
+                    }
+                    eligibleRecipients.push(recipient);
+                }
+            } else {
+                eligibleRecipients.push(...recipients);
+            }
+
+            if (eligibleRecipients.length === 0) {
+                res.status(403).json({
+                    success: false,
+                    error: 'No opted-in recipients found for broadcast',
+                    code: 'NO_OPT_IN_RECIPIENTS',
+                    rejectedRecipients,
+                });
+                return;
+            }
+
             let successCount = 0; let failureCount = 0;
             (async () => {
-                for (const recipient of recipients) {
+                for (const recipient of eligibleRecipients) {
                     try {
                         const result = await this.messageService.sendTemplate({ tenantId, recipientPhone: recipient.phone, templateName, language: language || 'en', variables: recipient.variables || {}, senderUserId: userId });
                         if (result.success) successCount++; else failureCount++;
                         await new Promise(resolve => setTimeout(resolve, 100));
                     } catch (error) { failureCount++; console.error(`Broadcast error for ${recipient.phone}:`, error); }
                 }
-                console.log(`Broadcast completed: ${successCount} sent, ${failureCount} failed`);
+                console.log(`Broadcast completed: ${successCount} sent, ${failureCount} failed, ${rejectedRecipients.length} blocked (opt-in)`);
             })();
 
-            res.json({ success: true, message: `Broadcast started for ${recipients.length} recipients`, jobId: 'background-processing' });
+            res.json({
+                success: true,
+                message: `Broadcast started for ${eligibleRecipients.length} recipients`,
+                jobId: 'background-processing',
+                blockedRecipients: rejectedRecipients,
+            });
         } catch (error) { next(error); }
     };
 }

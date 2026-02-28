@@ -4,8 +4,8 @@ export function validateOptIn(optInRepo: any) {
     return async (req: any, res: any, next: any) => {
         try {
             const tenantId = req.context?.tenantId;
-            const { to, phone, recipient } = req.body;
-            const phoneNumber = to || phone || recipient;
+            const { to, phone, recipient, recipientPhone } = req.body;
+            const phoneNumber = to || phone || recipient || recipientPhone;
             if (!tenantId) { res.status(401).json({ error: 'Tenant required' }); return; }
             if (!phoneNumber) { res.status(400).json({ error: 'Phone number required' }); return; }
             const optIn = await optInRepo.findByPhone(phoneNumber, tenantId);
@@ -23,8 +23,8 @@ export function softValidateOptIn(optInRepo: any) {
     return async (req: any, res: any, next: any) => {
         try {
             const tenantId = req.context?.tenantId;
-            const { to, phone, recipient } = req.body;
-            const phoneNumber = to || phone || recipient;
+            const { to, phone, recipient, recipientPhone } = req.body;
+            const phoneNumber = to || phone || recipient || recipientPhone;
             if (tenantId && phoneNumber) {
                 const optIn = await optInRepo.findByPhone(phoneNumber, tenantId);
                 if (!optIn || optIn.status !== 'OPTED_IN') {

@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { AdsService } from '../modules/ads';
+import { AdsService } from '../modules/ads.js';
 
 export class AdsController {
     constructor(private adsService: AdsService) { }

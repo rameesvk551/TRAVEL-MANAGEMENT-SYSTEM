@@ -1,6 +1,6 @@
 import { Op, fn, col, literal } from 'sequelize';
-import { TrackingEvent } from '../modules/growth/models/TrackingEvent';
-import { ITrackingEventRepository, EventFilters } from '../modules/growth/interfaces/ITrackingEventRepository';
+import { TrackingEvent } from '../modules/growth/models/TrackingEvent.js';
+import { ITrackingEventRepository, EventFilters } from '../modules/growth/interfaces/ITrackingEventRepository.js';
 import { TrackingEventModel } from '../models/TrackingEventModel.js';
 
 export class SequelizeTrackingEventRepository implements ITrackingEventRepository {

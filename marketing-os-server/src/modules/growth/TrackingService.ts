@@ -1,9 +1,9 @@
-import { TrackingEvent } from '../modules/growth/models/TrackingEvent';
-import { Visitor } from '../modules/growth/models/Visitor';
-import { TrafficSource } from '../modules/growth/models/TrafficSource';
-import { IVisitorRepository } from '../modules/growth/interfaces/IVisitorRepository';
-import { ITrackingEventRepository } from '../modules/growth/interfaces/ITrackingEventRepository';
-import { ITrafficSourceRepository } from '../modules/growth/interfaces/ITrafficSourceRepository';
+import { TrackingEvent } from '../modules/growth/models/TrackingEvent.js';
+import { Visitor } from '../modules/growth/models/Visitor.js';
+import { TrafficSource } from '../modules/growth/models/TrafficSource.js';
+import { IVisitorRepository } from '../modules/growth/interfaces/IVisitorRepository.js';
+import { ITrackingEventRepository } from '../modules/growth/interfaces/ITrackingEventRepository.js';
+import { ITrafficSourceRepository } from '../modules/growth/interfaces/ITrafficSourceRepository.js';
 import { Redis } from 'ioredis';
 
 export interface IngestEventDTO {

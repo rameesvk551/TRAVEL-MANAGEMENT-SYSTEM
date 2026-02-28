@@ -114,7 +114,7 @@ export const config: Config = {
     server: {
         port: parseInt(getEnvOrDefault('PORT', '5000'), 10),
         nodeEnv: getEnvOrDefault('NODE_ENV', 'development'),
-        corsOrigin: getEnvOrDefault('CORS_ORIGIN', 'http://localhost:3000'),
+        corsOrigin: getEnvOrDefault('CORS_ORIGIN', 'http://localhost:5173'),
     },
     database: {
         url: getEnvOrThrow('DATABASE_URL'),
@@ -163,7 +163,7 @@ export const config: Config = {
         uri: getEnvOrDefault('MONGO_URI', 'mongodb://localhost:27018/marketing-os?directConnection=true'),
     },
     socket: {
-        corsOrigin: getEnvOrDefault('CORS_ORIGIN', 'http://localhost:3000'),
+        corsOrigin: getEnvOrDefault('CORS_ORIGIN', 'http://localhost:5173'),
     },
 };
 

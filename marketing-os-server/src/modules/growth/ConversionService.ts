@@ -1,7 +1,7 @@
-import { Conversion, ConversionType, AttributionModel } from '../modules/growth/models/Conversion';
-import { IConversionRepository } from '../modules/growth/interfaces/IConversionRepository';
-import { IAdCostRepository } from '../modules/growth/interfaces/IAdCostRepository';
-import { IVisitorRepository } from '../modules/growth/interfaces/IVisitorRepository';
+import { Conversion, ConversionType, AttributionModel } from '../modules/growth/models/Conversion.js';
+import { IConversionRepository } from '../modules/growth/interfaces/IConversionRepository.js';
+import { IAdCostRepository } from '../modules/growth/interfaces/IAdCostRepository.js';
+import { IVisitorRepository } from '../modules/growth/interfaces/IVisitorRepository.js';
 
 export interface RecordConversionDTO {
     tenantId: string;

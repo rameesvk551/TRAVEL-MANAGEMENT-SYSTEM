@@ -1,5 +1,5 @@
 ﻿import { Request, Response } from 'express';
-import { AdminService } from '../modules/admin';
+import { AdminService } from '../modules/admin.js';
 
 const parseIntSafe = (value: unknown, fallback: number) => {
     const parsed = Number.parseInt(String(value ?? ''), 10);

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { TrackingService, IngestEventDTO } from '../modules/growth';
+import { TrackingService, IngestEventDTO } from '../modules/growth.js';
 
 export class TrackingController {
     constructor(private trackingService: TrackingService) {

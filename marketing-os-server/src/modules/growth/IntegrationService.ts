@@ -1,12 +1,12 @@
 import { IAdPlatformAdapter, AdPlatformEvent } from '../../../infrastructure/growth/integrations/IAdPlatformAdapter.js';
-import { IAdCostRepository } from '../modules/growth/interfaces/IAdCostRepository';
-import { AdCost, type AdPlatform } from '../modules/growth/models/AdCost';
+import { IAdCostRepository } from '../modules/growth/interfaces/IAdCostRepository.js';
+import { AdCost, type AdPlatform } from '../modules/growth/models/AdCost.js';
 import { MetaAdsAdapter } from '../../../infrastructure/growth/integrations/MetaAdsAdapter.js';
 import { GoogleAdsAdapter } from '../../../infrastructure/growth/integrations/GoogleAdsAdapter.js';
 import {
     SequelizeIntegrationCredentialRepository,
     type IntegrationCredentialRecord,
-} from '../modules/growth';
+} from '../modules/growth.js';
 import { QueryTypes } from 'sequelize';
 import { sequelize } from '../../config/database.js';
 

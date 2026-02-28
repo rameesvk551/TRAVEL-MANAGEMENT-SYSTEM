@@ -11,14 +11,22 @@ import { StoreController } from '../modules/store/store.controller.js';
 import { createStoreRoutes } from '../modules/store/store.routes.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { tenantMiddleware } from '../middlewares/tenant.middleware.js';
-import { createFlowRoutes } from '../modules/automation/flow.routes.js';
-import { FlowController } from '../modules/automation/flow.controller.js';
-import { FlowService } from '../modules/automation/flow.service.js';
+import { createFlowRoutes } from '../modules/flow/flow.routes.js';
+import { FlowController } from '../modules/flow/flow.controller.js';
+import { FlowService } from '../modules/flow/flow.service.js';
 import { MongoFlowRepository } from '../infrastructure/repositories/mongo/MongoFlowRepository.js';
 import { createWhatsAppContainer } from '../modules/whatsapp/container.js';
 import { createWhatsAppRoutes } from '../modules/whatsapp/whatsapp.routes.js';
 import { getPool } from '../config/database.js';
 
+// Lead Module imports
+import {
+    LeadRepository, LeadService, LeadPipelineService, LeadNoteService,
+    LeadFollowUpService, LeadAnalyticsService, LeadScoringService,
+    LeadDuplicateService, LeadAssignmentService, LeadController, createLeadRoutes
+} from '../modules/lead/index.js';
+
+// ... other interfaces
 interface CampaignDispatcherLike {
     startWorker(): void;
 }
@@ -91,13 +99,41 @@ export function registerRoutes(app: Express): AppDependencies {
         tenantMiddleware
     });
 
+    // 5. Lead Module
+    const leadRepository = new LeadRepository();
+    const leadAssignmentService = new LeadAssignmentService();
+    const leadService = new LeadService(leadRepository);
+    const leadPipelineService = new LeadPipelineService();
+    const leadNoteService = new LeadNoteService();
+    const leadFollowUpService = new LeadFollowUpService();
+    const leadAnalyticsService = new LeadAnalyticsService();
+    const leadScoringService = new LeadScoringService(leadRepository);
+    const leadDuplicateService = new LeadDuplicateService();
+
+    const leadController = new LeadController(
+        leadService,
+        leadPipelineService,
+        leadNoteService,
+        leadFollowUpService,
+        leadAnalyticsService,
+        leadScoringService,
+        leadDuplicateService,
+        leadAssignmentService
+    );
+    const leadRouter = createLeadRoutes({
+        leadController,
+        authMiddleware: protect,
+        tenantMiddleware
+    });
+
     app.use('/api/v1/auth', authRouter);
     app.use('/api/v1/whatsapp/onboard', onboardingRouter);
     app.use('/api/v1/whatsapp', whatsAppRoutes);
     app.use('/api/v1/store', storeRouter);
     app.use('/api/v1/automation/flows', flowRouter);
+    app.use('/api/v1/leads', leadRouter);
 
-    logger.info('Registered routes: /api/v1/auth, /api/v1/whatsapp, /api/v1/store, /api/v1/automation/flows');
+    logger.info('Registered routes: /api/v1/auth, /api/v1/whatsapp, /api/v1/store, /api/v1/automation/flows, /api/v1/leads');
 
     return {
         campaignDispatcher: noopCampaignDispatcher,

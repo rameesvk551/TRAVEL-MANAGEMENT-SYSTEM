@@ -1,7 +1,7 @@
 import { Op, fn, col, literal } from 'sequelize';
 import { sequelize } from '../../config/database.js';
-import { AdCost } from '../modules/growth/models/AdCost';
-import { IAdCostRepository, AdCostFilters } from '../modules/growth/interfaces/IAdCostRepository';
+import { AdCost } from '../modules/growth/models/AdCost.js';
+import { IAdCostRepository, AdCostFilters } from '../modules/growth/interfaces/IAdCostRepository.js';
 import { AdCostModel } from '../models/AdCostModel.js';
 
 export class SequelizeAdCostRepository implements IAdCostRepository {

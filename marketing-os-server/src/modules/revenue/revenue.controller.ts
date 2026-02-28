@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { RevenueService } from '../modules/revenue';
+import { RevenueService } from '../modules/revenue.js';
 
 export class RevenueController {
     constructor(private revenueService: RevenueService) { }

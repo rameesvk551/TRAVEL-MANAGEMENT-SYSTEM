@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { WidgetService } from '../modules/growth';
+import { WidgetService } from '../modules/growth.js';
 
 export class WidgetController {
     constructor(private widgetService: WidgetService) { }

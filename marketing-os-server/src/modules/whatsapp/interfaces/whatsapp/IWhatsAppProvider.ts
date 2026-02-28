@@ -9,7 +9,7 @@ import {
   InteractiveContent,
   TemplateContent,
   LocationContent,
-} from '../../entities/whatsapp/WhatsAppMessage.js';
+} from '../../models/whatsapp/WhatsAppMessage.js';
 
 /**
  * Provider identification

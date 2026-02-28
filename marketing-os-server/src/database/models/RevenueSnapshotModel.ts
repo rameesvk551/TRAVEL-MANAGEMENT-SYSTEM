@@ -1,6 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../../config/database.js';
-import { RevenueSnapshot, type RevenueSnapshotProps } from '../../../domain/revenue/entities/RevenueSnapshot.js';
+
 
 export class RevenueSnapshotModel extends Model {
     declare id: string;
@@ -20,9 +20,7 @@ export class RevenueSnapshotModel extends Model {
     declare metadata: Record<string, any>;
     declare createdAt: Date;
 
-    toEntity(): RevenueSnapshot {
-        return RevenueSnapshot.fromPersistence(this.get({ plain: true }) as RevenueSnapshotProps);
-    }
+
 }
 
 RevenueSnapshotModel.init({

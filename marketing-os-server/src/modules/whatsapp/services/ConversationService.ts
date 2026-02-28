@@ -1,7 +1,13 @@
 // application/services/whatsapp/ConversationService.ts
 // Core conversation context management
 
-import { ConversationContext } from '../models/index.js';
+import {
+    ActiveWorkflow,
+    CommunicationChannel,
+    ConversationActorType,
+    ConversationContext,
+    LinkedEntityType,
+} from '../models/index.js';
 import { IConversationRepository, IMessageRepository } from '../interfaces/whatsapp/index.js';
 
 /**
@@ -24,9 +30,9 @@ export class ConversationService {
      */
     async getOrCreateContext(
         tenantId: string,
-        channel: string,
+        channel: CommunicationChannel,
         externalId: string,
-        actorType: string = 'CUSTOMER',
+        actorType: ConversationActorType = 'CUSTOMER',
         displayName?: string
     ) {
         let context = await this.conversationRepo.findByExternalId(externalId, channel, tenantId);
@@ -67,11 +73,22 @@ export class ConversationService {
         return this.conversationRepo.save(newContext);
     }
 
-    async linkToEntity(conversationId: string, tenantId: string, entityType: string, entityId: string, makePrimary: boolean = false) {
+    async linkToEntity(
+        conversationId: string,
+        tenantId: string,
+        entityType: LinkedEntityType,
+        entityId: string,
+        makePrimary: boolean = false
+    ) {
         return this.conversationRepo.linkEntity(conversationId, tenantId, entityType, entityId, makePrimary);
     }
 
-    async startWorkflow(conversationId: string, tenantId: string, workflow: string, totalSteps: number) {
+    async startWorkflow(
+        conversationId: string,
+        tenantId: string,
+        workflow: ActiveWorkflow,
+        totalSteps: number
+    ) {
         const context = await this.conversationRepo.findById(conversationId, tenantId);
         if (!context) throw new Error('Conversation not found');
 

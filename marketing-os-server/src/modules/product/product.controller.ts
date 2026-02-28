@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { ProductAnalyticsService } from '../modules/product';
+import { ProductAnalyticsService } from '../modules/product.js';
 
 export class ProductController {
     constructor(private productService: ProductAnalyticsService) { }

@@ -6,11 +6,11 @@ import { Request, Response, NextFunction } from 'express';
 import { RecommendationService } from './recommendation.service.js';
 import { RecommendationStrategy, ProductInteractionType } from './recommendation.types.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { ApiResponse } from '../../utils/ApiResponse.js';
-import { AppError } from '../../utils/AppError.js';
+import { ApiResponse } from '../../utils/apiResponse.js';
+import { AppError } from '../../utils/appError.js';
 
 export class RecommendationController {
-    constructor(private service: RecommendationService) {}
+    constructor(private service: RecommendationService) { }
 
     // ============================================
     // RECOMMENDATIONS
@@ -48,7 +48,7 @@ export class RecommendationController {
             limit: limit ? Number(limit) : undefined,
         });
 
-        res.json(ApiResponse.success(result));
+        return ApiResponse.success(res, result);
     });
 
     /**
@@ -73,7 +73,7 @@ export class RecommendationController {
             }
         );
 
-        res.json(ApiResponse.success(result));
+        return ApiResponse.success(res, result);
     });
 
     /**
@@ -95,7 +95,7 @@ export class RecommendationController {
             limit ? Number(limit) : undefined
         );
 
-        res.json(ApiResponse.success(result));
+        return ApiResponse.success(res, result);
     });
 
     /**
@@ -120,7 +120,7 @@ export class RecommendationController {
             limit
         );
 
-        res.json(ApiResponse.success(result));
+        return ApiResponse.success(res, result);
     });
 
     /**
@@ -142,7 +142,7 @@ export class RecommendationController {
             limit ? Number(limit) : undefined
         );
 
-        res.json(ApiResponse.success(result));
+        return ApiResponse.success(res, result);
     });
 
     /**
@@ -162,7 +162,7 @@ export class RecommendationController {
             limit: limit ? Number(limit) : undefined,
         });
 
-        res.json(ApiResponse.success(result));
+        return ApiResponse.success(res, result);
     });
 
     // ============================================
@@ -198,7 +198,7 @@ export class RecommendationController {
             metadata,
         });
 
-        res.json(ApiResponse.success({ tracked: true }));
+        return ApiResponse.success(res, { tracked: true });
     });
 
     /**
@@ -219,7 +219,7 @@ export class RecommendationController {
 
         await this.service.trackView(tenantId, productId, { leadId, phone, sessionId });
 
-        res.json(ApiResponse.success({ tracked: true }));
+        return ApiResponse.success(res, { tracked: true });
     });
 
     /**
@@ -240,7 +240,7 @@ export class RecommendationController {
 
         await this.service.trackAddToCart(tenantId, productId, { leadId, phone, quantity });
 
-        res.json(ApiResponse.success({ tracked: true }));
+        return ApiResponse.success(res, { tracked: true });
     });
 
     /**
@@ -266,7 +266,7 @@ export class RecommendationController {
             price,
         });
 
-        res.json(ApiResponse.success({ tracked: true }));
+        return ApiResponse.success(res, { tracked: true });
     });
 
     // ============================================
@@ -290,7 +290,7 @@ export class RecommendationController {
             limit: limit ? Number(limit) : undefined,
         });
 
-        res.json(ApiResponse.success(products));
+        return ApiResponse.success(res, products);
     });
 
     /**
@@ -307,7 +307,7 @@ export class RecommendationController {
 
         const stats = await this.service.getProductConversionStats(tenantId, productId);
 
-        res.json(ApiResponse.success(stats));
+        return ApiResponse.success(res, stats);
     });
 
     /**
@@ -329,7 +329,7 @@ export class RecommendationController {
             limit ? Number(limit) : undefined
         );
 
-        res.json(ApiResponse.success({ productIds }));
+        return ApiResponse.success(res, { productIds });
     });
 
     // ============================================
@@ -350,7 +350,7 @@ export class RecommendationController {
 
         const preferences = await this.service.getLeadPreferences(tenantId, leadId);
 
-        res.json(ApiResponse.success(preferences));
+        return ApiResponse.success(res, preferences);
     });
 
     /**
@@ -372,7 +372,7 @@ export class RecommendationController {
 
         await this.service.updateLeadInterests(tenantId, leadId, interests);
 
-        res.json(ApiResponse.success({ updated: true }));
+        return ApiResponse.success(res, { updated: true });
     });
 
     /**
@@ -394,6 +394,6 @@ export class RecommendationController {
 
         await this.service.updateLeadBudget(tenantId, leadId, min, max);
 
-        res.json(ApiResponse.success({ updated: true }));
+        return ApiResponse.success(res, { updated: true });
     });
 }

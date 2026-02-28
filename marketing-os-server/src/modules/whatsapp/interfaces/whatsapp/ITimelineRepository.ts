@@ -7,7 +7,7 @@ import {
   TimelineEntryType,
   TimelineEntrySource,
   TimelineVisibility,
-} from '../../entities/whatsapp/UnifiedTimeline.js';
+} from '../../models/whatsapp/UnifiedTimeline.js';
 
 export interface TimelineFilters {
   entryType?: TimelineEntryType | TimelineEntryType[];

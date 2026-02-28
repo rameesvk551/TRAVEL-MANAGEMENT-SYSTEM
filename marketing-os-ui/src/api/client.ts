@@ -15,7 +15,7 @@ client.interceptors.request.use((config) => {
         config.headers['Authorization'] = `Bearer ${token}`;
     }
     // Tenant ID
-    config.headers['x-tenant-id'] = localStorage.getItem('tenantId') || 'default-tenant-id';
+    config.headers['x-tenant-id'] = localStorage.getItem('tenantId') || 'default';
     return config;
 });
 

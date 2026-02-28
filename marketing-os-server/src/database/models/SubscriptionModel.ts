@@ -1,6 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../../config/database.js';
-import { Subscription, type SubscriptionProps } from '../../../domain/revenue/entities/Subscription.js';
+
 
 export class SubscriptionModel extends Model {
     declare id: string;
@@ -23,9 +23,7 @@ export class SubscriptionModel extends Model {
     declare createdAt: Date;
     declare updatedAt: Date;
 
-    toEntity(): Subscription {
-        return Subscription.fromPersistence(this.get({ plain: true }) as SubscriptionProps);
-    }
+
 }
 
 SubscriptionModel.init({

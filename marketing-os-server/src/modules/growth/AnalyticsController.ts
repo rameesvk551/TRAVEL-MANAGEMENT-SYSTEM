@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { SourceAnalyticsService, DateRange } from '../modules/growth';
-import { ConversionService } from '../modules/growth';
-import { IntegrationService } from '../modules/growth';
+import { SourceAnalyticsService, DateRange } from '../modules/growth.js';
+import { ConversionService } from '../modules/growth.js';
+import { IntegrationService } from '../modules/growth.js';
 
 function parseDateRange(req: Request): DateRange {
     const now = new Date();

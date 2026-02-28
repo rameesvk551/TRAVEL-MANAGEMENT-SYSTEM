@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { AlertService } from '../modules/monitoring';
+import { AlertService } from '../modules/monitoring.js';
 
 export class MonitoringController {
     constructor(private alertService: AlertService) { }
