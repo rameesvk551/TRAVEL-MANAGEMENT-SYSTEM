@@ -72,8 +72,11 @@ export async function initializeWhatsApp(
     conversationController: container.conversationController,
     timelineController: container.timelineController,
     templateController: container.templateController,
-    analyticsController: container.analyticsController, // Added
-    automationController: container.automationController, // Added
+    analyticsController: container.analyticsController,
+    automationController: container.automationController,
+    settingsController: container.settingsController,
+    embeddedSignupController: container.embeddedSignupController,
+    broadcastController: container.broadcastController,
     optInRepo: container.optInRepo,
     authMiddleware: options.authMiddleware,
     tenantMiddleware: options.tenantMiddleware,

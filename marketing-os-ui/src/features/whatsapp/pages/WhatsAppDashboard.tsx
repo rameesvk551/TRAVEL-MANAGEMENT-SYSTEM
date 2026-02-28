@@ -8,13 +8,13 @@ import {
     BarChartOutlined,
     ContactsOutlined
 } from '@ant-design/icons';
-import WhatsAppChats from '../components/whatsapp/WhatsAppChats';
-import WhatsAppAutomation from '../components/whatsapp/WhatsAppAutomation';
-import WhatsAppTemplates from '../components/whatsapp/WhatsAppTemplates';
-import WhatsAppBroadcast from '../components/whatsapp/WhatsAppBroadcast';
-import WhatsAppAnalytics from '../components/whatsapp/WhatsAppAnalytics';
-import WhatsAppContacts from '../components/whatsapp/WhatsAppContacts';
-import { useResponsive } from '../hooks/useResponsive';
+import WhatsAppChats from '../components/WhatsAppChats';
+import WhatsAppAutomation from '../components/WhatsAppAutomation';
+import WhatsAppTemplates from '../components/WhatsAppTemplates';
+import WhatsAppBroadcast from '../components/WhatsAppBroadcast';
+import WhatsAppAnalytics from '../components/WhatsAppAnalytics';
+import WhatsAppContacts from '../components/WhatsAppContacts';
+import { useResponsive } from '../../../hooks/useResponsive';
 
 const { Content } = Layout;
 const { Title } = Typography;

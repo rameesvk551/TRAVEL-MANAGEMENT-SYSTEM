@@ -9,7 +9,7 @@ import GrowthDashboard from './pages/GrowthDashboard';
 import TrackingSetup from './pages/TrackingSetup';
 import RevenueDashboard from './pages/RevenueDashboard';
 import CRMDashboard from './pages/CRMDashboard';
-import WhatsAppDashboard from './pages/WhatsAppDashboard';
+import { WhatsAppDashboard } from './features/whatsapp';
 import EmailDashboard from './pages/EmailDashboard';
 import EmailTemplates from './pages/EmailTemplates';
 import CreateCampaign from './pages/CreateCampaign';
@@ -20,6 +20,7 @@ import AdsDashboard from './pages/AdsDashboard';
 import WidgetList from './pages/growth/widgets/WidgetList';
 import WidgetBuilder from './pages/growth/widgets/WidgetBuilder';
 import MonitoringDashboard from './pages/MonitoringDashboard';
+import { SettingsLayout } from './features/settings';
 
 // Auth Imports
 import { AuthProvider } from './context/AuthContext';
@@ -175,6 +176,7 @@ function App() {
                 <Route path="ai" element={<AIDashboard />} />
                 <Route path="ads" element={<AdsDashboard />} />
                 <Route path="monitoring" element={<MonitoringDashboard />} />
+                <Route path="settings" element={<SettingsLayout />} />
               </Route>
             </Routes>
           </BrowserRouter>

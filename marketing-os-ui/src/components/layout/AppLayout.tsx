@@ -107,7 +107,6 @@ const navItems: MenuItem[] = [
         key: '/settings',
         icon: <SettingOutlined />,
         label: 'Settings',
-        disabled: true,
     },
 ];
 

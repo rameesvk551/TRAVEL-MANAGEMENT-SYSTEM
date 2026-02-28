@@ -1,119 +1,32 @@
-import React, { useState } from 'react';
+// WhatsAppBroadcast.tsx — pure render shell.
+// All logic lives in hooks/useBroadcast.ts
+
+import React from 'react';
 import {
-    Card,
-    Steps,
-    Form,
-    Select,
-    Button,
-    Input,
-    Radio,
-    DatePicker,
-    Typography,
-    Space,
-    Tag,
-    message,
-    Alert,
-    Row,
-    Col,
-    Statistic,
-    Divider,
-    Segmented
+    Card, Steps, Form, Select, Button, Input, Radio, DatePicker,
+    Typography, Space, Tag, Alert, Row, Col, Statistic, Divider, Segmented,
 } from 'antd';
 import {
-    ScheduleOutlined,
-    SendOutlined,
-    FileTextOutlined,
-    PhoneOutlined,
-    CloudUploadOutlined,
-    UserOutlined,
-    UploadOutlined
+    ScheduleOutlined, SendOutlined, FileTextOutlined,
+    PhoneOutlined, CloudUploadOutlined, UserOutlined, UploadOutlined,
 } from '@ant-design/icons';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { whatsappApi } from '../../api/modules';
+import { useBroadcast } from '../hooks/useBroadcast';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const WhatsAppBroadcast: React.FC = () => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [form] = Form.useForm();
-    const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
-    const [recipientCount, setRecipientCount] = useState(0);
-
-    // Fetch approved templates
-    const { data: templatesData } = useQuery({
-        queryKey: ['whatsapp-templates', 'approved'],
-        queryFn: () => whatsappApi.getTemplates({ status: 'APPROVED' }),
-    });
-
-    const templates = templatesData?.data || [];
-
-    // Broadcast mutation
-    const broadcastMutation = useMutation({
-        mutationFn: whatsappApi.broadcast,
-        onSuccess: () => {
-            message.success('Broadcast scheduled successfully!');
-            setCurrentStep(0);
-            form.resetFields();
-            setSelectedTemplate(null);
-            setRecipientCount(0);
-        },
-        onError: () => message.error('Failed to schedule broadcast'),
-    });
-
-    const handleTemplateChange = (templateId: string) => {
-        const template = templates.find((t: any) => t.id === templateId);
-        setSelectedTemplate(template);
-    };
-
-    const onRecipientsChange = (e: any) => {
-        const text = e.target.value;
-        const count = text.split('\n').filter((line: string) => line.trim().length > 0).length;
-        setRecipientCount(count);
-    };
-
-    const next = async () => {
-        try {
-            await form.validateFields();
-            setCurrentStep(currentStep + 1);
-        } catch (error) {
-            console.error('Validation failed:', error);
-        }
-    };
-
-    const prev = () => {
-        setCurrentStep(currentStep - 1);
-    };
-
-    const handleSend = () => {
-        const values = form.getFieldsValue();
-        const recipients = values.recipients.split('\n').filter((line: string) => line.trim().length > 0)
-            .map((phone: string) => ({ phone: phone.trim() }));
-
-        broadcastMutation.mutate({
-            templateName: selectedTemplate.name,
-            language: selectedTemplate.language,
-            recipients: recipients
-        });
-    };
+    const {
+        form, currentStep, selectedTemplate, recipientCount, templates,
+        isSending,
+        handleTemplateChange, onRecipientsChange, next, prev, handleSend,
+    } = useBroadcast();
 
     const steps = [
-        {
-            title: 'Select Template',
-            description: 'Choose content',
-            icon: <FileTextOutlined />,
-        },
-        {
-            title: 'Add Recipients',
-            description: 'Define audience',
-            icon: <UserOutlined />,
-        },
-        {
-            title: 'Schedule & Send',
-            description: 'Review & Confirm',
-            icon: <ScheduleOutlined />,
-        }
+        { title: 'Select Template', description: 'Choose content', icon: <FileTextOutlined /> },
+        { title: 'Add Recipients', description: 'Define audience', icon: <UserOutlined /> },
+        { title: 'Schedule & Send', description: 'Review & Confirm', icon: <ScheduleOutlined /> },
     ];
 
     return (
@@ -131,14 +44,7 @@ const WhatsAppBroadcast: React.FC = () => {
                         {currentStep === 0 && (
                             <div className="fade-in">
                                 <Form.Item name="templateId" label={<Text strong>Select a Template</Text>} rules={[{ required: true, message: 'Please select a template' }]}>
-                                    <Select
-                                        placeholder="Search and select an approved template..."
-                                        onChange={handleTemplateChange}
-                                        size="large"
-                                        style={{ width: '100%' }}
-                                        showSearch
-                                        optionFilterProp="children"
-                                    >
+                                    <Select placeholder="Search and select an approved template..." onChange={handleTemplateChange} size="large" style={{ width: '100%' }} showSearch optionFilterProp="children">
                                         {templates.map((t: any) => (
                                             <Option key={t.id} value={t.id}>{t.name} ({t.language})</Option>
                                         ))}
@@ -157,14 +63,7 @@ const WhatsAppBroadcast: React.FC = () => {
                                             </Card>
                                         </div>
                                         <div style={{ flex: 1, minWidth: 300 }}>
-                                            <div style={{
-                                                background: '#e5ddd5',
-                                                padding: 16,
-                                                borderRadius: 8,
-                                                maxWidth: 360,
-                                                position: 'relative',
-                                                boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-                                            }}>
+                                            <div style={{ background: '#e5ddd5', padding: 16, borderRadius: 8, maxWidth: 360, position: 'relative', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
                                                 <div style={{ background: 'white', padding: '12px 16px', borderRadius: '0 8px 8px 8px', position: 'relative' }}>
                                                     <Paragraph style={{ margin: 0, fontSize: 15, lineHeight: 1.5 }}>
                                                         {selectedTemplate.components.find((c: any) => c.type === 'BODY')?.text}
@@ -191,34 +90,23 @@ const WhatsAppBroadcast: React.FC = () => {
                                                 { label: 'Upload CSV', value: 'csv', icon: <CloudUploadOutlined /> },
                                                 { label: 'From Contacts', value: 'contacts', icon: <UserOutlined /> },
                                             ]}
-                                            block
-                                            size="large"
+                                            block size="large"
                                         />
                                     </Form.Item>
                                 </Form.Item>
 
                                 <Divider style={{ margin: '24px 0' }} />
 
-                                <Form.Item
-                                    noStyle
-                                    shouldUpdate={(prev, current) => prev.recipientSource !== current.recipientSource}
-                                >
+                                <Form.Item noStyle shouldUpdate={(prev, current) => prev.recipientSource !== current.recipientSource}>
                                     {({ getFieldValue }) => {
                                         const source = getFieldValue('recipientSource');
                                         return source === 'manual' ? (
-                                            <Form.Item
-                                                name="recipients"
-                                                label="Phone Numbers"
-                                                rules={[{ required: true, message: 'Please enter at least one phone number' }]}
-                                                help="Enter phone numbers with country code (e.g., 15551234567), one per line."
-                                            >
+                                            <Form.Item name="recipients" label="Phone Numbers" rules={[{ required: true, message: 'Please enter at least one phone number' }]} help="Enter phone numbers with country code (e.g., 15551234567), one per line.">
                                                 <TextArea rows={12} onChange={onRecipientsChange} placeholder="15551234567&#10;919876543210" style={{ fontFamily: 'monospace' }} />
                                             </Form.Item>
                                         ) : (
                                             <div style={{ padding: 60, textAlign: 'center', background: '#fafafa', border: '2px dashed #d9d9d9', borderRadius: 12, cursor: 'pointer' }}>
-                                                <p className="ant-upload-drag-icon">
-                                                    <UploadOutlined style={{ fontSize: 48, color: '#1890ff', opacity: 0.8 }} />
-                                                </p>
+                                                <p className="ant-upload-drag-icon"><UploadOutlined style={{ fontSize: 48, color: '#1890ff', opacity: 0.8 }} /></p>
                                                 <Title level={4} style={{ marginTop: 16 }}>Click or drag CSV file to upload</Title>
                                                 <p className="ant-upload-hint">Support for massive bulk upload via CSV.</p>
                                                 <Button style={{ marginTop: 16 }}>Select File</Button>
@@ -237,32 +125,17 @@ const WhatsAppBroadcast: React.FC = () => {
 
                         {currentStep === 2 && (
                             <div className="fade-in">
-                                <Alert
-                                    message="Ready to Broadcast"
-                                    description="Review your campaign details before sending. This action normally cannot be undone."
-                                    type="info"
-                                    showIcon
-                                    style={{ marginBottom: 32 }}
-                                />
-
+                                <Alert message="Ready to Broadcast" description="Review your campaign details before sending. This action normally cannot be undone." type="info" showIcon style={{ marginBottom: 32 }} />
                                 <Row gutter={32}>
                                     <Col span={14}>
                                         <Card title="Campaign Overview" bordered={false} style={{ background: '#fafafa', height: '100%' }}>
-                                            <Statistic
-                                                title="Total Recipients"
-                                                value={recipientCount}
-                                                prefix={<UserOutlined style={{ color: '#1890ff' }} />}
-                                                valueStyle={{ fontWeight: 600 }}
-                                            />
+                                            <Statistic title="Total Recipients" value={recipientCount} prefix={<UserOutlined style={{ color: '#1890ff' }} />} valueStyle={{ fontWeight: 600 }} />
                                             <Divider />
                                             <div style={{ marginBottom: 16 }}>
                                                 <Text type="secondary">Template:</Text>
                                                 <div style={{ fontSize: 16, fontWeight: 500 }}>{selectedTemplate?.name}</div>
                                             </div>
-                                            <div>
-                                                <Text type="secondary">Language:</Text>
-                                                <div>{selectedTemplate?.language}</div>
-                                            </div>
+                                            <div><Text type="secondary">Language:</Text><div>{selectedTemplate?.language}</div></div>
                                         </Card>
                                     </Col>
                                     <Col span={10}>
@@ -283,18 +156,13 @@ const WhatsAppBroadcast: React.FC = () => {
                                                     </Radio>
                                                 </Radio.Group>
                                             </Form.Item>
-
-                                            <Form.Item
-                                                noStyle
-                                                shouldUpdate={(prev, current) => prev.schedule !== current.schedule}
-                                            >
+                                            <Form.Item noStyle shouldUpdate={(prev, current) => prev.schedule !== current.schedule}>
                                                 {({ getFieldValue }) => getFieldValue('schedule') === 'later' && (
                                                     <Form.Item name="scheduledTime" rules={[{ required: true }]}>
                                                         <DatePicker showTime style={{ width: '100%' }} size="large" />
                                                     </Form.Item>
                                                 )}
                                             </Form.Item>
-
                                             <Divider style={{ margin: '12px 0' }} />
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <Text type="secondary">Est. Cost</Text>
@@ -310,28 +178,11 @@ const WhatsAppBroadcast: React.FC = () => {
                     <Divider style={{ margin: '40px 0 24px 0' }} />
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: 800, margin: '0 auto' }}>
-                        <Button
-                            onClick={prev}
-                            disabled={currentStep === 0}
-                            size="large"
-                            style={{ minWidth: 100 }}
-                        >
-                            Back
-                        </Button>
-
+                        <Button onClick={prev} disabled={currentStep === 0} size="large" style={{ minWidth: 100 }}>Back</Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="primary" onClick={next} size="large" style={{ minWidth: 120 }}>
-                                Continue
-                            </Button>
+                            <Button type="primary" onClick={next} size="large" style={{ minWidth: 120 }}>Continue</Button>
                         ) : (
-                            <Button
-                                type="primary"
-                                icon={<SendOutlined />}
-                                onClick={handleSend}
-                                size="large"
-                                loading={broadcastMutation.isPending}
-                                style={{ minWidth: 160, background: '#52c41a', borderColor: '#52c41a' }}
-                            >
+                            <Button type="primary" icon={<SendOutlined />} onClick={handleSend} size="large" loading={isSending} style={{ minWidth: 160, background: '#52c41a', borderColor: '#52c41a' }}>
                                 Launch Campaign
                             </Button>
                         )}

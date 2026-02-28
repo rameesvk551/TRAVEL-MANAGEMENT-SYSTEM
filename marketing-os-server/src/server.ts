@@ -3,7 +3,7 @@ import { config } from './config/env.js';
 import { connectSequelize, connectToMongoDB, testConnection } from './config/database.js';
 import { getRedisClient } from './config/redis.js';
 import db from './db/sqlmodels/index.js';
-import { SocketServer } from './sockets/SocketServer.js';
+import { initSocketServer } from './sockets/SocketServer.js';
 import { logger } from './config/logger.js';
 
 /**
@@ -39,8 +39,8 @@ async function main(): Promise<void> {
             logger.info(`🚀 MarketingOS Server running on port ${port} [${config.server.nodeEnv}]`);
         });
 
-        // Initialize Socket.io
-        new SocketServer(server);
+        // Initialize Socket.io (function-based, no class)
+        initSocketServer(server);
         logger.info('✅ Socket.io Server initialized.');
 
         // Graceful shutdown

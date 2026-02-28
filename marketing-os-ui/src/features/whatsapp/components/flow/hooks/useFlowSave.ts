@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useReactFlow } from '@xyflow/react';
 import { message } from 'antd';
-import { automationApi } from '../../../../api/modules';
+import { automationApi } from '../../../../../api/modules';
 
 export const useFlowSave = (initialFlowId?: string | null) => {
     const { toObject, setViewport, setNodes, setEdges } = useReactFlow();

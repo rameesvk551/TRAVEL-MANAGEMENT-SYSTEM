@@ -221,9 +221,10 @@ export function createWebhookController(
 
             const status = provider.parseWebhookStatus(payload);
             if (status) {
-                await messageService.handleStatusUpdate(status);
                 const tenantId = await resolveTenantId(status.recipientPhone);
                 if (tenantId) {
+                    // Inject tenantId so handleStatusUpdate can look up the message
+                    await messageService.handleStatusUpdate({ ...status, tenantId });
                     await audit(tenantId, {
                         eventType: 'webhook_status_received',
                         actorType: 'WEBHOOK',

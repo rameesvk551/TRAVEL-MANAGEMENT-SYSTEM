@@ -8,7 +8,10 @@ import {
   TimelineController,
   TemplateController,
   WhatsAppAnalyticsController,
-  AutomationController, // Added
+  AutomationController,
+  SettingsController,
+  EmbeddedSignupController,
+  BroadcastController,
 } from './controllers/index.js';
 import {
   verifyWebhookChallenge,
@@ -29,7 +32,10 @@ export function createWhatsAppRoutes(dependencies: {
   timelineController: TimelineController;
   templateController: TemplateController;
   analyticsController: WhatsAppAnalyticsController;
-  automationController: AutomationController; // Added
+  automationController: AutomationController;
+  settingsController: SettingsController;
+  embeddedSignupController: EmbeddedSignupController;
+  broadcastController: BroadcastController;
   optInRepo: any; // For opt-in validation middleware
   authMiddleware: (req: any, res: any, next: any) => void;
   tenantMiddleware: (req: any, res: any, next: any) => void;
@@ -41,7 +47,10 @@ export function createWhatsAppRoutes(dependencies: {
     timelineController,
     templateController,
     analyticsController,
-    automationController, // Added
+    automationController,
+    settingsController,
+    embeddedSignupController,
+    broadcastController,
     optInRepo,
     authMiddleware,
     tenantMiddleware,
@@ -107,6 +116,54 @@ export function createWhatsAppRoutes(dependencies: {
   router.use(authMiddleware);
   router.use(tenantMiddleware);
   router.use(apiRateLimiter);
+
+  // ============================================
+  // SETTINGS ROUTES (Manual Credential Connection)
+  // ============================================
+
+  // Get current WhatsApp connection status
+  router.get('/settings',
+    settingsController.getConnection
+  );
+
+  // Save manual credentials (new connection)
+  router.post('/settings/manual',
+    settingsController.saveManualConfig
+  );
+
+  // Update existing manual credentials
+  router.put('/settings/manual/:connectionId',
+    settingsController.updateManualConfig
+  );
+
+  // Test current connection
+  router.post('/settings/test',
+    settingsController.testConnection
+  );
+
+  // Disconnect WhatsApp
+  router.delete('/settings',
+    settingsController.disconnect
+  );
+
+  // Regenerate webhook verify token
+  router.post('/settings/regenerate-verify-token',
+    settingsController.regenerateVerifyToken
+  );
+
+  // ============================================
+  // EMBEDDED SIGNUP ROUTES (Facebook OAuth Flow)
+  // ============================================
+
+  // Get FB Embedded Signup config
+  router.get('/settings/embedded/config',
+    embeddedSignupController.getConfig
+  );
+
+  // Complete FB Embedded Signup
+  router.post('/settings/embedded/complete',
+    embeddedSignupController.complete
+  );
 
   // ============================================
   // SEED DEMO DATA
@@ -344,11 +401,11 @@ export function createWhatsAppRoutes(dependencies: {
   );
 
   // ============================================
-  // BROADCAST ROUTES
+  // BROADCAST ROUTES (Isolated BroadcastController)
   // ============================================
 
   router.post('/broadcast',
-    conversationController.broadcast
+    broadcastController.send
   );
 
   // ============================================

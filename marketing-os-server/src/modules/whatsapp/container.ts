@@ -23,6 +23,7 @@ import { createMockProvider } from './providers/MockProvider.js';
 import { createTenantProviderFactory } from './providers/TenantProviderFactory.js';
 
 // Application services
+import { emitToTenant, emitToConversation } from '../../sockets/SocketServer.js';
 import {
   createConversationService,
   createMessageService,
@@ -42,6 +43,9 @@ import {
   createTemplateController,
   createWhatsAppAnalyticsController,
   createAutomationController,
+  createSettingsController,
+  createEmbeddedSignupController,
+  createBroadcastController,
 } from './controllers/index.js';
 
 import { createWhatsAppAnalyticsService } from './services/WhatsAppAnalyticsService.js';
@@ -82,6 +86,9 @@ export interface WhatsAppContainer {
   analyticsService: ReturnType<typeof createWhatsAppAnalyticsService>;
   automationEngine: ReturnType<typeof createAutomationEngine>;
   automationController: ReturnType<typeof createAutomationController>;
+  settingsController: ReturnType<typeof createSettingsController>;
+  embeddedSignupController: ReturnType<typeof createEmbeddedSignupController>;
+  broadcastController: ReturnType<typeof createBroadcastController>;
   flowEngine: any;
   flowRepository: any;
   instagramWebhookController: any;
@@ -174,11 +181,18 @@ export function createWhatsAppContainer(
 
   const timelineService = createTimelineService(timelineRepo);
 
+  // Socket emitter — broadcasts to tenant room AND conversation room
+  const socketEmitter = (tenantId: string, conversationId: string, event: string, data: any) => {
+    emitToTenant(tenantId, event, data);
+    emitToConversation(conversationId, event, data);
+  };
+
   const messageService = createMessageService(
     messageRepo,
     channelFactory,
     conversationService,
-    timelineService
+    timelineService,
+    socketEmitter
   );
 
   const workflowOrchestrator = createWorkflowOrchestrator(
@@ -261,6 +275,14 @@ export function createWhatsAppContainer(
 
   const automationController = createAutomationController(automationEngine);
 
+  // ============================================
+  // ISOLATED FEATURE CONTROLLERS
+  // ============================================
+
+  const settingsController = createSettingsController(waConfigRepo, tenantProviderFactory, pool);
+  const embeddedSignupController = createEmbeddedSignupController(waConfigRepo, pool);
+  const broadcastController = createBroadcastController(messageService, optInRepo);
+
   // Instagram & Omnichannel controllers (stubs until modules exist)
   const instagramWebhookController: any = {
     verify: async (req: any, res: any) => res.status(200).send('OK'),
@@ -303,6 +325,9 @@ export function createWhatsAppContainer(
     templateController,
     analyticsController,
     automationController,
+    settingsController,
+    embeddedSignupController,
+    broadcastController,
     instagramWebhookController,
     unifiedConversationController,
 
