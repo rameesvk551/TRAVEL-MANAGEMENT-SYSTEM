@@ -14,9 +14,9 @@ const db: any = {};
 
 let sequelize: Sequelize;
 if (config.use_env_variable) {
-    sequelize = new Sequelize(process.env[config.use_env_variable] as string, config);
+    sequelize = new Sequelize(process.env[config.use_env_variable] as string, config as any);
 } else {
-    sequelize = new Sequelize(config.database, config.username, config.password, config);
+    sequelize = new Sequelize((config as any).database, (config as any).username, (config as any).password, config as any);
 }
 
 // Read all TS model files using synchronous import via a custom require approach or explicit dynamic import mapping.

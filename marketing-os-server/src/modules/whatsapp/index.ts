@@ -1,13 +1,6 @@
 // infrastructure/whatsapp/index.ts
 // Main export for WhatsApp infrastructure layer
 
-// Integration
-export {
-  initializeWhatsApp,
-  getWhatsAppHealth,
-  type WhatsAppIntegrationOptions,
-} from './integration.js';
-
 // Container
 export {
   createWhatsAppContainer,

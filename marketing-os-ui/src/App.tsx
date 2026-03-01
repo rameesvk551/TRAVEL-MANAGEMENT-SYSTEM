@@ -2,24 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider } from 'antd';
 import { AppLayout } from './components/layout/AppLayout';
-import MarketingDashboard from './pages/MarketingDashboard';
-import Campaigns from './pages/Campaigns';
-import CampaignBuilder from './pages/CampaignBuilder';
-import GrowthDashboard from './pages/GrowthDashboard';
-import TrackingSetup from './pages/TrackingSetup';
-import RevenueDashboard from './pages/RevenueDashboard';
-import CRMDashboard from './pages/CRMDashboard';
+import { LeadsPage as CRMDashboard } from './features/crm';
 import { WhatsAppDashboard } from './features/whatsapp';
-import EmailDashboard from './pages/EmailDashboard';
-import EmailTemplates from './pages/EmailTemplates';
-import CreateCampaign from './pages/CreateCampaign';
-import EmailSettings from './pages/EmailSettings';
-import ProductDashboard from './pages/ProductDashboard';
-import AIDashboard from './pages/AIDashboard';
-import AdsDashboard from './pages/AdsDashboard';
-import WidgetList from './pages/growth/widgets/WidgetList';
-import WidgetBuilder from './pages/growth/widgets/WidgetBuilder';
-import MonitoringDashboard from './pages/MonitoringDashboard';
 import { SettingsLayout } from './features/settings';
 
 // Auth Imports
@@ -156,26 +140,9 @@ function App() {
                   </PrivateRoute>
                 }
               >
-                <Route index element={<MarketingDashboard />} />
-                <Route path="campaigns" element={<Campaigns />} />
-                <Route path="campaigns/new" element={<CampaignBuilder />} />
-
-                <Route path="growth" element={<GrowthDashboard />} />
-                <Route path="growth/setup" element={<TrackingSetup />} />
-                <Route path="growth/widgets" element={<WidgetList />} />
-                <Route path="growth/widgets/new" element={<WidgetBuilder />} />
-                <Route path="growth/widgets/edit/:id" element={<WidgetBuilder />} />
-                <Route path="revenue" element={<RevenueDashboard />} />
+                <Route index element={<Navigate to="crm" replace />} />
                 <Route path="crm" element={<CRMDashboard />} />
                 <Route path="whatsapp" element={<WhatsAppDashboard />} />
-                <Route path="email" element={<EmailDashboard />} />
-                <Route path="email/templates" element={<EmailTemplates />} />
-                <Route path="email/create" element={<CreateCampaign />} />
-                <Route path="email/settings" element={<EmailSettings />} />
-                <Route path="product" element={<ProductDashboard />} />
-                <Route path="ai" element={<AIDashboard />} />
-                <Route path="ads" element={<AdsDashboard />} />
-                <Route path="monitoring" element={<MonitoringDashboard />} />
                 <Route path="settings" element={<SettingsLayout />} />
               </Route>
             </Routes>

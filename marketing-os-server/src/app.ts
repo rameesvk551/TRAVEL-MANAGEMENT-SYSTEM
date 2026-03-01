@@ -2,14 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/env.js';
 import { errorMiddleware } from './middlewares/error.middleware.js';
-import { registerRoutes, type AppDependencies } from './routes/index.js';
+import apiRouter from './routes/index.js';
 import { logger } from './config/logger.js';
 
 /**
  * Creates and configures the Express application.
  * Separated from server startup for testability.
  */
-export function createApp(): { app: express.Express; dependencies: AppDependencies } {
+export function createApp() {
     const app = express();
 
     // ── Global Middleware ──
@@ -30,8 +30,8 @@ export function createApp(): { app: express.Express; dependencies: AppDependenci
         res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
 
-    // ── Module Routes ──
-    const dependencies = registerRoutes(app);
+    // ── All module routes under /api ──
+    app.use('/api/v1', apiRouter);
 
     // ── Error Handling (MUST be last) ──
     app.use(errorMiddleware);
@@ -47,5 +47,5 @@ export function createApp(): { app: express.Express; dependencies: AppDependenci
 
     logger.info('Application configured successfully');
 
-    return { app, dependencies };
+    return app;
 }

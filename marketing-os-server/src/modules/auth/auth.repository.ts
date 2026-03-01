@@ -19,6 +19,10 @@ export const findTenantById = async (id: string) => {
     return db.Tenant.findByPk(id);
 };
 
+export const findTenantBySlug = async (slug: string) => {
+    return db.Tenant.findOne({ where: { slug } });
+};
+
 export const createTenant = async (data: { name: string; slug: string; is_active: boolean }) => {
     return db.Tenant.create(data);
 };

@@ -2,22 +2,13 @@ import { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Menu, Typography, Avatar, Badge, Tooltip, Drawer } from 'antd';
 import {
-    DashboardOutlined,
     RocketOutlined,
-    LineChartOutlined,
     SettingOutlined,
     MenuFoldOutlined,
     MenuUnfoldOutlined,
-    ApiOutlined,
     BellOutlined,
     SearchOutlined,
-    DollarOutlined,
     TeamOutlined,
-    MailOutlined,
-    AppstoreOutlined,
-    BulbOutlined,
-    FundProjectionScreenOutlined,
-    AlertOutlined,
     WhatsAppOutlined,
     MenuOutlined,
     CloseOutlined,
@@ -35,37 +26,9 @@ type MenuItem = Required<MenuProps>['items'][number];
 
 const navItems: MenuItem[] = [
     {
-        key: '/',
-        icon: <DashboardOutlined />,
-        label: 'Overview',
-    },
-    {
-        key: '/campaigns',
-        icon: <RocketOutlined />,
-        label: 'Campaigns',
-    },
-    {
-        key: '/growth',
-        icon: <LineChartOutlined />,
-        label: 'Growth Analytics',
-    },
-    {
-        key: '/growth/setup',
-        icon: <ApiOutlined />,
-        label: 'Tracking Setup',
-    },
-    {
-        type: 'divider',
-    },
-    {
-        key: '/revenue',
-        icon: <DollarOutlined />,
-        label: 'Revenue',
-    },
-    {
         key: '/crm',
         icon: <TeamOutlined />,
-        label: 'CRM & Leads',
+        label: 'Leads',
     },
     {
         key: '/whatsapp',
@@ -73,35 +36,7 @@ const navItems: MenuItem[] = [
         label: 'WhatsApp',
     },
     {
-        key: '/email',
-        icon: <MailOutlined />,
-        label: 'Email Hub',
-    },
-    {
         type: 'divider',
-    },
-    {
-        key: '/product',
-        icon: <AppstoreOutlined />,
-        label: 'Product Analytics',
-    },
-    {
-        key: '/ai',
-        icon: <BulbOutlined />,
-        label: 'AI Intelligence',
-    },
-    {
-        key: '/ads',
-        icon: <FundProjectionScreenOutlined />,
-        label: 'Ads Control',
-    },
-    {
-        type: 'divider',
-    },
-    {
-        key: '/monitoring',
-        icon: <AlertOutlined />,
-        label: 'Monitoring',
     },
     {
         key: '/settings',

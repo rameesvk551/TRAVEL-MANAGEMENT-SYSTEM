@@ -5,7 +5,10 @@ import { getRedisClient } from '../../config/redis.js';
 import { getConfig } from '../../config/env.js';
 import { AppError, UnauthorizedError } from '../../utils/apiError.js';
 import * as authRepository from './auth.repository.js';
-import { sendEmail } from '../email/mailer.js';
+// Email module removed — stub until mailer is re-integrated
+const sendEmail = async (to: string, subject: string, html: string) => {
+    console.log(`[EMAIL STUB] To: ${to}, Subject: ${subject}`);
+};
 import type { RegisterDTO, LoginDTO, AuthResponse, TokenPayload } from './auth.types.js';
 import { AUTH } from '../../config/constants.js';
 
@@ -25,9 +28,17 @@ export const register = async (data: RegisterDTO): Promise<AuthResponse> => {
     }
 
     // 2. Create Tenant
+    const slug = data.tenantName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+
+    // Check if tenant with this slug already exists
+    const existingTenant = await authRepository.findTenantBySlug(slug);
+    if (existingTenant) {
+        throw new AppError('A tenant with this name already exists', 409);
+    }
+
     const tenant = await authRepository.createTenant({
         name: data.tenantName,
-        slug: data.tenantName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        slug,
         is_active: true,
     });
 

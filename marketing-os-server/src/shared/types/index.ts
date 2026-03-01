@@ -1,8 +1,13 @@
-import { Tenant } from '../../modules/tenants/models/Tenant.js';
+// Tenant module was removed — inline minimal type
+export interface Tenant {
+    id: string;
+    name: string;
+    slug: string;
+    is_active: boolean;
+    [key: string]: any;
+}
 
 import { Request } from 'express';
-
-
 
 /**
  * Request context attached to every authenticated request.

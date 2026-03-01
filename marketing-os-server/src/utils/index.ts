@@ -25,3 +25,4 @@ export {
     encrypt,
     decrypt,
 } from './helpers.js';
+export { validateRequired } from './validateRequired.js';

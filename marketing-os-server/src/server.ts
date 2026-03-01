@@ -16,8 +16,7 @@ async function main(): Promise<void> {
         await connectToMongoDB();
         await testConnection();
 
-        // Register all Sequelize model associations
-        db.setupAssociations();
+        // Sequelize model associations are auto-registered in db/sqlmodels/index.ts
         logger.info('✅ Model associations registered.');
 
         // Verify Redis
@@ -26,12 +25,10 @@ async function main(): Promise<void> {
         logger.info('✅ Redis connected.');
 
         // Create app and register routes
-        const { app, dependencies } = createApp();
+        const app = createApp();
 
-        // Start background workers & cron jobs
-        dependencies.campaignDispatcher.startWorker();
-        dependencies.billingJobs.start();
-        logger.info('✅ Background workers & billing cron jobs started.');
+        // Background workers (none active after module cleanup)
+        logger.info('✅ Server dependencies ready.');
 
         // Start HTTP server
         const port = config.server.port;

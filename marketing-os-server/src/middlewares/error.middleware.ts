@@ -33,7 +33,13 @@ export const errorMiddleware = (
     }
 
     // Handle unknown errors
-    logger.error('Unhandled error:', error);
+    logger.error('Unhandled error:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        ...(error as any).original && { original: (error as any).original.message },
+        ...(error as any).sql && { sql: (error as any).sql },
+    });
 
     return res.status(500).json({
         status: 'error',

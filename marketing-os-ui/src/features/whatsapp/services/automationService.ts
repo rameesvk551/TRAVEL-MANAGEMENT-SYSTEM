@@ -28,7 +28,11 @@ export const automationRuleService = {
 };
 
 /* ── Flows (shared automation module) ── */
+// Lazy wrappers to avoid circular-dependency TDZ error
+// (api/modules re-exports from features/whatsapp, creating a cycle).
 export const automationFlowService = {
-    getFlows: sharedAutomationApi.getFlows,
-    deleteFlow: sharedAutomationApi.deleteFlow,
+    getFlows: (...args: Parameters<typeof sharedAutomationApi.getFlows>) =>
+        sharedAutomationApi.getFlows(...args),
+    deleteFlow: (...args: Parameters<typeof sharedAutomationApi.deleteFlow>) =>
+        sharedAutomationApi.deleteFlow(...args),
 };
