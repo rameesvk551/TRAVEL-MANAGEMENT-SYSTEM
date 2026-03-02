@@ -36,6 +36,11 @@ export const conversationService = {
         return data;
     },
 
+    sendConversationTemplate: async (conversationId: string, templateName: string, language: string = 'en', variables: any = {}) => {
+        const { data } = await client.post(`/whatsapp/conversations/${conversationId}/send-template`, { templateName, language, variables });
+        return data;
+    },
+
     assignOperator: async (conversationId: string, userId: string) => {
         const { data } = await client.post(`/whatsapp/conversations/${conversationId}/assign`, { userId });
         return data;
@@ -51,8 +56,8 @@ export const conversationService = {
         return data;
     },
 
-    seedDemo: async () => {
-        const { data } = await client.post('/whatsapp/seed-demo');
+    startNewChat: async (phoneNumber: string, displayName?: string) => {
+        const { data } = await client.post('/whatsapp/conversations/new', { phoneNumber, displayName });
         return data;
     },
 };

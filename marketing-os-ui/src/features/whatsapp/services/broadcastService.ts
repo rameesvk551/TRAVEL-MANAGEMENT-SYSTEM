@@ -14,4 +14,12 @@ export const broadcastService = {
         const { data } = await client.post('/whatsapp/broadcast', payload);
         return data;
     },
+    getBroadcasts: async (params?: { status?: string; limit?: number; offset?: number }) => {
+        const { data } = await client.get('/whatsapp/broadcast', { params });
+        return data;
+    },
+    getBroadcast: async (id: string) => {
+        const { data } = await client.get(`/whatsapp/broadcast/${id}`);
+        return data;
+    },
 };

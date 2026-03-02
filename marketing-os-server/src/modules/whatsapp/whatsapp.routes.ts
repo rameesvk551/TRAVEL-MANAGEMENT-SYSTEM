@@ -177,6 +177,11 @@ export function createWhatsAppRoutes(dependencies: {
   // CONVERSATION ROUTES
   // ============================================
 
+  // Start new conversation
+  router.post('/conversations/new',
+    conversationController.startNew
+  );
+
   // List conversations
   router.get('/conversations',
     conversationController.getConversations
@@ -218,6 +223,12 @@ export function createWhatsAppRoutes(dependencies: {
     conversationController.sendMessage
   );
 
+  // Send template message in conversation (no opt-in required)
+  router.post('/conversations/:id/send-template',
+    sendMessageRateLimiter,
+    conversationController.sendConversationTemplate
+  );
+
   // ============================================
   // MESSAGE ROUTES
   // ============================================
@@ -254,6 +265,14 @@ export function createWhatsAppRoutes(dependencies: {
 
   router.post('/broadcast',
     broadcastController.send
+  );
+
+  router.get('/broadcast',
+    broadcastController.list
+  );
+
+  router.get('/broadcast/:id',
+    broadcastController.get
   );
 
 
@@ -318,48 +337,6 @@ export function createWhatsAppRoutes(dependencies: {
   // TEST ROUTES (Development only)
   // ============================================
 
-  // Quick test endpoint - bypasses opt-in for testing
-  router.post('/test/send', async (req, res, next) => {
-    try {
-      const { to, message } = req.body;
-
-      if (!to || !message) {
-        res.status(400).json({
-          error: 'Missing required fields',
-          required: { to: 'phone number', message: 'text message' }
-        });
-        return;
-      }
-
-      // Get the provider directly from container dependencies
-      const { createWhatsAppContainer } = await import('./container.js');
-      const { getPool } = await import('../../config/database.js');
-      const container = createWhatsAppContainer(getPool(), {});
-
-      const result = await container.provider.sendMessage({
-        recipientPhone: to.replace(/\s/g, ''), // Remove spaces
-        messageType: 'TEXT',
-        textContent: { body: message },
-      });
-
-      if (result.success) {
-        res.json({
-          success: true,
-          messageId: result.providerMessageId,
-          message: 'Message sent successfully! 🚀'
-        });
-      } else {
-        res.status(400).json({
-          success: false,
-          error: result.errorMessage,
-          errorCode: result.errorCode
-        });
-      }
-    } catch (error) {
-      next(error);
-    }
-  });
-
   // Health check for WhatsApp integration
   router.get('/health', async (_req, res, _next) => {
     try {
@@ -368,7 +345,7 @@ export function createWhatsAppRoutes(dependencies: {
 
       res.json({
         status: 'ok',
-        provider: config.whatsapp.provider,
+        provider: 'meta',
         apiVersion: config.whatsapp.meta?.apiVersion,
         phoneNumberId: config.whatsapp.meta?.phoneNumberId ? '***' + config.whatsapp.meta.phoneNumberId.slice(-4) : 'not set',
         webhookVerifyToken: config.whatsapp.verifyToken ? 'set' : 'not set',

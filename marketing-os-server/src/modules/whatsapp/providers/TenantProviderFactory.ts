@@ -3,7 +3,7 @@
 
 import { Pool } from 'pg';
 import { createMetaCloudProvider } from './MetaCloudProvider.js';
-import { createMockProvider } from './MockProvider.js';
+
 import { IWhatsAppProvider } from '../interfaces/whatsapp/index.js';
 import { createWhatsAppConfigRepository, WhatsAppConfigRow } from '../repositories/WhatsAppConfigRepository.js';
 import { getConfig } from '../../../config/index.js';
@@ -19,8 +19,7 @@ export function createTenantProviderFactory(configRepo: ReturnType<typeof create
         if (config.credential_source === 'own') {
             // BYO tenant — use their own credentials
             if (!config.access_token || !config.phone_number_id || !config.waba_id) {
-                console.warn(`[TenantProviderFactory] BYO tenant ${config.tenant_id} has incomplete credentials, using mock`);
-                return createMockProvider();
+                throw new Error(`Tenant ${config.tenant_id} has incomplete WhatsApp credentials. Please configure access_token, phone_number_id, and waba_id in WhatsApp Settings.`);
             }
 
             return createMetaCloudProvider({
@@ -36,8 +35,7 @@ export function createTenantProviderFactory(configRepo: ReturnType<typeof create
             const appWabaId = process.env.META_APP_WABA_ID;
 
             if (!systemToken || !config.phone_number_id) {
-                console.warn(`[TenantProviderFactory] Managed tenant ${config.tenant_id} missing system token, using mock`);
-                return createMockProvider();
+                throw new Error(`Managed tenant ${config.tenant_id} missing META_SYSTEM_USER_TOKEN or phone_number_id. Configure these in environment or WhatsApp Settings.`);
             }
 
             return createMetaCloudProvider({
@@ -52,19 +50,19 @@ export function createTenantProviderFactory(configRepo: ReturnType<typeof create
 
     function createFallbackProvider(): IWhatsAppProvider {
         const config = getConfig();
-        const providerType = config.whatsapp?.provider || 'mock';
+        const meta = config.whatsapp.meta;
 
-        if (providerType === 'meta' && config.whatsapp.meta?.accessToken) {
-            return createMetaCloudProvider({
-                accessToken: config.whatsapp.meta.accessToken,
-                phoneNumberId: config.whatsapp.meta.phoneNumberId || '',
-                businessAccountId: config.whatsapp.meta.businessAccountId || '',
-                webhookVerifyToken: config.whatsapp.verifyToken || '',
-                apiVersion: config.whatsapp.meta.apiVersion || 'v21.0',
-            });
+        if (!meta?.accessToken) {
+            console.warn('[TenantProviderFactory] No global WhatsApp credentials set. API calls will fail until tenant-level credentials are configured via Settings.');
         }
 
-        return createMockProvider();
+        return createMetaCloudProvider({
+            accessToken: meta?.accessToken || '',
+            phoneNumberId: meta?.phoneNumberId || '',
+            businessAccountId: meta?.businessAccountId || '',
+            webhookVerifyToken: config.whatsapp.verifyToken || '',
+            apiVersion: meta?.apiVersion || 'v21.0',
+        });
     }
 
     /**

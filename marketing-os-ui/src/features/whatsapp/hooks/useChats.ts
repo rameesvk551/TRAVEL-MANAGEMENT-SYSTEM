@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { message as antMessage } from 'antd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { conversationService } from '../services/conversationService';
+import { templateService } from '../services/templateService';
 import { useWhatsAppSocket } from './useWhatsAppSocket';
 
 /* ─── colour / format helpers ─── */
@@ -38,6 +39,8 @@ export function useChats() {
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
     const [messageText, setMessageText] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [newChatModalOpen, setNewChatModalOpen] = useState(false);
+    const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
 
@@ -69,13 +72,39 @@ export function useChats() {
         onError: (error: any) => antMessage.error(`Failed to send: ${error.message}`),
     });
 
-    const startDemoMutation = useMutation({
-        mutationFn: () => conversationService.seedDemo(),
+    const newChatMutation = useMutation({
+        mutationFn: (params: { phoneNumber: string; displayName?: string }) =>
+            conversationService.startNewChat(params.phoneNumber, params.displayName),
+        onSuccess: (result: any) => {
+            antMessage.success('Conversation created!');
+            queryClient.invalidateQueries({ queryKey: ['conversations'] });
+            if (result?.data?.id) {
+                setSelectedConversationId(result.data.id);
+            }
+            setNewChatModalOpen(false);
+        },
+        onError: (error: any) => antMessage.error(`Failed to create chat: ${error.message}`),
+    });
+
+    /* templates query */
+    const { data: templatesData, isLoading: isLoadingTemplates } = useQuery({
+        queryKey: ['whatsapp-templates'],
+        queryFn: () => templateService.getTemplates({ status: 'APPROVED' }),
+        staleTime: 60000,
+    });
+
+    const sendTemplateMutation = useMutation({
+        mutationFn: (params: { templateName: string; language?: string; variables?: any }) =>
+            conversationService.sendConversationTemplate(
+                selectedConversationId!, params.templateName, params.language || 'en', params.variables || {}
+            ),
         onSuccess: () => {
-            antMessage.success('Demo conversations loaded!');
+            antMessage.success('Template sent!');
+            setTemplatePickerOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['messages', selectedConversationId] });
             queryClient.invalidateQueries({ queryKey: ['conversations'] });
         },
-        onError: (error: any) => antMessage.error(`Demo failed: ${error.message}`),
+        onError: (error: any) => antMessage.error(`Failed to send template: ${error.message}`),
     });
 
     /* scroll to bottom on new messages */
@@ -89,7 +118,14 @@ export function useChats() {
         sendMessageMutation.mutate(messageText);
     };
 
-    const handleStartDemo = () => startDemoMutation.mutate();
+    const handleStartNewChat = (phoneNumber: string, displayName?: string) => {
+        newChatMutation.mutate({ phoneNumber, displayName });
+    };
+
+    const handleSendTemplate = (templateName: string, language?: string, variables?: any) => {
+        if (!selectedConversationId) return;
+        sendTemplateMutation.mutate({ templateName, language, variables });
+    };
 
     /* derived data */
     const conversations: any[] = conversationsData?.data || [];
@@ -112,6 +148,8 @@ export function useChats() {
         searchQuery,
         setSearchQuery,
         messagesEndRef,
+        newChatModalOpen,
+        setNewChatModalOpen,
 
         // connection
         isConnected,
@@ -120,16 +158,24 @@ export function useChats() {
         isLoadingConversations,
         isLoadingMessages,
         isSending: sendMessageMutation.isPending,
-        isDemoLoading: startDemoMutation.isPending,
+        isNewChatLoading: newChatMutation.isPending,
+        isLoadingTemplates,
+        isSendingTemplate: sendTemplateMutation.isPending,
 
         // data
         conversations,
         messages,
         activeConv,
         filteredConversations,
+        templates: (templatesData?.data || []) as any[],
+
+        // template picker
+        templatePickerOpen,
+        setTemplatePickerOpen,
 
         // handlers
         handleSend,
-        handleStartDemo,
+        handleStartNewChat,
+        handleSendTemplate,
     };
 }

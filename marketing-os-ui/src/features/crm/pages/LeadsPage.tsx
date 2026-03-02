@@ -11,6 +11,11 @@ import {
     BulkActionBar,
     DealsPipeline,
     TaskManager,
+    ConversionFunnel,
+    AgentPerformance,
+    DealValueChart,
+    TasksOverviewChart,
+    TopTagsChart,
 } from '../components';
 import { DEFAULT_LEAD_NOTES } from '../data/leads';
 import type { LeadRecord, LeadStatus } from '../data/leads';
@@ -25,17 +30,15 @@ import {
     useTasks,
 } from '../hooks';
 
-type CrmTab = 'leads' | 'deals' | 'tasks';
+type CrmTab = 'leads' | 'deals' | 'tasks' | 'analytics';
 type LeadsViewMode = 'list' | 'kanban';
 
 const tabClass = (active: boolean) =>
-    `rounded-lg px-4 py-2 text-sm font-medium transition ${
-        active ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+    `rounded-lg px-4 py-2 text-sm font-medium transition ${active ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
     }`;
 
 const viewButtonClass = (active: boolean) =>
-    `rounded-lg px-3 py-2 text-sm font-medium transition ${
-        active ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+    `rounded-lg px-3 py-2 text-sm font-medium transition ${active ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
     }`;
 
 export function LeadsPage() {
@@ -66,10 +69,11 @@ export function LeadsPage() {
     const { selected, toggle, selectAll, clearAll, isSelected, count: bulkCount } = useBulkSelection();
 
     /* ── deals ── */
-    const { byStage, totals, weighted, moveDeal, stages } = useDeals();
+    const { deals: allDeals, byStage, totals, weighted, moveDeal, stages } = useDeals();
 
     /* ── tasks ── */
     const {
+        tasks: allTasks,
         byStatus: tasksByStatus,
         changeStatus: changeTaskStatus,
         deleteTask,
@@ -127,27 +131,15 @@ export function LeadsPage() {
                         <button type="button" onClick={() => setActiveTab('tasks')} className={tabClass(activeTab === 'tasks')}>
                             Tasks
                         </button>
+                        <button type="button" onClick={() => setActiveTab('analytics')} className={tabClass(activeTab === 'analytics')}>
+                            Analytics
+                        </button>
                     </div>
                 </header>
 
                 {/* ═══════ LEADS TAB ═══════ */}
                 {activeTab === 'leads' && (
                     <>
-                        {/* KPI Stats */}
-                        <StatsBar stats={stats} />
-
-                        {/* Charts row */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="rounded-xl border bg-white p-4 shadow-sm">
-                                <h3 className="mb-2 text-sm font-semibold text-slate-600">Leads by Source</h3>
-                                <SourceChart stats={stats} />
-                            </div>
-                            <div className="rounded-xl border bg-white p-4 shadow-sm">
-                                <h3 className="mb-2 text-sm font-semibold text-slate-600">Leads by Status</h3>
-                                <StatusChart stats={stats} />
-                            </div>
-                        </div>
-
                         {/* Toolbar */}
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
@@ -206,6 +198,37 @@ export function LeadsPage() {
 
                         {/* Add Lead Modal */}
                         <AddLeadModal open={addModalOpen} onClose={() => setAddModalOpen(false)} onSubmit={addLead} />
+                    </>
+                )}
+
+                {/* ═══════ ANALYTICS TAB ═══════ */}
+                {activeTab === 'analytics' && (
+                    <>
+                        {/* KPI Stats */}
+                        <StatsBar stats={stats} />
+
+                        {/* Lead Analytics */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <SourceChart stats={stats} />
+                            <StatusChart stats={stats} />
+                        </div>
+
+                        {/* Funnel & Agent Performance */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <ConversionFunnel stats={stats} />
+                            <AgentPerformance leads={leads} />
+                        </div>
+
+                        {/* Deal & Task Analytics */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <DealValueChart deals={allDeals} />
+                            <TasksOverviewChart tasks={allTasks} />
+                        </div>
+
+                        {/* Tags */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <TopTagsChart leads={leads} />
+                        </div>
                     </>
                 )}
 

@@ -59,7 +59,6 @@ export interface WhatsAppMetaConfig {
 }
 
 export interface WhatsAppConfig {
-    provider: 'meta' | 'twilio' | 'vonage' | 'mock';
     meta?: WhatsAppMetaConfig;
     appSecret?: string;
     verifyToken?: string;
@@ -142,9 +141,8 @@ export const config: Config = {
     },
     defaultTenantSlug: getEnvOrDefault('DEFAULT_TENANT_SLUG', 'default'),
     whatsapp: {
-        provider: getEnvOrDefault('WHATSAPP_PROVIDER', 'mock') as WhatsAppConfig['provider'],
         meta: {
-            apiVersion: 'v21.0',
+            apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
             accessToken: process.env.WHATSAPP_ACCESS_TOKEN,
             phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID,
             businessAccountId: process.env.WHATSAPP_BUSINESS_ACCOUNT_ID,

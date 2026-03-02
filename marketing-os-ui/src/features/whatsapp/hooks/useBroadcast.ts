@@ -12,6 +12,7 @@ export function useBroadcast() {
     const [form] = Form.useForm();
     const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
     const [recipientCount, setRecipientCount] = useState(0);
+    const [recipientsText, setRecipientsText] = useState('');
 
     /* queries */
     const { data: templatesData } = useQuery({
@@ -29,8 +30,12 @@ export function useBroadcast() {
             form.resetFields();
             setSelectedTemplate(null);
             setRecipientCount(0);
+            setRecipientsText('');
         },
-        onError: () => message.error('Failed to schedule broadcast'),
+        onError: (error: any) => {
+            const msg = error?.response?.data?.error || error?.message || 'Failed to schedule broadcast';
+            message.error(msg);
+        },
     });
 
     /* handlers */
@@ -41,6 +46,7 @@ export function useBroadcast() {
 
     const onRecipientsChange = (e: any) => {
         const text = e.target.value;
+        setRecipientsText(text);
         const count = text.split('\n').filter((line: string) => line.trim().length > 0).length;
         setRecipientCount(count);
     };
@@ -57,14 +63,18 @@ export function useBroadcast() {
     const prev = () => setCurrentStep(s => s - 1);
 
     const handleSend = () => {
-        const values = form.getFieldsValue();
-        const recipients = values.recipients
+        if (!recipientsText.trim()) {
+            message.error('No recipients found. Please go back and add recipients.');
+            return;
+        }
+
+        const recipients = recipientsText
             .split('\n')
             .filter((line: string) => line.trim().length > 0)
             .map((phone: string) => ({ phone: phone.trim() }));
 
         broadcastMutation.mutate({
-            templateName: selectedTemplate.name,
+            templateName: selectedTemplate.template_name || selectedTemplate.name,
             language: selectedTemplate.language,
             recipients,
         });

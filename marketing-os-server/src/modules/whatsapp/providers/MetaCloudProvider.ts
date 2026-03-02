@@ -74,6 +74,7 @@ function buildInteractivePayload(content: NonNullable<SendMessageRequest['intera
 export function createMetaCloudProvider(config: MetaConfig): IWhatsAppProvider {
   const providerType: ProviderType = 'META_CLOUD';
   const baseUrl = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}`;
+  console.log(`[MetaCloudProvider] Initialized — baseUrl: ${baseUrl}`);
 
   /**
    * Verify webhook signature from Meta
@@ -252,6 +253,9 @@ export function createMetaCloudProvider(config: MetaConfig): IWhatsAppProvider {
         messagePayload.context = { message_id: request.replyToMessageId };
       }
 
+      console.log(`[MetaCloudProvider] sendMessage → ${baseUrl}/messages`);
+      console.log(`[MetaCloudProvider] Payload:`, JSON.stringify(messagePayload, null, 2));
+
       const response = await fetch(`${baseUrl}/messages`, {
         method: 'POST',
         headers: {
@@ -262,6 +266,7 @@ export function createMetaCloudProvider(config: MetaConfig): IWhatsAppProvider {
       });
 
       const data = await response.json() as any;
+      console.log(`[MetaCloudProvider] Response (${response.status}):`, JSON.stringify(data, null, 2));
 
       if (!response.ok) {
         return {
@@ -315,6 +320,9 @@ export function createMetaCloudProvider(config: MetaConfig): IWhatsAppProvider {
         },
       };
 
+      console.log(`[MetaCloudProvider] sendTemplate → ${baseUrl}/messages`);
+      console.log(`[MetaCloudProvider] Template payload:`, JSON.stringify(templatePayload, null, 2));
+
       const response = await fetch(`${baseUrl}/messages`, {
         method: 'POST',
         headers: {
@@ -325,6 +333,7 @@ export function createMetaCloudProvider(config: MetaConfig): IWhatsAppProvider {
       });
 
       const data = await response.json() as any;
+      console.log(`[MetaCloudProvider] Template response (${response.status}):`, JSON.stringify(data, null, 2));
 
       if (!response.ok) {
         return {

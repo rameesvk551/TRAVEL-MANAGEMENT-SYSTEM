@@ -14,12 +14,12 @@ import {
 /**
  * Provider identification
  */
-export type ProviderType = 'META_CLOUD' | 'TWILIO' | 'GUPSHUP' | 'WATI' | 'MOCK';
+export type ProviderType = 'META_CLOUD' | 'TWILIO' | 'GUPSHUP' | 'WATI';
 
 /**
  * Webhook event types from provider
  */
-export type WebhookEventType = 
+export type WebhookEventType =
   | 'MESSAGE_RECEIVED'
   | 'MESSAGE_STATUS'
   | 'TEMPLATE_STATUS'

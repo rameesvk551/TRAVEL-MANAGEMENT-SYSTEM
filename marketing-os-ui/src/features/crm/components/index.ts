@@ -13,3 +13,8 @@ export * from './ActivityTimeline';
 export * from './BulkActionBar';
 export * from './DealsPipeline';
 export * from './TaskManager';
+export * from './ConversionFunnel';
+export * from './AgentPerformance';
+export * from './DealValueChart';
+export * from './TasksOverviewChart';
+export * from './TopTagsChart';

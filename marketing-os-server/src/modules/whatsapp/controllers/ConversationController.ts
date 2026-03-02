@@ -1,8 +1,11 @@
 // presentation/controllers/whatsapp/ConversationController.ts
 
+import { v4 as uuidv4 } from 'uuid';
+import { Pool } from 'pg';
+
 export function createConversationController(
     conversationService: any, messageService: any, timelineService: any,
-    conversationRepo: any, optInRepo?: any
+    conversationRepo: any, optInRepo?: any, pool?: Pool
 ) {
     const list = async (req: any, res: any, next: any) => {
         try {
@@ -74,7 +77,42 @@ export function createConversationController(
     };
 
     const close = async (req: any, res: any, next: any) => {
-        try { const tenantId = req.context?.tenantId; if (!tenantId) { res.status(401).json({ error: 'Tenant required' }); return; } res.json({ success: true, message: 'Conversation close would be implemented with full conversation management' }); } catch (error) { next(error); }
+        try {
+            const tenantId = req.context?.tenantId;
+            const { id } = req.params;
+            if (!tenantId) { res.status(401).json({ error: 'Tenant required' }); return; }
+            const conversation = await conversationRepo.findById(id, tenantId);
+            if (!conversation) { res.status(404).json({ error: 'Conversation not found' }); return; }
+            const updated = await conversationRepo.updateState(id, tenantId, 'COMPLETED');
+            res.json({ data: updated });
+        } catch (error) { next(error); }
+    };
+
+    const startNew = async (req: any, res: any, next: any) => {
+        try {
+            const tenantId = req.context?.tenantId;
+            if (!tenantId) { res.status(401).json({ error: 'Tenant required' }); return; }
+            const { phoneNumber, displayName } = req.body;
+            if (!phoneNumber) { res.status(400).json({ error: 'phoneNumber is required' }); return; }
+            const cleanPhone = phoneNumber.replace(/[\s\-()]/g, '');
+
+            // Auto opt-in the phone number
+            if (pool) {
+                try {
+                    await pool.query(
+                        `INSERT INTO whatsapp_opt_ins (id, tenant_id, phone_number, status, opt_in_date)
+                         VALUES ($1, $2, $3, 'OPTED_IN', NOW())
+                         ON CONFLICT DO NOTHING`,
+                        [uuidv4(), tenantId, cleanPhone]
+                    );
+                } catch (optInError) {
+                    console.warn('Auto opt-in failed (non-blocking):', optInError);
+                }
+            }
+
+            const context = await conversationService.getOrCreateContext(tenantId, 'WHATSAPP', cleanPhone, 'CUSTOMER', displayName || cleanPhone);
+            res.json({ data: { id: context.id, phoneNumber: cleanPhone, displayName: displayName || cleanPhone, state: context.state } });
+        } catch (error) { next(error); }
     };
 
     const getMessages = async (req: any, res: any, next: any) => {
@@ -104,9 +142,36 @@ export function createConversationController(
         } catch (error) { next(error); }
     };
 
+    const sendConversationTemplate = async (req: any, res: any, next: any) => {
+        try {
+            const tenantId = req.context?.tenantId;
+            const userId = req.context?.userId;
+            const { id } = req.params;
+            const { templateName, language, variables } = req.body;
+            if (!tenantId || !userId) { res.status(401).json({ error: 'Authentication required' }); return; }
+            if (!templateName) { res.status(400).json({ error: 'templateName is required' }); return; }
+
+            // Resolve phone from conversation
+            let phone: string | undefined;
+            if (id) {
+                const conv = await conversationRepo.findById(id, tenantId);
+                if (conv) phone = conv.primaryActor?.phoneNumber || conv.externalId;
+            }
+            if (!phone) { res.status(400).json({ error: 'Could not resolve recipient phone from conversation' }); return; }
+
+            const result = await messageService.sendTemplate({
+                tenantId, recipientPhone: phone, templateName,
+                language: language || 'en', variables: variables || {},
+                senderUserId: userId,
+            });
+            if (!result.success) { res.status(400).json({ error: result.error }); return; }
+            res.json({ data: result });
+        } catch (error) { next(error); }
+    };
+
     return {
         list, getById, sendMessage, sendTemplate, linkEntity, escalate, getEscalated,
         getConversations: list, getConversation: getById,
-        assignOperator, close, getMessages, broadcast,
+        assignOperator, close, getMessages, broadcast, startNew, sendConversationTemplate,
     };
 }

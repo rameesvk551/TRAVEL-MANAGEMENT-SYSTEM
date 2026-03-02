@@ -19,7 +19,7 @@ import { createTimelineRepository } from './repositories/TimelineRepository.js';
 import { createWhatsAppConfigRepository } from './repositories/WhatsAppConfigRepository.js';
 import { createWhatsAppAuditLogRepository } from './repositories/WhatsAppAuditLogRepository.js';
 import { createMetaCloudProvider } from './providers/MetaCloudProvider.js';
-import { createMockProvider } from './providers/MockProvider.js';
+
 import { createTenantProviderFactory } from './providers/TenantProviderFactory.js';
 
 // Application services
@@ -255,7 +255,8 @@ export function createWhatsAppContainer(
     messageService,
     timelineService,
     conversationRepo,
-    optInRepo
+    optInRepo,
+    pool
   );
 
   const timelineController = createTimelineController(
@@ -281,7 +282,8 @@ export function createWhatsAppContainer(
 
   const settingsController = createSettingsController(waConfigRepo, tenantProviderFactory, pool);
   const embeddedSignupController = createEmbeddedSignupController(waConfigRepo, pool);
-  const broadcastController = createBroadcastController(messageService, optInRepo);
+  const broadcastRepo = createBroadcastRepository(pool);
+  const broadcastController = createBroadcastController(messageService, optInRepo, broadcastRepo);
 
   // Instagram & Omnichannel controllers (stubs until modules exist)
   const instagramWebhookController: any = {
@@ -338,18 +340,14 @@ export function createWhatsAppContainer(
 }
 
 /**
- * Create appropriate WhatsApp provider based on config
+ * Create WhatsApp provider from global config (Meta Cloud API only)
  */
 function createProvider(config: any): IWhatsAppProvider {
-  const providerType = config.whatsapp?.provider || 'mock';
-
-  switch (providerType) {
-    case 'meta':
-      return createMetaCloudProvider(config.whatsapp?.meta || {});
-    case 'mock':
-    default:
-      return createMockProvider();
+  const meta = config.whatsapp?.meta;
+  if (!meta?.accessToken || !meta?.phoneNumberId) {
+    console.warn('[WhatsApp] Global credentials not set — provider will fail until tenant-level credentials are configured via Settings.');
   }
+  return createMetaCloudProvider(meta || {});
 }
 
 /**
@@ -526,6 +524,84 @@ function createTemplateRepository(pool: Pool) {
         `DELETE FROM whatsapp_templates WHERE id = $1 AND tenant_id = $2`,
         [id, tenantId]
       );
+    },
+  };
+}
+
+/**
+ * Broadcast repository — persists broadcast records
+ */
+function createBroadcastRepository(pool: Pool) {
+  return {
+    async save(broadcast: any) {
+      const query = `
+        INSERT INTO whatsapp_broadcasts (
+          id, tenant_id, template_name, language, status,
+          total_recipients, sent_count, failed_count, blocked_count,
+          recipients, blocked_recipients, scheduled_at, started_at, completed_at,
+          created_by, created_at, updated_at
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+        ON CONFLICT (id) DO UPDATE SET
+          status = EXCLUDED.status,
+          sent_count = EXCLUDED.sent_count,
+          failed_count = EXCLUDED.failed_count,
+          completed_at = EXCLUDED.completed_at,
+          updated_at = EXCLUDED.updated_at
+        RETURNING *
+      `;
+      const result = await pool.query(query, [
+        broadcast.id,
+        broadcast.tenantId,
+        broadcast.templateName,
+        broadcast.language || 'en',
+        broadcast.status || 'PENDING',
+        broadcast.totalRecipients || 0,
+        broadcast.sentCount || 0,
+        broadcast.failedCount || 0,
+        broadcast.blockedCount || 0,
+        JSON.stringify(broadcast.recipients || []),
+        JSON.stringify(broadcast.blockedRecipients || []),
+        broadcast.scheduledAt || null,
+        broadcast.startedAt || null,
+        broadcast.completedAt || null,
+        broadcast.createdBy,
+        new Date(),
+        new Date(),
+      ]);
+      return result.rows[0];
+    },
+    async updateStatus(id: string, tenantId: string, updates: any) {
+      const result = await pool.query(
+        `UPDATE whatsapp_broadcasts SET status = $1, sent_count = $2, failed_count = $3, completed_at = $4, updated_at = $5 WHERE id = $6 AND tenant_id = $7 RETURNING *`,
+        [updates.status, updates.sentCount, updates.failedCount, updates.completedAt, new Date(), id, tenantId]
+      );
+      return result.rows[0];
+    },
+    async findByTenant(tenantId: string, filters: any = {}) {
+      let query = `SELECT * FROM whatsapp_broadcasts WHERE tenant_id = $1`;
+      const params: any[] = [tenantId];
+      if (filters.status) {
+        params.push(filters.status);
+        query += ` AND status = $${params.length}`;
+      }
+      query += ` ORDER BY created_at DESC`;
+      if (filters.limit) {
+        params.push(filters.limit);
+        query += ` LIMIT $${params.length}`;
+      }
+      if (filters.offset) {
+        params.push(filters.offset);
+        query += ` OFFSET $${params.length}`;
+      }
+      const result = await pool.query(query, params);
+      return result.rows;
+    },
+    async findById(id: string, tenantId: string) {
+      const result = await pool.query(
+        `SELECT * FROM whatsapp_broadcasts WHERE id = $1 AND tenant_id = $2`,
+        [id, tenantId]
+      );
+      return result.rows[0] || null;
     },
   };
 }

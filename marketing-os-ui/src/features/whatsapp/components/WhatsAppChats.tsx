@@ -1,8 +1,8 @@
 // WhatsAppChats.tsx — pure render shell.
 // All logic lives in hooks/useChats.ts
 
-import React from 'react';
-import { Input, Avatar, Badge, Tag, Tooltip, Spin } from 'antd';
+import React, { useState } from 'react';
+import { Input, Avatar, Badge, Tag, Tooltip, Spin, Modal } from 'antd';
 import {
     SendOutlined,
     PhoneOutlined,
@@ -14,6 +14,8 @@ import {
     PaperClipOutlined,
     MoreOutlined,
     MessageOutlined,
+    PlusOutlined,
+    FileTextOutlined,
 } from '@ant-design/icons';
 import { useChats, pickColor, initials, formatTime } from '../hooks/useChats';
 
@@ -23,11 +25,25 @@ const WhatsAppChats: React.FC = () => {
         messageText, setMessageText,
         searchQuery, setSearchQuery,
         messagesEndRef,
+        newChatModalOpen, setNewChatModalOpen,
+        templatePickerOpen, setTemplatePickerOpen,
         isConnected,
-        isLoadingConversations, isLoadingMessages, isSending, isDemoLoading,
+        isLoadingConversations, isLoadingMessages, isSending, isNewChatLoading,
+        isLoadingTemplates, isSendingTemplate,
         conversations, messages, activeConv, filteredConversations,
-        handleSend, handleStartDemo,
+        templates,
+        handleSend, handleStartNewChat, handleSendTemplate,
     } = useChats();
+
+    const [newChatPhone, setNewChatPhone] = useState('');
+    const [newChatName, setNewChatName] = useState('');
+
+    const onNewChatSubmit = () => {
+        if (!newChatPhone.trim()) return;
+        handleStartNewChat(newChatPhone.trim(), newChatName.trim() || undefined);
+        setNewChatPhone('');
+        setNewChatName('');
+    };
 
     return (
         <div style={S.root}>
@@ -47,9 +63,9 @@ const WhatsAppChats: React.FC = () => {
                             }} />
                         </Tooltip>
                     </div>
-                    <Tooltip title="Start Demo Chat">
-                        <button onClick={handleStartDemo} disabled={isDemoLoading} style={S.demoBtn}>
-                            {isDemoLoading ? <Spin size="small" /> : '+ Demo'}
+                    <Tooltip title="Start New Chat">
+                        <button onClick={() => setNewChatModalOpen(true)} style={S.newChatBtn}>
+                            <PlusOutlined style={{ fontSize: 14 }} /> New Chat
                         </button>
                     </Tooltip>
                 </div>
@@ -75,8 +91,8 @@ const WhatsAppChats: React.FC = () => {
                                 {conversations.length === 0 ? 'No conversations yet' : 'No results found'}
                             </div>
                             {conversations.length === 0 && (
-                                <button onClick={handleStartDemo} style={{ ...S.demoBtn, marginTop: 12 }}>
-                                    Start Demo Flow
+                                <button onClick={() => setNewChatModalOpen(true)} style={{ ...S.newChatBtn, marginTop: 12 }}>
+                                    <PlusOutlined /> Start a Conversation
                                 </button>
                             )}
                         </div>
@@ -158,11 +174,12 @@ const WhatsAppChats: React.FC = () => {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '8px 0' }}>
                                     {messages.map((msg: any) => {
                                         const isOut = msg.direction === 'OUTBOUND';
-                                        const body = msg.type === 'TEXT'
-                                            ? (msg.content?.body || msg.textContent?.body || msg.body || msg.textBody || '')
-                                            : msg.type === 'TEMPLATE'
-                                                ? `📋 Template: ${msg.metadata?.templateName || msg.templateContent?.templateName || 'Unknown'}`
-                                                : `📎 ${msg.type}`;
+                                        const msgType = msg.messageType || msg.type || 'TEXT';
+                                        const body = (msgType === 'TEXT' || msgType === 'text')
+                                            ? (msg.textContent?.body || msg.content?.body || msg.textBody || msg.body || '')
+                                            : (msgType === 'TEMPLATE' || msgType === 'template')
+                                                ? `📋 Template: ${msg.templateContent?.templateName || msg.metadata?.templateName || 'Unknown'}`
+                                                : `📎 ${msgType}`;
                                         return (
                                             <div key={msg.id} style={{ display: 'flex', justifyContent: isOut ? 'flex-end' : 'flex-start' }}>
                                                 <div style={{
@@ -198,6 +215,12 @@ const WhatsAppChats: React.FC = () => {
                         <div style={S.inputArea}>
                             <SmileOutlined style={{ fontSize: 24, color: '#8696a0', cursor: 'pointer', flexShrink: 0 }} />
                             <PaperClipOutlined style={{ fontSize: 24, color: '#8696a0', cursor: 'pointer', flexShrink: 0 }} />
+                            <Tooltip title="Send Template">
+                                <FileTextOutlined
+                                    onClick={() => setTemplatePickerOpen(true)}
+                                    style={{ fontSize: 24, color: '#8696a0', cursor: 'pointer', flexShrink: 0, transition: 'color 0.2s' }}
+                                />
+                            </Tooltip>
                             <input
                                 value={messageText}
                                 onChange={(e) => setMessageText(e.target.value)}
@@ -225,7 +248,7 @@ const WhatsAppChats: React.FC = () => {
                             </h2>
                             <p style={{ fontSize: 14, color: '#8696a0', maxWidth: 460, textAlign: 'center', lineHeight: 1.6 }}>
                                 Send and receive messages from your customers. Select a conversation
-                                from the list to start chatting, or click <b>+ Demo</b> to create a test conversation.
+                                from the list to start chatting, or click <b>+ New Chat</b> to start a new conversation.
                             </p>
                             <div style={{ width: 400, height: 1, background: 'linear-gradient(90deg, transparent, #e0e0e0, transparent)', margin: '24px 0' }} />
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#8696a0', fontSize: 13 }}>
@@ -236,6 +259,106 @@ const WhatsAppChats: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* ─────────── NEW CHAT MODAL ─────────── */}
+            <Modal
+                title={<span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><WhatsAppOutlined style={{ color: '#00a884' }} /> New Conversation</span>}
+                open={newChatModalOpen}
+                onCancel={() => { setNewChatModalOpen(false); setNewChatPhone(''); setNewChatName(''); }}
+                onOk={onNewChatSubmit}
+                okText={isNewChatLoading ? 'Creating...' : 'Start Chat'}
+                okButtonProps={{ disabled: !newChatPhone.trim() || isNewChatLoading, style: { background: '#00a884', borderColor: '#00a884' } }}
+                destroyOnClose
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '12px 0' }}>
+                    <div>
+                        <label style={{ fontWeight: 600, fontSize: 13, color: '#111b21', display: 'block', marginBottom: 6 }}>
+                            Phone Number <span style={{ color: '#f5222d' }}>*</span>
+                        </label>
+                        <Input
+                            placeholder="e.g. +91 98765 43210"
+                            prefix={<PhoneOutlined style={{ color: '#8696a0' }} />}
+                            value={newChatPhone}
+                            onChange={(e) => setNewChatPhone(e.target.value)}
+                            onPressEnter={onNewChatSubmit}
+                            size="large"
+                            style={{ borderRadius: 8 }}
+                        />
+                        <div style={{ fontSize: 12, color: '#8696a0', marginTop: 4 }}>
+                            Include country code (e.g. +91 for India)
+                        </div>
+                    </div>
+                    <div>
+                        <label style={{ fontWeight: 600, fontSize: 13, color: '#111b21', display: 'block', marginBottom: 6 }}>
+                            Contact Name <span style={{ color: '#8696a0', fontWeight: 400 }}>(optional)</span>
+                        </label>
+                        <Input
+                            placeholder="e.g. John Doe"
+                            value={newChatName}
+                            onChange={(e) => setNewChatName(e.target.value)}
+                            onPressEnter={onNewChatSubmit}
+                            size="large"
+                            style={{ borderRadius: 8 }}
+                        />
+                    </div>
+                </div>
+            </Modal>
+
+            {/* ─────────── TEMPLATE PICKER MODAL ─────────── */}
+            <Modal
+                title={<span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><FileTextOutlined style={{ color: '#00a884' }} /> Send Template Message</span>}
+                open={templatePickerOpen}
+                onCancel={() => setTemplatePickerOpen(false)}
+                footer={null}
+                destroyOnClose
+                width={520}
+            >
+                <div style={{ padding: '8px 0' }}>
+                    <p style={{ color: '#8696a0', fontSize: 13, marginBottom: 16 }}>
+                        Select an approved template to send. Templates allow you to start conversations without opt-in.
+                    </p>
+                    {isLoadingTemplates ? (
+                        <div style={{ textAlign: 'center', padding: 32 }}><Spin /></div>
+                    ) : templates.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: 32, color: '#8696a0' }}>
+                            <FileTextOutlined style={{ fontSize: 40, marginBottom: 8 }} />
+                            <div>No approved templates found</div>
+                            <div style={{ fontSize: 12, marginTop: 4 }}>Create and approve templates in the Templates tab</div>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 400, overflowY: 'auto' }}>
+                            {templates.map((tpl: any) => (
+                                <div
+                                    key={tpl.id}
+                                    onClick={() => !isSendingTemplate && handleSendTemplate(tpl.template_name || tpl.templateName, tpl.language)}
+                                    style={{
+                                        padding: '12px 16px', borderRadius: 8, border: '1px solid #e9edef',
+                                        cursor: isSendingTemplate ? 'wait' : 'pointer', transition: 'all 0.2s',
+                                        background: '#fff',
+                                    }}
+                                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = '#f0f9f4'; (e.currentTarget as HTMLDivElement).style.borderColor = '#00a884'; }}
+                                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = '#fff'; (e.currentTarget as HTMLDivElement).style.borderColor = '#e9edef'; }}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                        <span style={{ fontWeight: 600, color: '#111b21', fontSize: 14 }}>
+                                            {tpl.template_name || tpl.templateName}
+                                        </span>
+                                        <Tag color="green" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px' }}>
+                                            {tpl.language || 'en'}
+                                        </Tag>
+                                    </div>
+                                    <div style={{ fontSize: 13, color: '#667781', lineHeight: 1.4 }}>
+                                        {tpl.body_content || tpl.bodyContent || 'No preview available'}
+                                    </div>
+                                    {tpl.category && (
+                                        <Tag style={{ marginTop: 6, fontSize: 10 }}>{tpl.category}</Tag>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </Modal>
         </div>
     );
 };
@@ -265,7 +388,7 @@ const S: Record<string, React.CSSProperties> = {
     inputArea: { display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px', background: '#f0f2f5' },
     textInput: { flex: 1, border: 'none', borderRadius: 8, padding: '10px 14px', fontSize: 15, outline: 'none', background: '#fff', color: '#111b21' },
     sendBtn: { width: 42, height: 42, borderRadius: '50%', border: 'none', background: '#00a884', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, transition: 'opacity 0.2s' },
-    demoBtn: { padding: '5px 14px', borderRadius: 6, border: 'none', background: '#00a884', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer' },
+    newChatBtn: { padding: '5px 14px', borderRadius: 6, border: 'none', background: '#00a884', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 },
     emptyState: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0f2f5' },
     emptyStateInner: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center' },
     emptyIcon: { width: 120, height: 120, borderRadius: '50%', background: 'linear-gradient(135deg, #e8f8e8 0%, #d5f5e3 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
